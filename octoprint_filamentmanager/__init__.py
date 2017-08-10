@@ -69,7 +69,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
-        profiles = self.filamentManager.get_all_profiles()
+        if self._profiles is None:
+            self._profiles = self.filamentManager.get_all_profiles()
+
+        profiles = self._profiles
 
         if profiles is not None:
             return jsonify(profiles=profiles)
@@ -86,6 +89,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.create_profile(json_data)
 
         if success:
+            self._profiles = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
@@ -100,6 +104,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.update_profile(identifier, json_data)
 
         if success:
+            self._profiles = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
@@ -109,13 +114,17 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.delete_profile(identifier)
 
         if success:
+            self._profiles = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
-        spools = self.filamentManager.get_all_spools()
+        if self._spools is None:
+            self._spools = self.filamentManager.get_all_spools()
+
+        spools = self._spools
 
         if spools is not None:
             return jsonify(spools=spools)
@@ -132,6 +141,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.create_spool(json_data)
 
         if success:
+            self._spools = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
@@ -146,6 +156,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.update_spool(identifier, json_data)
 
         if success:
+            self._spools = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
@@ -155,6 +166,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         success = self.filamentManager.delete_spool(identifier)
 
         if success:
+            self._spools = None
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
