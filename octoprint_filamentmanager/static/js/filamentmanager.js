@@ -45,10 +45,23 @@ $(function() {
         });
 
         self.selectedProfile.subscribe(function() {
+            if (self.selectedProfile() === undefined) {
+                if (!self.isNew()) {
+                    // selected 'new profile' in options menu, but no profile created yet
+                    self.fromProfileData();
+                }
+                return;
+            }
+
+            // find profile data
             var data = ko.utils.arrayFirst(self.profiles(), function(item) {
                 return item.id == self.selectedProfile();
             });
-            data !== null ? self.fromProfileData(data) : self.fromProfileData();
+
+            if (data !== null) {
+                // populate data
+                self.fromProfileData(data);
+            }
         });
 
         self.fromProfileData = function(data) {
@@ -56,6 +69,7 @@ $(function() {
 
             if (data === undefined) {
                 data = cleanProfile();
+                self.selectedProfile(undefined);
             }
 
             self.id(data.id);
