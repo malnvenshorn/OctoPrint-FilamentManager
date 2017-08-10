@@ -22,7 +22,7 @@ class FilamentManager(object):
                      profile_id INTEGER NOT NULL,
                      name TEXT NOT NULL,
                      used REAL NOT NULL,
-                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE) """
+                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT) """
 
         try:
             db = sqlite3.connect(self._db_path)

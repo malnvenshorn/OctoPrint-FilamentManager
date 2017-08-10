@@ -220,11 +220,6 @@ $(function() {
             }
         };
 
-        // self.newProfile = function() {
-        //     self.profileEditor.fromProfileData(cleanProfile());
-        //     self.profileEditor.isNew(true);
-        // };
-
         self.saveProfile = function(data) {
             if (data === undefined) {
                 data = self.profileEditor.toProfileData();
@@ -305,7 +300,7 @@ $(function() {
             };
 
             var text = gettext("You are about to delete the filament profile \"%(name)s\"." //\
-                               + " This will also delete all associated filament spools.");
+                               + " Please notice that it is not possible to delete profiles with associated spools.");
             showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
         };
 
