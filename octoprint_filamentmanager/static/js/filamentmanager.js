@@ -115,6 +115,10 @@ $(function() {
         self.totalWeight = ko.observable();
         self.remaining = ko.observable();
 
+        self.nameInvalid = ko.pureComputed(function() {
+            return !self.name();
+        });
+
         self.selectedProfile.subscribe(function() {
                 var data = ko.utils.arrayFirst(self.profiles(), function(item) {
                     return item.id == self.selectedProfile();
@@ -211,12 +215,22 @@ $(function() {
             self.spoolDialog.modal("show");
         };
 
+        self.hideSpoolDialog = function() {
+            self.spoolDialog.modal("hide");
+        };
+
         self.requestData = function(data) {
+            self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/" + data,
                 type: "GET",
                 dataType: "json",
-                success: self.fromResponse
+            })
+            .done(function(data) {
+                self.fromResponse(data);
+            })
+            .always(function() {
+                self.requestInProgress(false);
             });
         };
 
@@ -266,7 +280,7 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("profiles")
+                self.requestData("profiles");
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -313,7 +327,7 @@ $(function() {
                     type: "DELETE"
                 })
                 .done(function() {
-                    self.requestData("profiles")
+                    self.requestData("profiles");
                 })
                 .fail(function() {
                     var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -329,12 +343,19 @@ $(function() {
             showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
         };
 
-        self.saveSpool = function() {
-            data = self.spoolEditor.toSpoolData();
+        self.saveSpool = function(data) {
+            if (data === undefined) {
+                data = self.spoolEditor.toSpoolData();
+            }
+
             self.spoolEditor.isNew() ? self.addSpool(data) : self.updateSpool(data);
         };
 
         self.addSpool = function(data) {
+            if (data === undefined) {
+                data = self.spoolEditor.toSpoolData();
+            }
+
             self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/spools",
@@ -343,10 +364,11 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("spools")
+                self.requestData("spools");
+                self.hideSpoolDialog();
             })
             .fail(function() {
-                var text = gettext("There was an unexpected error while adding the filament spool, please consult the logs.");
+                var text = gettext("There was an unexpected database error, please consult the logs.");
                 new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
             })
             .always(function() {
@@ -355,6 +377,10 @@ $(function() {
         };
 
         self.updateSpool = function(data) {
+            if (data === undefined) {
+                data = self.spoolEditor.toSpoolData();
+            }
+
             self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/spools/" + data.id,
@@ -363,10 +389,11 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("spools")
+                self.requestData("spools");
+                self.hideSpoolDialog();
             })
             .fail(function() {
-                var text = gettext("There was an unexpected error while updating the filament spool, please consult the logs.");
+                var text = gettext("There was an unexpected database error, please consult the logs.");
                 new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
             })
             .always(function() {
@@ -375,21 +402,30 @@ $(function() {
         };
 
         self.removeSpool = function(data) {
-            self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/spools/" + data.id,
-                type: "DELETE"
-            })
-            .done(function() {
-                self.requestData("spools")
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected error while removing the filament spool, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
+            if (data === undefined) {
+                data = self.spoolEditor.toSpoolData();
+            }
+
+            var perform = function() {
+                self.requestInProgress(true);
+                $.ajax({
+                    url: "plugin/filamentmanager/spools/" + data.id,
+                    type: "DELETE"
+                })
+                .done(function() {
+                    self.requestData("spools")
+                })
+                .fail(function() {
+                    var text = gettext("There was an unexpected database error, please consult the logs.");
+                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
+            };
+
+            var text = gettext("You are about to delete the filament spool \"%(name)s\".");
+            showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
         };
     }
 

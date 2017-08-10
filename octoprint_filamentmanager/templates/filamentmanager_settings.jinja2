@@ -1,6 +1,6 @@
 <form class="form-horizontal">
 
-    <h3>{{ _("Filament Spools") }}</h3>
+    <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
     <!-- table -->
 
@@ -23,7 +23,7 @@
             <td><span data-bind="text: remaining"></span>g</td>
             <td><span data-bind="text: usedPercent"></span>%</td>
         <td>
-            <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="click: function() { $root.removeSpool($data); }"></a>
+            <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
         </td>
     </tr>
     </tbody>

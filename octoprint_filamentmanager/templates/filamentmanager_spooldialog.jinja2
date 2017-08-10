@@ -9,12 +9,13 @@
 
         <form class="form-horizontal">
 
-            <div class="control-group">
+            <div class="control-group" data-bind="css: {error: spoolEditor.nameInvalid()}">
                 <label class="control-label">{{ _('Name') }}</label>
                 <div class="controls">
-                    <div class="input-append">
-                        <input type="text" data-bind="value: spoolEditor.name">
-                    </div>
+                    <input type="text" data-bind="value: spoolEditor.name, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: spoolEditor.nameInvalid()">
+                        <br><span class="help-inline">{{ _("Name must be set") }}</span>
+                    </span>
                 </div>
             </div>
 
@@ -42,7 +43,7 @@
 
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true" data-bind="click: function() { saveSpool(); }">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="disable: spoolEditor.nameInvalid(), click: function() { saveSpool(spoolEditor.toSpoolData()); }">{{ _('Save') }}</button>
     </div>
 
 </div>
