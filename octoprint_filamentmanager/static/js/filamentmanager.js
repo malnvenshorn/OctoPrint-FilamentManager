@@ -40,6 +40,10 @@ $(function() {
         self.density = ko.observable();
         self.diameter = ko.observable();
 
+        self.nameInvalid = ko.pureComputed(function() {
+            return !self.name();
+        });
+
         self.selectedProfile.subscribe(function() {
             var data = ko.utils.arrayFirst(self.profiles(), function(item) {
                 return item.id == self.selectedProfile();
@@ -63,13 +67,20 @@ $(function() {
         };
 
         self.toProfileData = function() {
+            var defaultProfile = cleanProfile();
+
+            var validFloat = function(value, def) {
+                var f = parseFloat(value);
+                return isNaN(f) ? def : f;
+            };
+
             return {
                 id: self.id(),
                 name: self.name(),
-                cost: self.cost(),
-                weight: self.weight(),
-                density: self.density(),
-                diameter: self.diameter()
+                cost: validFloat(self.cost(), defaultProfile.cost),
+                weight: validFloat(self.weight(), defaultProfile.weight),
+                density: validFloat(self.density(), defaultProfile.density),
+                diameter: validFloat(self.diameter(), defaultProfile.diameter)
             };
         };
 

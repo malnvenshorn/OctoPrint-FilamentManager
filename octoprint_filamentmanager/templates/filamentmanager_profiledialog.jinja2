@@ -10,20 +10,21 @@
         <div class="controls" style="margin-bottom: 5px;">
             <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: profileEditor.selectedProfile"></select>
             <button class="btn btn-small btn-success" style="margin-bottom: 8px;" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
-            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.selectedProfile() === undefined || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
-            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
+            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.isNew() || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
+            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.nameInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
         </div>
 
         <legend></legend>
 
         <form class="form-horizontal">
 
-            <div class="control-group">
+            <div class="control-group" data-bind="css: {error: profileEditor.nameInvalid()}">
                 <label class="control-label">{{ _('Name') }}</label>
                 <div class="controls">
-                    <div class="input-append">
-                        <input type="text" data-bind="value: profileEditor.name">
-                    </div>
+                    <input type="text" data-bind="value: profileEditor.name, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: profileEditor.nameInvalid()">
+                        <br><span class="help-inline">{{ _("Name must be set") }}</span>
+                    </span>
                 </div>
             </div>
 
