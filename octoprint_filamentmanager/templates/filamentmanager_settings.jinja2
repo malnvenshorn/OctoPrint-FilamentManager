@@ -1,5 +1,25 @@
 <form class="form-horizontal">
 
+    <h3>{{ _("Selected Spools") }}</h3>
+
+     <!-- ko foreach: tools -->
+    <div class="control-group">
+        <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>
+        <div class="controls">
+            <select data-bind="options: $root.spools, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
+            <!--  -->
+        </div>
+    </div>
+    <!-- /ko -->
+
+    <div class="control-group">
+       <div class="controls">
+           <label class="checkbox">
+               <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableTracking">{{ _("Track filament consumption") }} <span class="label label-important">{{ _("Experimental") }}</span>
+           </label>
+       </div>
+   </div>
+
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
     <!-- table -->

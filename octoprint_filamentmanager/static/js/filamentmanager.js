@@ -174,9 +174,12 @@ $(function() {
     function FilamentManagerViewModel(parameters) {
         var self = this;
 
+        self.settings = parameters[0];
+
         self.requestInProgress = ko.observable(false);
         self.profiles = ko.observableArray([]);
         self.spools = ko.observableArray([]);
+        self.tools = ko.observableArray([]);
 
         self.spoolsList = new ItemListHelper(
             "filamentSpools",
@@ -199,6 +202,13 @@ $(function() {
         self.onStartup = function() {
             self.profileDialog = $("#settings_plugin_filamentmanager_profiledialog");
             self.spoolDialog = $("#settings_plugin_filamentmanager_spooldialog");
+        };
+
+        self.onBeforeBinding = function() {
+            self._readExtruderCount();
+            self.settings.printerProfiles.currentProfileData.subscribe(function() {
+                self._readExtruderCount();
+            });
         };
 
         self.onStartupComplete = function() {
@@ -427,11 +437,28 @@ $(function() {
             var text = gettext("You are about to delete the filament spool \"%(name)s\".");
             showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
         };
+
+        self._readExtruderCount = function() {
+            var currentProfileData = self.settings.printerProfiles.currentProfileData();
+            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
+            self.tools(new Array(numExtruders));
+
+            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+            var selectedSpoolsCount = Object.keys(selectedSpools).length;
+
+            if (selectedSpoolsCount < numExtruders) {
+                // add observables for new tools
+                for(var i = selectedSpoolsCount; i < numExtruders; ++i) {
+                    var id = "tool" + i;
+                    selectedSpools[id] = ko.observable(0);
+                }
+            }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilamentManagerViewModel,
-        dependencies: [],
+        dependencies: ["settingsViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog"]

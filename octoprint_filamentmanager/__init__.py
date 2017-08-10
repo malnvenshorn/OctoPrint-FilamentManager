@@ -6,24 +6,33 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
 
 import octoprint.plugin
-import sqlite3
 import os
 from flask import jsonify, request, make_response
 from werkzeug.exceptions import BadRequest
 from .manager import FilamentManager
+from octoprint.events import Events
+import re
+import math
 
 
 class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.SettingsPlugin,
                             octoprint.plugin.AssetPlugin,
                             octoprint.plugin.TemplatePlugin,
-                            octoprint.plugin.BlueprintPlugin):
+                            octoprint.plugin.BlueprintPlugin,
+                            octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
         self._db = None
         self._profiles = None
         self._spools = None
         self.filamentManager = None
+        self.relativeMode = False
+        self.lastExtrusion = 0.0
+        self.totalExtrusion = 0.0
+        self.maxExtrusion = 0.0
+        self.prog = re.compile(r'.*E(\d+(\.\d+)?)')
+        self.filamentTracking = False
 
     # StartupPlugin
 
@@ -36,7 +45,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def get_settings_defaults(self):
         return dict(
-            selectedFilament=dict()
+            selectedSpools=dict(),
+            enableTracking=True
         )
 
     # AssetPlugin
@@ -149,6 +159,60 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
+    def _send_client_message(self, message_type, data=None):
+        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
+
+    # EventHandlerPlugin
+
+    def on_event(self, event, payload):
+        if event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
+            if self.filamentTracking:
+                self._logger.info("Filament used: " + str(self.maxExtrusion) + " mm")
+                self._update_filament_usage()
+            self.filamentTracking = False
+        elif event == Events.PRINT_STARTED:
+            self.filamentTracking = self._settings.get(["enableTracking"])
+            self._logger.info("Filament tracking: " + "on" if self.filamentTracking else "off")
+            self._reset_extrusion_counter()
+
+    def _reset_extrusion_counter(self):
+        self.lastExtrusion = 0.0
+        self.totalExtrusion = 0.0
+        self.maxExtrusion = 0.0
+
+    def _update_filament_usage(self):
+        pass
+
+    # Protocol hook
+
+    def track_filament_consumption(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+        if not self.filamentTracking or gcode is None:
+            return
+
+        if gcode == "G1" or gcode == "G0":
+            e = self._get_extruder_float(cmd)
+            if e is not None:
+                if not self.relativeMode:
+                    e -= self.lastExtrusion
+                self.totalExtrusion += e
+                self.lastExtrusion += e
+                self.maxExtrusion = max(self.maxExtrusion, self.totalExtrusion)
+        elif gcode == "G90":
+            self.relativeMode = False
+        elif gcode == "G91":
+            self.relativeMode = True
+        elif gcode == "G92":
+            e = self._get_extruder_float(cmd)
+            if e is not None:
+                self.lastExtrusion = e
+
+    def _get_extruder_float(self, cmd):
+        result = self.prog.match(cmd)
+        if result is not None:
+            return float(result.group(1))
+        else:
+            return None
+
     # Softwareupdate hook
 
     def get_update_information(self):
@@ -168,9 +232,6 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             )
         )
 
-    def _send_client_message(self, message_type, data=None):
-        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
-
 
 __plugin_name__ = "FilamentManager"
 
@@ -181,5 +242,6 @@ def __plugin_load__():
 
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.comm.protocol.gcode.sent": __plugin_implementation__.track_filament_consumption
     }
