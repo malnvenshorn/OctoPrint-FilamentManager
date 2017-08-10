@@ -44,12 +44,16 @@ $(function() {
             var data = ko.utils.arrayFirst(self.profiles(), function(item) {
                 return item.id == self.selectedProfile();
             });
-            self.isNew(data === null);
-            if (self.isNew()) data = cleanProfile();
-            self.fromProfileData(data);
+            data !== null ? self.fromProfileData(data) : self.fromProfileData();
         });
 
         self.fromProfileData = function(data) {
+            self.isNew(data === undefined);
+
+            if (data === undefined) {
+                data = cleanProfile();
+            }
+
             self.id(data.id);
             self.name(data.name);
             self.cost(data.cost);
@@ -69,7 +73,7 @@ $(function() {
             };
         };
 
-        self.fromProfileData(cleanProfile());
+        self.fromProfileData();
     }
 
     function SpoolEditorViewModel(profiles) {
@@ -216,20 +220,24 @@ $(function() {
             }
         };
 
-        self.newProfile = function() {
-            self.profileEditor.fromProfileData(cleanProfile());
-            self.profileEditor.isNew(true);
+        // self.newProfile = function() {
+        //     self.profileEditor.fromProfileData(cleanProfile());
+        //     self.profileEditor.isNew(true);
+        // };
+
+        self.saveProfile = function(data) {
+            if (data === undefined) {
+                data = self.profileEditor.toProfileData();
+            }
+
+            self.profileEditor.isNew() ? self.addProfile(data) : self.updateProfile(data);
         };
 
-        self.saveProfile = function() {
-            if (self.profileEditor.isNew())
-                self.addProfile();
-            else
-                self.updateProfile();
-        };
+        self.addProfile = function(data) {
+            if (data === undefined) {
+                data = self.profileEditor.toProfileData();
+            }
 
-        self.addProfile = function() {
-            data = self.profileEditor.toProfileData();
             self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/profiles",
@@ -241,7 +249,7 @@ $(function() {
                 self.requestData("profiles")
             })
             .fail(function() {
-                var text = gettext("There was an unexpected error while adding the filament profile, please consult the logs.");
+                var text = gettext("There was an unexpected database error, please consult the logs.");
                 new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
             })
             .always(function() {
@@ -249,8 +257,11 @@ $(function() {
             });
         };
 
-        self.updateProfile = function() {
-            data = self.profileEditor.toProfileData();
+        self.updateProfile = function(data) {
+            if (data === undefined) {
+                data = self.profileEditor.toProfileData();
+            }
+
             self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/profiles/" + data.id,
@@ -262,7 +273,7 @@ $(function() {
                 self.requestData("profiles")
             })
             .fail(function() {
-                var text = gettext("There was an unexpected error while updating the filament profile, please consult the logs.");
+                var text = gettext("There was an unexpected database error, please consult the logs.");
                 new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
             })
             .always(function() {
@@ -270,24 +281,33 @@ $(function() {
             });
         };
 
-        self.removeProfile = function() {
-            data = self.profileEditor.toProfileData();
-            self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/profiles/" + data.id,
-                type: "DELETE"
-            })
-            .done(function() {
-                self.requestData("profiles")
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected error while removing the filament profile, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
-        }
+        self.removeProfile = function(data) {
+            if (data === undefined) {
+                data = self.profileEditor.toProfileData();
+            }
+
+            var perform = function() {
+                self.requestInProgress(true);
+                $.ajax({
+                    url: "plugin/filamentmanager/profiles/" + data.id,
+                    type: "DELETE"
+                })
+                .done(function() {
+                    self.requestData("profiles")
+                })
+                .fail(function() {
+                    var text = gettext("There was an unexpected database error, please consult the logs.");
+                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
+            };
+
+            var text = gettext("You are about to delete the filament profile \"%(name)s\"." //\
+                               + " This will also delete all associated filament spools.");
+            showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
+        };
 
         self.saveSpool = function() {
             data = self.spoolEditor.toSpoolData();

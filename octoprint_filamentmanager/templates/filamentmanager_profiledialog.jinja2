@@ -9,9 +9,9 @@
 
         <div class="controls" style="margin-bottom: 5px;">
             <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: profileEditor.selectedProfile"></select>
-            <button class="btn btn-small btn-success" style="margin-bottom: 8px;" title="{{ _('New') }}" data-bind="click: function() { newProfile(); }"><span class="icon-plus"></span></button>
-            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.profiles().length < 1, click: function() { removeProfile(); }"><span class="icon-minus"></span></button>
-            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="click: function() { saveProfile(); }">{{ _('Save') }}</button>
+            <button class="btn btn-small btn-success" style="margin-bottom: 8px;" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
+            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.selectedProfile() === undefined || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
+            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
         </div>
 
         <legend></legend>
