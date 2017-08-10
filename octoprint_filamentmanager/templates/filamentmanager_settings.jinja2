@@ -1,0 +1,53 @@
+<form class="form-horizontal">
+
+    <h3>{{ _("Filament Spools") }}</h3>
+
+    <!-- table -->
+
+    <table class="table table-striped table-hover table-condensed table-hover">
+    <thead>
+        <tr>
+            <th>{{ _('Name') }}</th>
+            <th>{{ _('Profile') }}</th>
+            <th>{{ _('Weight') }}</th>
+            <th>{{ _('Remaining') }}</th>
+            <th>{{ _('Used') }}</th>
+            <th>{{ _('Action') }}</th>
+        </tr>
+    </thead>
+    <tbody data-bind="foreach: spoolsList.paginatedItems">
+        <tr>
+            <td data-bind="text: name"></td>
+            <td data-bind="text: profileName"></td>
+            <td><span data-bind="text: totalWeight"></span>g</td>
+            <td><span data-bind="text: remaining"></span>g</td>
+            <td><span data-bind="text: usedPercent"></span>%</td>
+        <td>
+            <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="click: function() { $root.removeSpool($data); }"></a>
+        </td>
+    </tr>
+    </tbody>
+    </table>
+
+    <!-- pagination -->
+
+    <div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: spoolsList.currentPage() === 0}"><a href="#" data-bind="click: spoolsList.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: spoolsList.pages">
+        <li data-bind="css: { active: $data.number === $root.spoolsList.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spoolsList.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: spoolsList.currentPage() === spoolsList.lastPage() || spoolsList.lastPage() === -1}"><a href="#" data-bind="click: spoolsList.nextPage">»</a></li>
+    </ul>
+    </div>
+
+    <!-- buttons -->
+
+    <div class="pull-right">
+        <button class="btn" data-bind="click: function() { showProfilesDialog(); }">{{ _("Manage Profiles") }}</button>
+        <button class="btn" data-bind="enable: profiles().length > 0, click: function() { showSpoolDialog(); }">{{ _("Add Spool") }}</button>
+    </div>
+
+</form>

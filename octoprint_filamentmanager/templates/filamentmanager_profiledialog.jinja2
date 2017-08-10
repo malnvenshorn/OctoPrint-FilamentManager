@@ -1,0 +1,77 @@
+<div id="settings_plugin_filamentmanager_profiledialog" class="modal hide fade">
+
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Filament Profiles') }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
+    </div>
+
+    <div class="modal-body">
+
+        <div class="controls" style="margin-bottom: 5px;">
+            <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: profileEditor.selectedProfile"></select>
+            <button class="btn btn-small btn-success" style="margin-bottom: 8px;" title="{{ _('New') }}" data-bind="click: function() { newProfile(); }"><span class="icon-plus"></span></button>
+            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.profiles().length < 1, click: function() { removeProfile(); }"><span class="icon-minus"></span></button>
+            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="click: function() { saveProfile(); }">{{ _('Save') }}</button>
+        </div>
+
+        <legend></legend>
+
+        <form class="form-horizontal">
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Name') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="text" data-bind="value: profileEditor.name">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Price') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.cost">
+                        <span class="add-on">€</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Weight') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: profileEditor.weight">
+                        <span class="add-on">g</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Density') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.density">
+                        <span class="add-on">g/cm<sup>3</sup></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Diameter') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.diameter">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+
+</div>

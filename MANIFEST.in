@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_filamentmanager/templates *
+recursive-include octoprint_filamentmanager/translations *
+recursive-include octoprint_filamentmanager/static *
