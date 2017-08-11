@@ -175,6 +175,7 @@ $(function() {
         var self = this;
 
         self.settings = parameters[0];
+        self.printerState = parameters[1];
 
         self.requestInProgress = ko.observable(false);
         self.profiles = ko.observableArray([]);
@@ -218,8 +219,6 @@ $(function() {
 
         self.profileEditor = new ProfileEditorViewModel(self.profiles);
         self.spoolEditor = new SpoolEditorViewModel(self.profiles);
-        self.profileDialog = undefined;
-        self.spoolDialog = undefined;
 
         self.onStartup = function() {
             self.profileDialog = $("#settings_plugin_filamentmanager_profiledialog");
@@ -233,8 +232,33 @@ $(function() {
             });
         };
 
+        /*
+         * Sets number of tools for template generation and if neccessary adds dictionary entries in the settings to
+         * save the selected spools.
+         */
+        self._readExtruderCount = function() {
+            var currentProfileData = self.settings.printerProfiles.currentProfileData();
+            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
+            self.tools(new Array(numExtruders));
+
+            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+            var selectedSpoolsCount = Object.keys(selectedSpools).length;
+
+            if (selectedSpoolsCount < numExtruders) {
+                // add observables for new tools
+                for(var i = selectedSpoolsCount; i < numExtruders; ++i) {
+                    var id = "tool" + i;
+                    selectedSpools[id] = ko.observable(0);
+                }
+            }
+        };
+
         self.onStartupComplete = function() {
             self.requestData("profiles");
+            self.requestData("spools");
+        };
+
+        self.onEventPrinterStateChanged = function() {
             self.requestData("spools");
         };
 
@@ -461,28 +485,11 @@ $(function() {
             var text = gettext("You are about to delete the filament spool \"%(name)s\".");
             showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
         };
-
-        self._readExtruderCount = function() {
-            var currentProfileData = self.settings.printerProfiles.currentProfileData();
-            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
-            self.tools(new Array(numExtruders));
-
-            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-            var selectedSpoolsCount = Object.keys(selectedSpools).length;
-
-            if (selectedSpoolsCount < numExtruders) {
-                // add observables for new tools
-                for(var i = selectedSpoolsCount; i < numExtruders; ++i) {
-                    var id = "tool" + i;
-                    selectedSpools[id] = ko.observable(0);
-                }
-            }
-        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilamentManagerViewModel,
-        dependencies: ["settingsViewModel"],
+        dependencies: ["settingsViewModel", "printerStateViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog"]
