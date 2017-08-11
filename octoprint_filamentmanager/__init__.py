@@ -46,7 +46,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_settings_defaults(self):
         return dict(
             selectedSpools=dict(),
-            enableTracking=True
+            enableTracking=True,
+            enableWarning=True
         )
 
     # AssetPlugin
@@ -171,6 +172,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
+    def _get_first_item(self, lst, identifier):
+        for item in lst:
+            if item['id'] == identifier:
+                return item
+        else:
+            return None
+
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
 
@@ -180,11 +188,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
             if self.filamentTracking:
                 self._logger.info("Filament used: " + str(self.maxExtrusion) + " mm")
-                self._update_filament_usage()
+                self._update_filament_usage(self.maxExtrusion)
             self.filamentTracking = False
         elif event == Events.PRINT_STARTED:
             self.filamentTracking = self._settings.get(["enableTracking"])
-            self._logger.info("Filament tracking: " + "on" if self.filamentTracking else "off")
             self._reset_extrusion_counter()
 
     def _reset_extrusion_counter(self):
@@ -192,8 +199,26 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.totalExtrusion = 0.0
         self.maxExtrusion = 0.0
 
-    def _update_filament_usage(self):
-        pass
+    def _update_filament_usage(self, extrusion):
+        tool = self._settings.get(["selectedSpools", "tool0"])
+        if tool is None:
+            return
+        if self._spools is None:
+            self._spools = self.filamentManager.get_all_spools()
+        spool = self._get_first_item(self._spools, tool)
+        if spool is None:
+            return
+        if self._profiles is None:
+            self._profiles = self.filamentManager.get_all_profiles()
+        profile = self._get_first_item(self._profiles, spool['profile_id'])
+        if profile is None:
+            return
+        h = extrusion / 10
+        r = (profile['diameter'] / 10) / 2
+        volume = h * math.pi * r * r
+        spool['used'] += volume * profile['density']
+        self.filamentManager.update_spool(spool['id'], spool)
+        self._spools = None
 
     # Protocol hook
 

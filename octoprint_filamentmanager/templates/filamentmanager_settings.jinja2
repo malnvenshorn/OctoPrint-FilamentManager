@@ -6,7 +6,7 @@
     <div class="control-group">
         <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>
         <div class="controls">
-            <select data-bind="options: $root.spools, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
+            <select data-bind="options: $root.spoolsList.items, optionsText: function(item) { return item.name + ' - ' + item.profileName; }, optionsValue: function(item) { return item.id; }, value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
             <!--  -->
         </div>
     </div>
@@ -19,6 +19,14 @@
            </label>
        </div>
    </div>
+
+   <div class="control-group">
+      <div class="controls">
+          <label class="checkbox">
+              <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableWarning">{{ _("Warn if model exceeds remaining filament on spool") }}
+          </label>
+      </div>
+    </div>
 
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
