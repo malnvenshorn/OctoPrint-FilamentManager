@@ -30,6 +30,14 @@
 
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
+    <!-- sorting -->
+
+    <div class="pull-right">
+        <small>
+            {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spoolsList.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('remaining'); }">{{ _("Remaining (decending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('used'); }">{{ _("Used (ascending)") }}</a>
+        </small>
+    </div>
+
     <!-- table -->
 
     <table class="table table-striped table-hover table-condensed table-hover">

@@ -189,6 +189,28 @@ $(function() {
                     if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
                     if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
                     return 0;
+                },
+                "profile": function(a, b) {
+                    // sorts ascending
+                    if (a["profileName"].toLocaleLowerCase() < b["profileName"].toLocaleLowerCase()) return -1;
+                    if (a["profileName"].toLocaleLowerCase() > b["profileName"].toLocaleLowerCase()) return 1;
+                    return 0;
+                },
+                "remaining": function(a, b) {
+                    // sorts descending
+                    va = parseFloat(a["remaining"]);
+                    vb = parseFloat(b["remaining"]);
+                    if (va > vb) return -1;
+                    if (va < vb) return 1;
+                    return 0;
+                },
+                "used": function(a, b) {
+                    // sorts ascending
+                    va = parseFloat(a["usedPercent"]);
+                    vb = parseFloat(b["usedPercent"]);
+                    if (va < vb) return -1;
+                    if (va > vb) return 1;
+                    return 0;
                 }
             },
             {}, "name", [], [], 10
