@@ -303,14 +303,18 @@ $(function() {
                     });
                     var remaining = profile.weight - spool.used;
                     var usedPercent = (spool.used * 100) / profile.weight;
-                    spool.remaining = remaining.toFixed(0);
-                    spool.usedPercent = usedPercent.toFixed(0);
-                    spool.profileName = profile.name;
-                    spool.totalWeight = profile.weight;
-                    return spool;
+                    // nedd to create a new dictionary, otherwise the ui doesn't get updated properly on changes
+                    return {
+                        id: spool.id,
+                        name: spool.name,
+                        profile_id: spool.profile_id,
+                        used: spool.used,
+                        remaining: remaining,
+                        usedPercent: usedPercent,
+                        profileName: profile.name,
+                        totalWeight: profile.weight
+                    };
                 });
-                self.spoolsList.updateItems([]);   // otherwise ui doesn't get updated if additional properties changes
-                                                   // (e.g. profileName or remaining) don't know why
                 self.spoolsList.updateItems(rows);
             } else {
                 self.spoolsList.updateItems([]);
