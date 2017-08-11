@@ -1,17 +1,13 @@
 # OctoPrint-FilamentManager
 
-**TODO:** Describe what your plugin does.
+This OctoPrint plugin helps to manage your filament spools. The project is still under heavy development. So don't rely on it and use it at your own risk. I'm grateful for all reports that help me to track down bugs.
 
-## Setup
+## Features (planned)
 
-Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
-or manually using this URL:
+* Track filament consumption (incl. multiple extruders)
+* Warn if print exceeds remaining filament on spool
+* Provide an API for other plugins
 
-    https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/master.zip
+## Screenshots
 
-**TODO:** Describe how to install your plugin, if more needs to be done than just installing it via pip or through
-the plugin manager.
-
-## Configuration
-
-**TODO:** Describe your plugin's configuration options (if any).
+![FilamentManager Settings](screenshots/filamentmanager_settings.png?raw=true)
