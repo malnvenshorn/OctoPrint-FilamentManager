@@ -285,6 +285,8 @@ $(function() {
                     spool.totalWeight = profile.weight;
                     return spool;
                 });
+                self.spoolsList.updateItems([]);   // otherwise ui doesn't get updated if additional properties changes
+                                                   // (e.g. profileName or remaining) don't know why
                 self.spoolsList.updateItems(rows);
             } else {
                 self.spoolsList.updateItems([]);
