@@ -7,16 +7,20 @@
 
     <div class="modal-body">
 
-        <div class="controls" style="margin-bottom: 5px;">
+        <!-- profile selection -->
+
+        <div class="controls settings_plugin_filamentmanager_profiledialog_select">
             <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: profileEditor.selectedProfile"></select>
-            <button class="btn btn-small btn-success" style="margin-bottom: 8px;" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
-            <button class="btn btn-small btn-danger" style="margin-bottom: 8px;" title="{{ _('Delete') }}" data-bind="disable: profileEditor.isNew() || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
-            <button class="btn btn-small btn-primary pull-right" style="margin-bottom: 8px;" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.nameInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
+            <button class="btn btn-small btn-success" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
+            <button class="btn btn-small btn-danger" title="{{ _('Delete') }}" data-bind="disable: profileEditor.isNew() || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
+            <button class="btn btn-small btn-primary pull-right" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.nameInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
         </div>
 
         <legend></legend>
 
         <form class="form-horizontal">
+
+            <!-- name -->
 
             <div class="control-group" data-bind="css: {error: profileEditor.nameInvalid()}">
                 <label class="control-label">{{ _('Name') }}</label>
@@ -28,6 +32,8 @@
                 </div>
             </div>
 
+            <!-- price -->
+
             <div class="control-group">
                 <label class="control-label">{{ _('Price') }}</label>
                 <div class="controls">
@@ -37,6 +43,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- weight -->
 
             <div class="control-group">
                 <label class="control-label">{{ _('Weight') }}</label>
@@ -48,6 +56,8 @@
                 </div>
             </div>
 
+            <!-- density -->
+
             <div class="control-group">
                 <label class="control-label">{{ _('Density') }}</label>
                 <div class="controls">
@@ -57,6 +67,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- diameter -->
 
             <div class="control-group">
                 <label class="control-label">{{ _('Diameter') }}</label>

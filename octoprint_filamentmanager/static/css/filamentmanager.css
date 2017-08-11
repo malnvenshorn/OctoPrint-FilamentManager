@@ -1,4 +1,48 @@
-table td.settings_filamentmanager_action a {
+table td.settings_plugin_filamentmanager_spools_name,
+table th.settings_plugin_filamentmanager_spools_name {
+    width: 20%;
+    text-align: left;
+}
+
+table td.settings_plugin_filamentmanager_spools_profile,
+table th.settings_plugin_filamentmanager_spools_profile {
+    width: 30%;
+    text-align: left;
+}
+
+table td.settings_plugin_filamentmanager_spools_weight,
+table th.settings_plugin_filamentmanager_spools_weight {
+    width: 15%;
+    text-align: center;
+}
+
+table td.settings_plugin_filamentmanager_spools_remaining,
+table th.settings_plugin_filamentmanager_spools_remaining {
+    width: 15%;
+    text-align: center;
+}
+
+table td.settings_plugin_filamentmanager_spools_used,
+table th.settings_plugin_filamentmanager_spools_used {
+    width: 10%;
+    text-align: center;
+}
+
+table td.settings_plugin_filamentmanager_spools_action,
+table th.settings_plugin_filamentmanager_spools_action {
+    width: 10%;
+    text-align: center;
+}
+
+table td.settings_plugin_filamentmanager_spools_action a {
     color: #000;
     text-decoration: none;
+}
+
+.settings_plugin_filamentmanager_profiledialog_select {
+    margin-bottom: 6px;
+}
+
+.settings_plugin_filamentmanager_profiledialog_select button.btn-small {
+    margin-bottom: 10px;
 }
