@@ -50,7 +50,7 @@
             <td><span data-bind="text: totalWeight"></span>g</td>
             <td><span data-bind="text: remaining"></span>g</td>
             <td><span data-bind="text: usedPercent"></span>%</td>
-        <td>
+        <td class="settings_filamentmanager_action">
             <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enabled: !requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
         </td>
     </tr>
