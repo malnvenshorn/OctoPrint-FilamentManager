@@ -21,6 +21,11 @@ class FilamentOdometer(object):
         self.maxExtrusion = [0.0]
         self.currentTool = 0
 
+    def reset_extruded_length(self):
+        tools = len(self.maxExtrusion)
+        self.maxExtrusion = [0.0] * tools
+        self.totalExtrusion = [0.0] * tools
+
     def parse(self, gcode, cmd):
         if gcode == "G1" or gcode == "G0":  # move
             e = self._get_float(cmd, self.regexE)

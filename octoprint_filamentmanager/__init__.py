@@ -176,22 +176,31 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return None
 
-    def _send_client_message(self, message_type, data=None):
-        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
+    # def _send_client_message(self, message_type, data=None):
+    #     self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
 
     # EventHandlerPlugin
 
     def on_event(self, event, payload):
-        if event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
-            if self.odometerEnabled:
-                self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
-                self._update_filament_usage(self.filamentOdometer.get_values()[0])
-            self.odometerEnabled = False
-        elif event == Events.PRINT_STARTED:
+        if event == Events.PRINT_STARTED:
             self.odometerEnabled = self._settings.get(["enableTracking"])
             self.filamentOdometer.reset()
+        elif event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
+            if self.odometerEnabled:
+                self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
+                self._update_filament_usage()
+            self.odometerEnabled = False
+        elif event == Events.PRINT_PAUSED:
+            self.odometerEnabled = False
+            self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
+            # take into account a possible filament change
+            self._update_filament_usage()
+            self.filamentOdometer.reset_extruded_length()
+        elif event == Events.PRINT_RESUMED:
+            self.odometerEnabled = self._settings.get(["enableTracking"])
 
-    def _update_filament_usage(self, extrusion):
+    def _update_filament_usage(self):
+        extrusion = self.filamentOdometer.get_values()[0]
         tool = self._settings.get(["selectedSpools", "tool0"])
         if tool is None:
             return
