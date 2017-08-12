@@ -13,6 +13,7 @@ from .manager import FilamentManager
 from octoprint.events import Events
 import re
 import math
+from .odometer import FilamentOdometer
 
 
 class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
@@ -23,16 +24,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
-        self._db = None
         self._profiles = None
         self._spools = None
         self.filamentManager = None
-        self.relativeMode = False
-        self.lastExtrusion = 0.0
-        self.totalExtrusion = 0.0
-        self.maxExtrusion = 0.0
-        self.prog = re.compile(r'.*E(\d+(\.\d+)?)')
-        self.filamentTracking = False
+        self.filamentOdometer = FilamentOdometer()
+        self.odometerEnabled = False
 
     # StartupPlugin
 
@@ -187,18 +183,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
-            if self.filamentTracking:
-                self._logger.info("Filament used: " + str(self.maxExtrusion) + " mm")
-                self._update_filament_usage(self.maxExtrusion)
-            self.filamentTracking = False
+            if self.odometerEnabled:
+                self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
+                self._update_filament_usage(self.filamentOdometer.get_values()[0])
+            self.odometerEnabled = False
         elif event == Events.PRINT_STARTED:
-            self.filamentTracking = self._settings.get(["enableTracking"])
-            self._reset_extrusion_counter()
-
-    def _reset_extrusion_counter(self):
-        self.lastExtrusion = 0.0
-        self.totalExtrusion = 0.0
-        self.maxExtrusion = 0.0
+            self.odometerEnabled = self._settings.get(["enableTracking"])
+            self.filamentOdometer.reset()
 
     def _update_filament_usage(self, extrusion):
         tool = self._settings.get(["selectedSpools", "tool0"])
@@ -223,33 +214,9 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     # Protocol hook
 
-    def track_filament_consumption(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-        if not self.filamentTracking or gcode is None:
-            return
-
-        if gcode == "G1" or gcode == "G0":
-            e = self._get_extruder_float(cmd)
-            if e is not None:
-                if not self.relativeMode:
-                    e -= self.lastExtrusion
-                self.totalExtrusion += e
-                self.lastExtrusion += e
-                self.maxExtrusion = max(self.maxExtrusion, self.totalExtrusion)
-        elif gcode == "G90":
-            self.relativeMode = False
-        elif gcode == "G91":
-            self.relativeMode = True
-        elif gcode == "G92":
-            e = self._get_extruder_float(cmd)
-            if e is not None:
-                self.lastExtrusion = e
-
-    def _get_extruder_float(self, cmd):
-        result = self.prog.match(cmd)
-        if result is not None:
-            return float(result.group(1))
-        else:
-            return None
+    def filament_odometer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+        if self.odometerEnabled and gcode is not None:
+            self.filamentOdometer.parse(gcode, cmd)
 
     # Softwareupdate hook
 
@@ -281,5 +248,5 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_hooks__ = {
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
-        "octoprint.comm.protocol.gcode.sent": __plugin_implementation__.track_filament_consumption
+        "octoprint.comm.protocol.gcode.sent": __plugin_implementation__.filament_odometer
     }
