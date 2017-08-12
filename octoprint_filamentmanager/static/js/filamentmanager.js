@@ -230,6 +230,60 @@ $(function() {
             self.settings.printerProfiles.currentProfileData.subscribe(function() {
                 self._readExtruderCount();
             });
+
+            // Warn if model exceeds remaining filament on spool
+            self.filename = undefined;
+            self.printerState.filament.subscribe(function() {
+                // Only if data is available and the file has changed
+                if (self.spoolsList.items().length > 0 && self.filename !== self.printerState.filename()) {
+                    self._filamentWarning();
+                    self.filename = self.printerState.filename();
+                }
+            });
+            self.spoolsList.items.subscribe(function() {
+                // Only if data is available and the file has not changed
+                if (self.spoolsList.items().length > 0 && self.filename === self.printerState.filename()) {
+                    self._filamentWarning();
+                }
+            });
+        };
+
+        self._filamentWarning = function() {
+            var warningEnabled = self.settings.settings.plugins.filamentmanager.enableWarning();
+            if (warningEnabled && !self._checkRemainingFilament()) {
+                var text = gettext("The model exceeds the remaining filament on the selected spools.");
+                new PNotify({title: gettext("Filament warning"), text: text, type: "warning", hide: false});
+            }
+        };
+
+        self._checkRemainingFilament = function()  {
+            var ok = true;
+            var filament = self.printerState.filament();
+            for (var i = 0; i < filament.length; ++i) {
+                var tool = self.settings.settings.plugins.filamentmanager.selectedSpools['tool' + i]();
+                var spool = ko.utils.arrayFirst(self.spools(), function(item) { return item.id == tool; });
+                if (spool === null) continue;
+                var profile = ko.utils.arrayFirst(self.profiles(), function(item) { return item.id == spool.profile_id; });
+                if (profile === null) continue;
+                var volume = filament[i].data().volume;
+                if (volume == 0) volume = self._calculateVolume(filament[i].data().length, profile.diameter);
+                var weight = volume * profile.density;
+                if (weight > profile.weight - spool.used) {
+                    ok = false;
+                    break;
+                }
+            }
+            return ok;
+        };
+
+        /**
+         * Calculates the volume of the filament
+         * @param  {float} length   length in mm
+         * @param  {float} diameter diameter in mm
+         * @return {float}          volume in cm³
+         */
+        self._calculateVolume = function(length, diameter) {
+            return (length / 10) * Math.PI * Math.pow((diameter / 10) / 2, 2);
         };
 
         /*

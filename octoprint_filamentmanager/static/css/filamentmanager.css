@@ -13,19 +13,19 @@ table th.settings_plugin_filamentmanager_spools_profile {
 table td.settings_plugin_filamentmanager_spools_weight,
 table th.settings_plugin_filamentmanager_spools_weight {
     width: 15%;
-    text-align: center;
+    text-align: right;
 }
 
 table td.settings_plugin_filamentmanager_spools_remaining,
 table th.settings_plugin_filamentmanager_spools_remaining {
     width: 15%;
-    text-align: center;
+    text-align: right;
 }
 
 table td.settings_plugin_filamentmanager_spools_used,
 table th.settings_plugin_filamentmanager_spools_used {
     width: 10%;
-    text-align: center;
+    text-align: right;
 }
 
 table td.settings_plugin_filamentmanager_spools_action,
