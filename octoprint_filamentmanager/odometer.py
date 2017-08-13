@@ -8,9 +8,10 @@ __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the 
 
 class FilamentOdometer(object):
 
+    regexE = re.compile(r'.*E(-?\d+(\.\d+)?)')
+    regexT = re.compile(r'^T(\d+)')
+
     def __init__(self):
-        self.regexE = re.compile(r'.*E(\d+(\.\d+)?)')
-        self.regexT = re.compile(r'^T(\d+)')
         self.reset()
 
     def reset(self):
@@ -27,10 +28,14 @@ class FilamentOdometer(object):
         self.totalExtrusion = [0.0] * tools
 
     def parse(self, gcode, cmd):
+        # taken from gcodeInterpreter.py
         if gcode == "G1" or gcode == "G0":  # move
             e = self._get_float(cmd, self.regexE)
             if e is not None:
-                if not self.relativeMode and not self.relativeExtrusion:
+                if self.relativeMode or self.relativeExtrusion:
+                    # e is already relative, nothing to do
+                    pass
+                else:
                     e -= self.lastExtrusion[self.currentTool]
                 self.totalExtrusion[self.currentTool] += e
                 self.lastExtrusion[self.currentTool] += e
