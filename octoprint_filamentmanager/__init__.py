@@ -187,39 +187,45 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             self.filamentOdometer.reset()
         elif event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
             if self.odometerEnabled:
-                self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
                 self._update_filament_usage()
             self.odometerEnabled = False
         elif event == Events.PRINT_PAUSED:
+            if self.odometerEnabled:
+                # take into account a possible filament change
+                self._update_filament_usage()
+                self.filamentOdometer.reset_extruded_length()
             self.odometerEnabled = False
-            self._logger.info("Filament used: " + str(self.filamentOdometer.get_values()[0]) + " mm")
-            # take into account a possible filament change
-            self._update_filament_usage()
-            self.filamentOdometer.reset_extruded_length()
         elif event == Events.PRINT_RESUMED:
             self.odometerEnabled = self._settings.get(["enableTracking"])
 
     def _update_filament_usage(self):
-        extrusion = self.filamentOdometer.get_values()[0]
-        tool = self._settings.get(["selectedSpools", "tool0"])
-        if tool is None:
-            return
-        if self._spools is None:
-            self._spools = self.filamentManager.get_all_spools()
-        spool = self._get_first_item(self._spools, tool)
-        if spool is None:
-            return
-        if self._profiles is None:
-            self._profiles = self.filamentManager.get_all_profiles()
-        profile = self._get_first_item(self._profiles, spool['profile_id'])
-        if profile is None:
-            return
-        h = extrusion / 10
-        r = (profile['diameter'] / 10) / 2
-        volume = h * math.pi * r * r
-        spool['used'] += volume * profile['density']
-        self.filamentManager.update_spool(spool['id'], spool)
-        self._spools = None
+        printer_profile = self._printer_profile_manager.get_current_or_default()
+        extrusion = self.filamentOdometer.get_values()
+        numTools = min(printer_profile['extruder']['count'], len(extrusion))
+
+        for i in range(0, numTools):
+            tool = self._settings.get(["selectedSpools", "tool" + str(i)])
+            if tool is not None:
+                if self._spools is None:
+                    self._spools = self.filamentManager.get_all_spools()
+                spool = self._get_first_item(self._spools, tool)
+                if spool is not None:
+                    if self._profiles is None:
+                        self._profiles = self.filamentManager.get_all_profiles()
+                    profile = self._get_first_item(self._profiles, spool['profile_id'])
+                    if profile is not None:
+                        # update spool
+                        volume = self._calculate_volume(profile['diameter'], extrusion[i])
+                        spool['used'] += volume * profile['density']
+                        self.filamentManager.update_spool(spool['id'], spool)
+                        self._logger.info("Filament used: " + str(extrusion[i]) + " mm (tool" + str(i) + ")")
+
+        self._spools = None  # force refresh
+
+    def _calculate_volume(self, diameter, length):
+        radius = (diameter / 2) / 10  # cm
+        length = length / 10          # cm
+        return length * math.pi * radius * radius  # cm³
 
     # Protocol hook
 
