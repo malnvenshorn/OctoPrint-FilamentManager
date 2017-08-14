@@ -5,14 +5,14 @@ __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
+import math
 import os
 from flask import jsonify, request, make_response
 from werkzeug.exceptions import BadRequest
-from .manager import FilamentManager
+import octoprint.plugin
 from octoprint.events import Events
-import re
-import math
+from octoprint.util import dict_merge
+from .manager import FilamentManager
 from .odometer import FilamentOdometer
 
 
@@ -24,8 +24,6 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
-        self._profiles = None
-        self._spools = None
         self.filamentManager = None
         self.filamentOdometer = FilamentOdometer()
         self.odometerEnabled = False
@@ -33,8 +31,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     # StartupPlugin
 
     def on_after_startup(self):
-        self._db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
-        self.filamentManager = FilamentManager(self._db_path, self._logger)
+        db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+        self.filamentManager = FilamentManager(db_path, self._logger)
         self.filamentManager.init_database()
 
     # SettingsPlugin
@@ -67,114 +65,167 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
-        if self._profiles is None:
-            self._profiles = self.filamentManager.get_all_profiles()
+        all_profiles = self.filamentManager.get_all_profiles()
+        if all_profiles is not None:
+            return jsonify(dict(profiles=all_profiles))
+        else:
+            return make_response("Database error", 500)
 
-        profiles = self._profiles
-
-        if profiles is not None:
-            return jsonify(profiles=profiles)
+    @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["GET"])
+    def get_profile(self, identifier):
+        profile = self.filamentManager.get_profile(identifier)
+        if profile is not None:
+            if len(profile) > 0:
+                return jsonify(dict(profile=profile[0]))
+            else:
+                return make_response("Unknown profile", 404)
         else:
             return make_response("Database error", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["POST"])
     def create_profile(self):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON data in request", 400)
+            return make_response("Malformed JSON body in request", 400)
 
-        success = self.filamentManager.create_profile(json_data)
+        if "profile" not in json_data:
+            return make_response("No profile included in request", 400)
 
-        if success:
-            self._profiles = None
-            return make_response("", 204)
+        new_profile = json_data["profile"]
+
+        for key in ["name", "weight", "cost", "density", "diameter"]:
+            if key not in new_profile:
+                return make_response("Profile does not contain mandatory '{}' field".format(key), 400)
+
+        saved_profile = self.filamentManager.create_profile(new_profile)
+
+        if saved_profile is not None:
+            return jsonify(dict(profile=saved_profile))
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/profiles/<string:identifier>", methods=["PATCH"])
+    @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["PATCH"])
     def update_profile(self, identifier):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON data in request", 400)
+            return make_response("Malformed JSON body in request", 400)
 
-        success = self.filamentManager.update_profile(identifier, json_data)
+        if "profile" not in json_data:
+            return make_response("No profile included in request", 400)
 
-        if success:
-            self._profiles = None
-            return make_response("", 204)
+        profile = self.filamentManager.get_profile(identifier)
+        if profile is None:
+            return make_response("Database error", 500)
+        if len(profile) < 1:
+            return make_response("Unknown profile", 404)
+
+        updated_profile = json_data["profile"]
+        merged_profile = dict_merge(profile[0], updated_profile)
+
+        saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
+
+        if saved_profile is not None:
+            return jsonify(dict(profile=saved_profile))
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/profiles/<string:identifier>", methods=["DELETE"])
+    @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["DELETE"])
     def delete_profile(self, identifier):
-        success = self.filamentManager.delete_profile(identifier)
-
-        if success:
-            self._profiles = None
+        noerror = self.filamentManager.delete_profile(identifier)
+        if noerror:
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
-        if self._spools is None:
-            self._spools = self.filamentManager.get_all_spools()
+        all_spools = self.filamentManager.get_all_spools()
+        if all_spools is not None:
+            return jsonify(dict(spools=all_spools))
+        else:
+            return make_response("Database error", 500)
 
-        spools = self._spools
-
-        if spools is not None:
-            return jsonify(spools=spools)
+    @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["GET"])
+    def get_spool(self, identifier):
+        spool = self.filamentManager.get_spool(identifier)
+        if spool is not None:
+            if len(spool) > 0:
+                return jsonify(dict(spool=spool[0]))
+            else:
+                return make_response("Unknown spool", 404)
         else:
             return make_response("Database error", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["POST"])
     def create_spool(self):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON data in request", 400)
+            return make_response("Malformed JSON body in request", 400)
 
-        success = self.filamentManager.create_spool(json_data)
+        if "spool" not in json_data:
+            return make_response("No spool included in request", 400)
 
-        if success:
-            self._spools = None
-            return make_response("", 204)
+        new_spool = json_data["spool"]
+
+        for key in ["name", "profile_id", "used"]:
+            if key not in new_spool:
+                return make_response("Spool does not contain mandatory '{}' field".format(key), 400)
+
+        saved_spool = self.filamentManager.create_spool(new_spool)
+
+        if saved_spool is not None:
+            return jsonify(dict(spool=saved_spool))
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/spools/<string:identifier>", methods=["PATCH"])
+    @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["PATCH"])
     def update_spool(self, identifier):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON data in request", 400)
+            return make_response("Malformed JSON body in request", 400)
 
-        success = self.filamentManager.update_spool(identifier, json_data)
+        if "spool" not in json_data:
+            return make_response("No spool included in request", 400)
 
-        if success:
-            self._spools = None
-            return make_response("", 204)
+        spool = self.filamentManager.get_spool(identifier)
+        if spool is None:
+            return make_response("Database error", 500)
+        if len(spool) < 1:
+            return make_response("Unknown spool", 404)
+
+        updated_spool = json_data["spool"]
+        merged_spool = dict_merge(spool[0], updated_spool)
+
+        saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
+
+        if saved_spool is not None:
+            return jsonify(dict(spool=saved_spool))
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/spools/<string:identifier>", methods=["DELETE"])
+    @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["DELETE"])
     def delete_spool(self, identifier):
-        success = self.filamentManager.delete_spool(identifier)
-
-        if success:
-            self._spools = None
+        noerror = self.filamentManager.delete_spool(identifier)
+        if noerror:
             return make_response("", 204)
         else:
             return make_response("Database error", 500)
-
-    def _get_first_item(self, lst, identifier):
-        for item in lst:
-            if item['id'] == identifier:
-                return item
-        else:
-            return None
 
     # def _send_client_message(self, message_type, data=None):
     #     self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
@@ -206,26 +257,21 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         for i in range(0, numTools):
             tool = self._settings.get(["selectedSpools", "tool" + str(i)])
             if tool is not None:
-                if self._spools is None:
-                    self._spools = self.filamentManager.get_all_spools()
-                spool = self._get_first_item(self._spools, tool)
-                if spool is not None:
-                    if self._profiles is None:
-                        self._profiles = self.filamentManager.get_all_profiles()
-                    profile = self._get_first_item(self._profiles, spool['profile_id'])
-                    if profile is not None:
+                spool_list = self.filamentManager.get_spool(tool)
+                if spool_list is not None and len(spool_list) > 0:
+                    spool = spool_list[0]
+                    profile_list = self.filamentManager.get_profile(spool['profile_id'])
+                    if profile_list is not None and len(profile_list) > 0:
+                        profile = profile_list[0]
                         # update spool
-                        volume = self._calculate_volume(profile['diameter'], extrusion[i])
+                        volume = self._calculate_volume(profile['diameter'], extrusion[i]) / 1000
                         spool['used'] += volume * profile['density']
                         self.filamentManager.update_spool(spool['id'], spool)
                         self._logger.info("Filament used: " + str(extrusion[i]) + " mm (tool" + str(i) + ")")
 
-        self._spools = None  # force refresh
-
     def _calculate_volume(self, diameter, length):
-        radius = (diameter / 2) / 10  # cm
-        length = length / 10          # cm
-        return length * math.pi * radius * radius  # cm³
+        radius = diameter / 2
+        return length * math.pi * radius * radius
 
     # Protocol hook
 

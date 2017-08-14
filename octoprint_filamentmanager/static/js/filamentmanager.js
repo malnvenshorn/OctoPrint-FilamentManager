@@ -392,7 +392,7 @@ $(function() {
             $.ajax({
                 url: "plugin/filamentmanager/profiles",
                 type: "POST",
-                data: JSON.stringify(data),
+                data: JSON.stringify({profile: data}),
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
@@ -416,7 +416,7 @@ $(function() {
             $.ajax({
                 url: "plugin/filamentmanager/profiles/" + data.id,
                 type: "PATCH",
-                data: JSON.stringify(data),
+                data: JSON.stringify({profile: data}),
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
@@ -476,7 +476,7 @@ $(function() {
             $.ajax({
                 url: "plugin/filamentmanager/spools",
                 type: "POST",
-                data: JSON.stringify(data),
+                data: JSON.stringify({spool: data}),
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
@@ -501,7 +501,7 @@ $(function() {
             $.ajax({
                 url: "plugin/filamentmanager/spools/" + data.id,
                 type: "PATCH",
-                data: JSON.stringify(data),
+                data: JSON.stringify({spool: data}),
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
