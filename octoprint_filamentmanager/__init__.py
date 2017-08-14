@@ -7,10 +7,13 @@ __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the 
 
 import math
 import os
+import hashlib
 from flask import jsonify, request, make_response
 from werkzeug.exceptions import BadRequest
+from werkzeug.http import http_date
 import octoprint.plugin
 from octoprint.events import Events
+from octoprint.server.util.flask import check_lastmodified, check_etag
 from octoprint.util import dict_merge
 from .manager import FilamentManager
 from .odometer import FilamentOdometer
@@ -65,9 +68,20 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
+        mods = self.filamentManager.get_profiles_modifications()
+        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        etag = (hashlib.sha1(str(lm))).hexdigest()
+
+        if check_lastmodified(int(lm)) and check_etag(etag):
+            return make_response("Not Modified", 304)
+
         all_profiles = self.filamentManager.get_all_profiles()
         if all_profiles is not None:
-            return jsonify(dict(profiles=all_profiles))
+            response = jsonify(dict(profiles=all_profiles))
+            response.set_etag(etag)
+            response.headers["Last-Modified"] = http_date(lm)
+            response.headers["Cache-Control"] = "max-age=0"
+            return response
         else:
             return make_response("Database error", 500)
 
@@ -147,9 +161,20 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
+        mods = self.filamentManager.get_spools_modifications()
+        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        etag = (hashlib.sha1(str(lm))).hexdigest()
+
+        if check_lastmodified(int(lm)) and check_etag(etag):
+            return make_response("Not Modified", 304)
+
         all_spools = self.filamentManager.get_all_spools()
         if all_spools is not None:
-            return jsonify(dict(spools=all_spools))
+            response = jsonify(dict(spools=all_spools))
+            response.set_etag(etag)
+            response.headers["Last-Modified"] = http_date(lm)
+            response.headers["Cache-Control"] = "max-age=0"
+            return response
         else:
             return make_response("Database error", 500)
 

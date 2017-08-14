@@ -16,24 +16,39 @@ class FilamentManager(object):
         self._db.execute("PRAGMA foreign_keys = ON")
 
     def init_database(self):
-        scheme = """ CREATE TABLE IF NOT EXISTS profiles (
-                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                     name TEXT NOT NULL,
-                     cost REAL NOT NULL,
-                     weight REAL NOT NULL,
-                     density REAL NOT NULL,
-                     diameter REAL NOT NULL);
+        scheme = []
+        scheme.append(
+            """ CREATE TABLE IF NOT EXISTS profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    cost REAL NOT NULL,
+                    weight REAL NOT NULL,
+                    density REAL NOT NULL,
+                    diameter REAL NOT NULL);
 
-                     CREATE TABLE IF NOT EXISTS spools (
-                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                     profile_id INTEGER NOT NULL,
-                     name TEXT NOT NULL,
-                     used REAL NOT NULL,
-                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT); """
+                CREATE TABLE IF NOT EXISTS spools (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    profile_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    used REAL NOT NULL,
+                    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT);
+
+                CREATE TABLE IF NOT EXISTS modifications (
+                    table_name TEXT NOT NULL PRIMARY KEY ON CONFLICT REPLACE,
+                    action TEXT NOT NULL,
+                    changed_at TIMESTAMP DEFAULT (strftime('%s', 'now'))); """)
+
+        for table in ["profiles", "spools"]:
+            for action in ["INSERT", "UPDATE", "DELETE"]:
+                scheme.append(
+                    """ CREATE TRIGGER IF NOT EXISTS {table}_on{action} AFTER {action} ON {table}
+                        BEGIN
+                            INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
+                        END; """.format(table=table, action=action))
 
         try:
             with self._db_lock, self._db as db:
-                db.executescript(scheme)
+                db.executescript("".join(scheme))
                 return True
         except sqlite3.Error as error:
             self._log_error(error)
@@ -43,6 +58,15 @@ class FilamentManager(object):
         try:
             with self._db_lock, self._db as db:
                 cursor = db.execute("SELECT * FROM profiles ORDER BY name COLLATE NOCASE")
+                return self._cursor_to_dict(cursor)
+        except sqlite3.Error as error:
+            self._log_error(error)
+            return None
+
+    def get_profiles_modifications(self):
+        try:
+            with self._db_lock, self._db as db:
+                cursor = db.execute("SELECT * FROM modifications WHERE table_name = 'profiles'")
                 return self._cursor_to_dict(cursor)
         except sqlite3.Error as error:
             self._log_error(error)
@@ -93,6 +117,15 @@ class FilamentManager(object):
         try:
             with self._db_lock, self._db as db:
                 cursor = db.execute("SELECT * FROM spools ORDER BY name COLLATE NOCASE")
+                return self._cursor_to_dict(cursor)
+        except sqlite3.Error as error:
+            self._log_error(error)
+            return None
+
+    def get_spools_modifications(self):
+        try:
+            with self._db_lock, self._db as db:
+                cursor = db.execute("SELECT * FROM modifications WHERE table_name = 'spools'")
                 return self._cursor_to_dict(cursor)
         except sqlite3.Error as error:
             self._log_error(error)
