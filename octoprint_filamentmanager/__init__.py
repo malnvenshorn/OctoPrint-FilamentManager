@@ -252,9 +252,6 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
-    # def _send_client_message(self, message_type, data=None):
-    #     self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
-
     # EventHandlerPlugin
 
     def on_event(self, event, payload):
