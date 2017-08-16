@@ -306,7 +306,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_update_information(self):
         return dict(
             filamentmanager=dict(
-                displayName="FilamentManager",
+                displayName="Filament Manager",
                 displayVersion=self._plugin_version,
 
                 # version check: github repository
@@ -321,7 +321,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         )
 
 
-__plugin_name__ = "FilamentManager"
+__plugin_name__ = "Filament Manager"
 
 
 def __plugin_load__():
