@@ -6,8 +6,7 @@
     <div class="control-group">
         <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>
         <div class="controls">
-            <select data-bind="options: $root.spoolsList.items, optionsText: function(item) { return item.name + ' - ' + item.profileName; }, optionsValue: function(item) { return item.id; }, value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())], event:{ change: function() {if ($root.spoolsList.items().length > 0 && $root.filename === $root.printerState.filename()) { $root._filamentWarning();} } }"></select>
-            <!--  -->
+            <select data-bind="options: $root.spools.items, optionsText: function(item) { return item.name + ' ' + (item.profile.weight - item.used).toFixed(0) + 'g - ' + item.profile.name; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
         </div>
     </div>
     <!-- /ko -->
@@ -15,7 +14,7 @@
     <div class="control-group">
        <div class="controls">
            <label class="checkbox">
-               <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableTracking">{{ _("Track filament consumption") }} <span class="label label-important">{{ _("Experimental") }}</span>
+               <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableTracking">{{ _("Enable filament odometer") }}
            </label>
        </div>
    </div>
@@ -23,7 +22,7 @@
    <div class="control-group">
       <div class="controls">
           <label class="checkbox">
-              <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableWarning">{{ _("Warn if model exceeds remaining filament on spool") }}
+              <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableWarning">{{ _("Warn if print job exceeds remaining filament on spool") }}
           </label>
       </div>
     </div>
@@ -34,7 +33,7 @@
 
     <div class="pull-right">
         <small>
-            {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spoolsList.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('remaining'); }">{{ _("Remaining (decending)") }}</a> | <a href="#" data-bind="click: function() { spoolsList.changeSorting('used'); }">{{ _("Used (ascending)") }}</a>
+            {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (decending)") }}</a>
         </small>
     </div>
 
@@ -51,13 +50,13 @@
             <th class="settings_plugin_filamentmanager_spools_action">{{ _('Action') }}</th>
         </tr>
     </thead>
-    <tbody data-bind="foreach: spoolsList.paginatedItems">
-        <tr data-bind="attr: {title: name + ' - ' + profileName}">
+    <tbody data-bind="foreach: spools.paginatedItems">
+        <tr>
             <td class="settings_plugin_filamentmanager_spools_name" data-bind="text: name"></td>
-            <td class="settings_plugin_filamentmanager_spools_profile" data-bind="text: profileName"></td>
-            <td class="settings_plugin_filamentmanager_spools_weight"><span data-bind="text: totalWeight"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: remaining.toFixed(0)"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: usedPercent.toFixed(0)"></span>%</td>
+            <td class="settings_plugin_filamentmanager_spools_profile" data-bind="text: profile.name"></td>
+            <td class="settings_plugin_filamentmanager_spools_weight"><span data-bind="text: profile.weight"></span>g</td>
+            <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: (profile.weight - used).toFixed(0)"></span>g</td>
+            <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: (used * 100 / profile.weight).toFixed(0)"></span>%</td>
             <td class="settings_plugin_filamentmanager_spools_action">
                 <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
             </td>
@@ -69,13 +68,13 @@
 
     <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: spoolsList.currentPage() === 0}"><a href="#" data-bind="click: spoolsList.prevPage">«</a></li>
+        <li data-bind="css: {disabled: spools.currentPage() === 0}"><a href="#" data-bind="click: spools.prevPage">«</a></li>
     </ul>
-    <ul data-bind="foreach: spoolsList.pages">
-        <li data-bind="css: { active: $data.number === $root.spoolsList.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spoolsList.changePage($data.number); }"></a></li>
+    <ul data-bind="foreach: spools.pages">
+        <li data-bind="css: { active: $data.number === $root.spools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spools.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: spoolsList.currentPage() === spoolsList.lastPage() || spoolsList.lastPage() === -1}"><a href="#" data-bind="click: spoolsList.nextPage">»</a></li>
+        <li data-bind="css: {disabled: spools.currentPage() === spools.lastPage() || spools.lastPage() === -1}"><a href="#" data-bind="click: spools.nextPage">»</a></li>
     </ul>
     </div>
 

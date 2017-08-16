@@ -175,14 +175,13 @@ $(function() {
         var self = this;
 
         self.settings = parameters[0];
-        self.printerState = parameters[1];
 
         self.requestInProgress = ko.observable(false);
-        self.profiles = ko.observableArray([]);
-        self.spools = ko.observableArray([]);
-        self.tools = ko.observableArray([]);
 
-        self.spoolsList = new ItemListHelper(
+        self.profiles = ko.observableArray([]);
+        self.spoolsRaw = ko.observableArray([]);
+
+        self.spools = new ItemListHelper(
             "filamentSpools",
             {
                 "name": function(a, b) {
@@ -199,23 +198,19 @@ $(function() {
                 },
                 "remaining": function(a, b) {
                     // sorts descending
-                    va = parseFloat(a["remaining"]);
-                    vb = parseFloat(b["remaining"]);
+                    va = parseFloat(a.profile.weight) - parseFloat(a.used);
+                    vb = parseFloat(b.profile.weight) - parseFloat(b.used);
                     if (va > vb) return -1;
                     if (va < vb) return 1;
                     return 0;
-                },
-                "used": function(a, b) {
-                    // sorts ascending
-                    va = parseFloat(a["usedPercent"]);
-                    vb = parseFloat(b["usedPercent"]);
-                    if (va < vb) return -1;
-                    if (va > vb) return 1;
-                    return 0;
                 }
             },
-            {}, "name", [], [], 10
+            {}, "name", [], [], 5
         );
+
+        self.selectedSpools = ko.observableArray([]);
+
+        self.tools = ko.observableArray([]);
 
         self.profileEditor = new ProfileEditorViewModel(self.profiles);
         self.spoolEditor = new SpoolEditorViewModel(self.profiles);
@@ -226,85 +221,18 @@ $(function() {
         };
 
         self.onBeforeBinding = function() {
-            self._readExtruderCount();
-            self.settings.printerProfiles.currentProfileData.subscribe(function() {
-                self._readExtruderCount();
-            });
-
-            // Warn if model exceeds remaining filament on spool
-            self.filename = undefined;
-            self.printerState.filament.subscribe(function() {
-                // Only if data is available and the file has changed
-                if (self.spoolsList.items().length > 0 && self.filename !== self.printerState.filename()) {
-                    self._filamentWarning();
-                    self.filename = self.printerState.filename();
-                }
-            });
-            self.spoolsList.items.subscribe(function() {
-                // Only if data is available and the file has not changed
-                if (self.spoolsList.items().length > 0 && self.filename === self.printerState.filename()) {
-                    self._filamentWarning();
-                }
-            });
-        };
-
-        self._filamentWarning = function() {
-            var warningEnabled = self.settings.settings.plugins.filamentmanager.enableWarning();
-            if (warningEnabled && !self._checkRemainingFilament()) {
-                var text = gettext("The model exceeds the remaining filament on the selected spools.");
-                new PNotify({title: gettext("Filament warning"), text: text, type: "warning", hide: false});
-            }
-        };
-
-        self._checkRemainingFilament = function()  {
-            var ok = true;
-            var filament = self.printerState.filament();
-            for (var i = 0; i < filament.length; ++i) {
-                var tool = self.settings.settings.plugins.filamentmanager.selectedSpools['tool' + i]();
-                var spool = ko.utils.arrayFirst(self.spools(), function(item) { return item.id == tool; });
-                if (spool === null) continue;
-                var profile = ko.utils.arrayFirst(self.profiles(), function(item) { return item.id == spool.profile_id; });
-                if (profile === null) continue;
-                var volume = filament[i].data().volume;
-                if (volume == 0) volume = self._calculateVolume(filament[i].data().length, profile.diameter);
-                var weight = volume * profile.density;
-                if (weight > profile.weight - spool.used) {
-                    ok = false;
-                    break;
-                }
-            }
-            return ok;
-        };
-
-        /**
-         * Calculates the volume of the filament
-         * @param  {float} length   length in mm
-         * @param  {float} diameter diameter in mm
-         * @return {float}          volume in cm³
-         */
-        self._calculateVolume = function(length, diameter) {
-            return (length / 10) * Math.PI * Math.pow((diameter / 10) / 2, 2);
-        };
-
-        /*
-         * Sets number of tools for template generation and if neccessary adds dictionary entries in the settings to
-         * save the selected spools.
-         */
-        self._readExtruderCount = function() {
-            var currentProfileData = self.settings.printerProfiles.currentProfileData();
-            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
-            self.tools(new Array(numExtruders));
-
             var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
             var selectedSpoolsCount = Object.keys(selectedSpools).length;
-
-            if (selectedSpoolsCount < numExtruders) {
-                // add observables for new tools
-                for(var i = selectedSpoolsCount; i < numExtruders; ++i) {
-                    var id = "tool" + i;
-                    selectedSpools[id] = ko.observable(0);
-                }
+            for (var i = 0; i < selectedSpoolsCount; ++i) {
+                var id = "tool" + i;
+                selectedSpools[id].subscribe(self._updateSelectedSpoolData);
             }
+
+
+            self._syncWithExtruderCount();
+            self.settings.printerProfiles.currentProfileData.subscribe(function() {
+                self._syncWithExtruderCount();
+            });
         };
 
         self.onStartupComplete = function() {
@@ -314,6 +242,46 @@ $(function() {
 
         self.onEventPrinterStateChanged = function() {
             self.requestData("spools");
+        };
+
+        /*
+         * Sets number of tools for template generation and if neccessary adds
+         * dictionary entries in the settings to save the selected spools.
+         */
+        self._syncWithExtruderCount = function() {
+            var currentProfileData = self.settings.printerProfiles.currentProfileData();
+            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
+            self.tools(new Array(numExtruders));
+
+            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+            var selectedSpoolsCount = Object.keys(selectedSpools).length;
+
+            if (selectedSpoolsCount < numExtruders) {
+                // add observables for new tools in the settings
+                for (var i = selectedSpoolsCount; i < numExtruders; ++i) {
+                    var id = "tool" + i;
+                    selectedSpools[id] = ko.observable(0);
+                    selectedSpools[id].subscribe(self._updateSelectedSpoolData);
+                }
+            }
+        };
+
+        self._updateSelectedSpoolData = function() {
+            var list = []
+            if (self.spools.items().length > 0) {
+                for (var i = 0; i < self.tools().length; ++i) {
+                    var id = self.settings.settings.plugins.filamentmanager.selectedSpools["tool"+i]();
+                    if (id === undefined) {
+                        list.push(undefined);
+                        continue;
+                    };
+                    var data = ko.utils.arrayFirst(self.spools.items(), function(item) {
+                        return item.id == id;
+                    });
+                    list.push(data);
+                }
+            }
+            self.selectedSpools(list);
         };
 
         self.showProfilesDialog = function() {
@@ -346,32 +314,31 @@ $(function() {
 
         self.fromResponse = function(data) {
             if (data.hasOwnProperty("profiles")) self.profiles(data.profiles);
-            else if (data.hasOwnProperty("spools")) self.spools(data.spools);
+            else if (data.hasOwnProperty("spools")) self.spoolsRaw(data.spools);
             else return;
 
             // spool list has to be updated in either case
             if (self.profiles().length > 0) {
-                var rows = ko.utils.arrayMap(self.spools(), function (spool) {
+                var rows = ko.utils.arrayMap(self.spoolsRaw(), function (spool) {
                     var profile = ko.utils.arrayFirst(self.profiles(), function(item) {
                         return item.id == spool.profile_id;
                     });
-                    var remaining = profile.weight - spool.used;
-                    var usedPercent = (spool.used * 100) / profile.weight;
-                    // nedd to create a new dictionary, otherwise the ui doesn't get updated properly on changes
-                    return {
-                        id: spool.id,
-                        name: spool.name,
-                        profile_id: spool.profile_id,
-                        used: spool.used,
-                        remaining: remaining,
-                        usedPercent: usedPercent,
-                        profileName: profile.name,
-                        totalWeight: profile.weight
-                    };
+
+                    // need to create a new dictionary, otherwise the ui doesn't get updated properly on changes,
+                    // because knockout observable array doesn't observe properties of items
+                    return { id: spool.id,
+                             name: spool.name,
+                             used: spool.used,
+                             profile_id: spool.profile_id,
+                             profile: profile };
+
                 });
-                self.spoolsList.updateItems(rows);
+                self.spools.updateItems(rows);
+                if (self.selectedSpools().length > 0) {  // on start the selected spools data gets updated by the
+                    self._updateSelectedSpoolData();     // options field, so we update only on changes after that
+                }
             } else {
-                self.spoolsList.updateItems([]);
+                self.spools.updateItems([]);
             }
         };
 
@@ -547,7 +514,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilamentManagerViewModel,
-        dependencies: ["settingsViewModel", "printerStateViewModel"],
+        dependencies: ["settingsViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog"]
