@@ -17,12 +17,8 @@ $(function() {
 
         self.onBeforeBinding = function() {
             self.printerState.filament.subscribe(function() {
-                if (self.printerState.filament().length > 0
-                    && self.filename !== self.printerState.filename()) {
-                    if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
-                        self.filename = self.printerState.filename();
-                        self.showWarningIfNeeded();
-                    }
+                if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
+                    self.showWarningIfNeeded();
                 }
             });
 
@@ -36,20 +32,33 @@ $(function() {
         self.showWarningIfNeeded = function() {
             var filament = self.printerState.filament();
             var spoolsData = self.filamentManager.selectedSpools();
+            var fileHasChanged = (self.filename !== self.printerState.filename());
+
             for (var i = 0; i < filament.length && i < spoolsData.length; ++i) {
-                if (spoolsData[i] === undefined) continue;  // skip tools with no selected spool
-                if (self.previousData !== undefined         // skip check if data hasn't changed
-                    && JSON.stringify(spoolsData[i]) === JSON.stringify(self.previousData[i])) continue;
+                if (spoolsData[i] === undefined) {
+                    // skip tools with no selected spool
+                    continue;
+                }
+
+                if (!fileHasChanged && self.previousData !== undefined
+                    && JSON.stringify(spoolsData[i]) === JSON.stringify(self.previousData[i])) {
+                    // skip check if file and data hasn't changed
+                    continue;
+                }
+
                 var length = filament[i].data().length;
                 var diameter = spoolsData[i].profile.diameter;
                 var density = spoolsData[i].profile.density;
                 var remaining = spoolsData[i].profile.weight - spoolsData[i].used;
                 var needed = self.calculateFilamentWeight(length, diameter, density);
+                
                 if (needed > remaining) {
                     self.showWarning();
                     break;
                 }
             }
+
+            self.filename = self.printerState.filename();
             self.previousData = spoolsData;
         };
 
