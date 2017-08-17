@@ -51,7 +51,7 @@ $(function() {
                 var density = spoolsData[i].profile.density;
                 var remaining = spoolsData[i].profile.weight - spoolsData[i].used;
                 var needed = self.calculateFilamentWeight(length, diameter, density);
-                
+
                 if (needed > remaining) {
                     self.showWarning();
                     break;
@@ -63,7 +63,7 @@ $(function() {
         };
 
         self.showWarning = function() {
-            var text = gettext("The current print job needs more material than whats remaining on the selected spool, be careful when printing this.");
+            var text = gettext("The current print job needs more material than whats remaining on the selected spool.");
             new PNotify({title: gettext("Filament warning"), text: text, type: "warning", hide: false});
         };
 

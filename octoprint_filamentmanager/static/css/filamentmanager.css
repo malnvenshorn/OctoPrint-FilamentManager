@@ -6,7 +6,7 @@ table th.settings_plugin_filamentmanager_spools_name {
 
 table td.settings_plugin_filamentmanager_spools_profile,
 table th.settings_plugin_filamentmanager_spools_profile {
-    width: 30%;
+    width: 25%;
     text-align: left;
 }
 
@@ -24,7 +24,7 @@ table th.settings_plugin_filamentmanager_spools_remaining {
 
 table td.settings_plugin_filamentmanager_spools_used,
 table th.settings_plugin_filamentmanager_spools_used {
-    width: 10%;
+    width: 15%;
     text-align: right;
 }
 
