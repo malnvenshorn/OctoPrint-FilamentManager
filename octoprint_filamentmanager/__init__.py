@@ -43,7 +43,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_settings_defaults(self):
         return dict(
             selectedSpools=dict(),
-            enableTracking=True,
+            enableOdometer=True,
             enableWarning=True
         )
 
@@ -52,7 +52,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_assets(self):
         return dict(
             css=["css/filamentmanager.css"],
-            js=["js/filamentmanager.js", "js/filamentwarning.js"]
+            js=["js/filamentmanager.js", "js/filamentadvanced.js"]
         )
 
     # TemplatePlugin
@@ -256,7 +256,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event == Events.PRINT_STARTED:
-            self.odometerEnabled = self._settings.get(["enableTracking"])
+            self.odometerEnabled = self._settings.get(["enableOdometer"])
             self.filamentOdometer.reset()
         elif event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
             if self.odometerEnabled:
@@ -269,7 +269,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self.filamentOdometer.reset_extruded_length()
             self.odometerEnabled = False
         elif event == Events.PRINT_RESUMED:
-            self.odometerEnabled = self._settings.get(["enableTracking"])
+            self.odometerEnabled = self._settings.get(["enableOdometer"])
 
     def _update_filament_usage(self):
         printer_profile = self._printer_profile_manager.get_current_or_default()

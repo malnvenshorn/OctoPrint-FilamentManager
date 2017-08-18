@@ -15,6 +15,34 @@ $(function() {
         self.filename = undefined;
         self.previousData = undefined;
 
+        self.printerState.filamentWithWeight = ko.observableArray([]);
+
+        self.printerState.formatFilamentWithWeight = function(filament) {
+            if (!filament || !filament["length"]) return "-";
+            var result = "%(length).02fm";
+            if (filament.hasOwnProperty("weight") && filament.weight) {
+                result += " (%(weight).02fg)";
+            }
+            return _.sprintf(result, {length: filament["length"] / 1000, weight: filament["weight"]});
+        }
+
+        self.onStartup = function() {
+            var element = $("#state").find("br:nth-of-type(3)");
+            if (element.length) {
+                element.after("<!-- ko foreach: filamentWithWeight -->"
+                              + "<span data-bind=\"text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()\"></span><strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>"
+                              + "<!-- /ko -->");
+            }
+
+            $("#state").find(".accordion-inner").contents().each(function() {
+                if (this.nodeType === Node.COMMENT_NODE) {
+                    if (this.nodeValue === " ko foreach: filament ") {
+                        this.nodeValue = " ko foreach: [] ";
+                    }
+                }
+            });
+        };
+
         self.onBeforeBinding = function() {
             self.printerState.filament.subscribe(function() {
                 if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
@@ -37,29 +65,36 @@ $(function() {
             for (var i = 0; i < filament.length && i < spoolsData.length; ++i) {
                 if (spoolsData[i] === undefined) {
                     // skip tools with no selected spool
-                    continue;
-                }
-
-                if (!fileHasChanged && self.previousData !== undefined
-                    && JSON.stringify(spoolsData[i]) === JSON.stringify(self.previousData[i])) {
-                    // skip check if file and data hasn't changed
+                    filament[i].data().weight = 0;
                     continue;
                 }
 
                 var length = filament[i].data().length;
                 var diameter = spoolsData[i].profile.diameter;
                 var density = spoolsData[i].profile.density;
-                var remaining = spoolsData[i].profile.weight - spoolsData[i].used;
                 var needed = self.calculateFilamentWeight(length, diameter, density);
 
-                if (needed > remaining) {
-                    self.showWarning();
-                    break;
+                filament[i].data().weight = needed;
+
+                if (!fileHasChanged && self.previousData !== undefined
+                    && JSON.stringify(spoolsData[i]) === JSON.stringify(self.previousData[i])) {
+                    // skip check if file and data hasn't changed, this prevents warning message spamming
+                    continue;
+                }
+
+                if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
+                    var remaining = spoolsData[i].profile.weight - spoolsData[i].used;
+
+                    if (needed > remaining) {
+                        self.showWarning();
+                        break;
+                    }
                 }
             }
 
             self.filename = self.printerState.filename();
             self.previousData = spoolsData;
+            self.printerState.filamentWithWeight(filament);;
         };
 
         self.showWarning = function() {
