@@ -27,7 +27,16 @@ $(function() {
         }
 
         self.onStartup = function() {
-            var element = $("#state").find("br:nth-of-type(3)");
+            $("#state").find(".accordion-inner").contents().each(function(index, item) {
+                if (item.nodeType === Node.COMMENT_NODE) {
+                    if (item.nodeValue === " ko foreach: filament ") {
+                        item.nodeValue = " ko foreach: [] ";
+                        return false; // break loop
+                    }
+                }
+            });
+
+            var element = $("#state").find(".accordion-inner br:nth-of-type(3)");
             if (element.length) {
                 element.after("<!-- ko foreach: filamentWithWeight -->" +
                               "<span data-bind=\"text: 'Filament (' + name() + '): ', " +
@@ -35,14 +44,6 @@ $(function() {
                               "<strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>" +
                               "<!-- /ko -->");
             }
-
-            $("#state").find(".accordion-inner").contents().each(function() {
-                if (this.nodeType === Node.COMMENT_NODE) {
-                    if (this.nodeValue === " ko foreach: filament ") {
-                        this.nodeValue = " ko foreach: [] ";
-                    }
-                }
-            });
         };
 
         self.onBeforeBinding = function() {
