@@ -21,7 +21,7 @@ $(function() {
             if (!filament || !filament["length"]) return "-";
             var result = "%(length).02fm";
             if (filament.hasOwnProperty("weight") && filament.weight) {
-                result += " (%(weight).02fg)";
+                result += " / %(weight).02fg";
             }
             return _.sprintf(result, {length: filament["length"] / 1000, weight: filament["weight"]});
         }
