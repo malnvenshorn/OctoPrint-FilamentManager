@@ -1,3 +1,20 @@
+.settings_plugin_filamentmanager_spools_header {
+    margin-bottom: 10px;
+}
+
+.settings_plugin_filamentmanager_spools_header input[type=number]::-webkit-inner-spin-button,
+.settings_plugin_filamentmanager_spools_header_pagesize input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.settings_plugin_filamentmanager_spools_header input[type=number] {
+    width: 14px;
+    height: 11px;
+    font-size: 12px;
+    text-align: center;
+}
+
 table td.settings_plugin_filamentmanager_spools_name,
 table th.settings_plugin_filamentmanager_spools_name {
     width: 20%;

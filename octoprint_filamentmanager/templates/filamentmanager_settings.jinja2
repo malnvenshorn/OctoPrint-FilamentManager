@@ -29,12 +29,22 @@
 
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
-    <!-- sorting -->
+    <div class="settings_plugin_filamentmanager_spools_header">
 
-    <div class="pull-right">
-        <small>
-            {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
-        </small>
+        <!-- items per page -->
+
+        <span class="input-prepend" title="{{ _('Items per page') }}">
+            <span class="add-on" style="height:19px; padding: 0px 4px;"><i class="icon-list" style="vertical-align:initial;font-size:0.95em"></i></span>
+            <input type="number" min="0" max="99" step="1" class="input-mini" data-bind="value: pageSize">
+        </span>
+
+        <!-- sorting -->
+
+        <span class="pull-right">
+            <small>
+                {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
+            </small>
+        </span>
     </div>
 
     <!-- table -->
@@ -67,15 +77,15 @@
     <!-- pagination -->
 
     <div class="pagination pagination-mini pagination-centered">
-    <ul>
-        <li data-bind="css: {disabled: spools.currentPage() === 0}"><a href="#" data-bind="click: spools.prevPage">«</a></li>
-    </ul>
-    <ul data-bind="foreach: spools.pages">
-        <li data-bind="css: { active: $data.number === $root.spools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spools.changePage($data.number); }"></a></li>
-    </ul>
-    <ul>
-        <li data-bind="css: {disabled: spools.currentPage() === spools.lastPage() || spools.lastPage() === -1}"><a href="#" data-bind="click: spools.nextPage">»</a></li>
-    </ul>
+        <ul>
+            <li data-bind="css: {disabled: spools.currentPage() === 0}"><a href="#" data-bind="click: spools.prevPage">«</a></li>
+        </ul>
+        <ul data-bind="foreach: spools.pages">
+            <li data-bind="css: { active: $data.number === $root.spools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spools.changePage($data.number); }"></a></li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: spools.currentPage() === spools.lastPage() || spools.lastPage() === -1}"><a href="#" data-bind="click: spools.nextPage">»</a></li>
+        </ul>
     </div>
 
     <!-- buttons -->

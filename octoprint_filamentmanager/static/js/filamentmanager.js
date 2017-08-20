@@ -208,6 +208,15 @@ $(function() {
             {}, "name", [], [], 5
         );
 
+        self.pageSize = ko.pureComputed({
+            read : function(){
+                return self.spools.pageSize();
+            },
+            write: function(value){
+                self.spools.pageSize(parseInt(value));
+            }
+        });
+
         self.selectedSpools = ko.observableArray([]);
 
         self.tools = ko.observableArray([]);
