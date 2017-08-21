@@ -10,49 +10,37 @@
         <!-- profile selection -->
 
         <div class="controls settings_plugin_filamentmanager_profiledialog_select">
-            <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: profileEditor.selectedProfile"></select>
+            <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.material + ' (' + item.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: profileEditor.selectedProfile"></select>
             <button class="btn btn-small btn-success" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
             <button class="btn btn-small btn-danger" title="{{ _('Delete') }}" data-bind="disable: profileEditor.isNew() || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
-            <button class="btn btn-small btn-primary pull-right" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.nameInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
+            <button class="btn btn-small btn-primary pull-right" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.materialInvalid() || profileEditor.vendorInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
         </div>
 
         <legend></legend>
 
         <form class="form-horizontal">
 
-            <!-- name -->
+            <!-- vendor -->
 
-            <div class="control-group" data-bind="css: {error: profileEditor.nameInvalid()}">
-                <label class="control-label">{{ _('Name') }}</label>
+            <div class="control-group" data-bind="css: {error: profileEditor.vendorInvalid()}">
+                <label class="control-label">{{ _('Vendor') }}</label>
                 <div class="controls">
-                    <input type="text" data-bind="value: profileEditor.name, valueUpdate: 'afterkeydown'">
-                    <span data-bind="visible: profileEditor.nameInvalid()">
-                        <br><span class="help-inline">{{ _("Name must be set") }}</span>
+                    <input type="text" data-bind="value: profileEditor.vendor, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: profileEditor.vendorInvalid()">
+                        <br><span class="help-inline">{{ _("Vendor must be set") }}</span>
                     </span>
                 </div>
             </div>
 
-            <!-- price -->
+            <!-- material -->
 
-            <div class="control-group">
-                <label class="control-label">{{ _('Price') }}</label>
+            <div class="control-group" data-bind="css: {error: profileEditor.materialInvalid()}">
+                <label class="control-label">{{ _('Material') }}</label>
                 <div class="controls">
-                    <div class="input-append">
-                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.cost">
-                        <span class="add-on">€</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- weight -->
-
-            <div class="control-group">
-                <label class="control-label">{{ _('Weight') }}</label>
-                <div class="controls">
-                    <div class="input-append">
-                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: profileEditor.weight">
-                        <span class="add-on">g</span>
-                    </div>
+                    <input type="text" data-bind="value: profileEditor.material, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: profileEditor.materialInvalid()">
+                        <br><span class="help-inline">{{ _("Material must be set") }}</span>
+                    </span>
                 </div>
             </div>
 

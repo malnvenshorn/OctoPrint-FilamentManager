@@ -33,15 +33,22 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     # StartupPlugin
 
-    def on_after_startup(self):
+    def on_startup(self, host, port):
         db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
         self.filamentManager = FilamentManager(db_path, self._logger)
         self.filamentManager.init_database()
+        self.migrate_db_scheme()
+
+    def migrate_db_scheme(self):
+        current_version = self._settings.get(["_db_version"])
+        if current_version == 1:
+            pass
 
     # SettingsPlugin
 
     def get_settings_defaults(self):
         return dict(
+            _db_version=1,
             selectedSpools=dict(),
             enableOdometer=True,
             enableWarning=True
@@ -111,7 +118,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         new_profile = json_data["profile"]
 
-        for key in ["name", "weight", "cost", "density", "diameter"]:
+        for key in ["vendor", "material", "density", "diameter"]:
             if key not in new_profile:
                 return make_response("Profile does not contain mandatory '{}' field".format(key), 400)
 
@@ -204,7 +211,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         new_spool = json_data["spool"]
 
-        for key in ["name", "profile_id", "used"]:
+        for key in ["name", "profile_id", "cost", "weight", "used"]:
             if key not in new_spool:
                 return make_response("Spool does not contain mandatory '{}' field".format(key), 400)
 

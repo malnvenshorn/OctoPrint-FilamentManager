@@ -9,9 +9,8 @@ $(function() {
     var cleanProfile = function() {
         return {
             id: 0,
-            name: "",
-            cost: 20,
-            weight: 1000,
+            material: "",
+            vendor: "",
             density: 1.25,
             diameter: 1.75
         };
@@ -22,6 +21,8 @@ $(function() {
             id: 0,
             name: "",
             profile_id: 0,
+            cost: 20,
+            weight: 1000,
             used: 0
         };
     };
@@ -34,14 +35,17 @@ $(function() {
         self.selectedProfile = ko.observable();
 
         self.id = ko.observable();
-        self.name = ko.observable();
-        self.cost = ko.observable();
-        self.weight = ko.observable();
+        self.vendor = ko.observable();
+        self.material = ko.observable();
         self.density = ko.observable();
         self.diameter = ko.observable();
 
-        self.nameInvalid = ko.pureComputed(function() {
-            return !self.name();
+        self.vendorInvalid = ko.pureComputed(function() {
+            return !self.vendor();
+        });
+
+        self.materialInvalid = ko.pureComputed(function() {
+            return !self.material();
         });
 
         self.selectedProfile.subscribe(function() {
@@ -73,9 +77,8 @@ $(function() {
             }
 
             self.id(data.id);
-            self.name(data.name);
-            self.cost(data.cost);
-            self.weight(data.weight);
+            self.vendor(data.vendor);
+            self.material(data.material);
             self.density(data.density);
             self.diameter(data.diameter);
         };
@@ -90,9 +93,8 @@ $(function() {
 
             return {
                 id: self.id(),
-                name: self.name(),
-                cost: validFloat(self.cost(), defaultProfile.cost),
-                weight: validFloat(self.weight(), defaultProfile.weight),
+                vendor: self.vendor(),
+                material: self.material(),
                 density: validFloat(self.density(), defaultProfile.density),
                 diameter: validFloat(self.diameter(), defaultProfile.diameter)
             };
@@ -110,27 +112,14 @@ $(function() {
         self.id = ko.observable();
         self.name = ko.observable();
         self.selectedProfile = ko.observable();
+        self.cost = ko.observable();
+        self.totalWeight = ko.observable();
         self.used = ko.observable();
 
-        self.totalWeight = ko.observable();
         self.remaining = ko.observable();
 
         self.nameInvalid = ko.pureComputed(function() {
             return !self.name();
-        });
-
-        self.selectedProfile.subscribe(function() {
-                var data = ko.utils.arrayFirst(self.profiles(), function(item) {
-                    return item.id == self.selectedProfile();
-                });
-                if (data !== null) {
-                    self.totalWeight(data.weight);
-                    if (self.isNew()) {
-                        // automatically set remaining weight = total weight if spool is new
-                        // otherwise we keep the entered value
-                        self.remaining(data.weight);
-                    }
-                }
         });
 
         self.fromSpoolData = function(data) {
@@ -148,9 +137,9 @@ $(function() {
             self.id(data.id);
             self.name(data.name);
             self.selectedProfile(data.profile_id);
-            self.selectedProfile.valueHasMutated(); // if the selected profile gets modified we have to ensure
-                                                    // that the values get updated here as well
-            self.remaining(self.totalWeight() - data.used);
+            self.totalWeight(data.weight);
+            self.cost(data.cost);
+            self.remaining(data.weight - data.used);
         };
 
         self.toSpoolData = function() {
@@ -158,6 +147,8 @@ $(function() {
                 id: self.id(),
                 name: self.name(),
                 profile_id: self.selectedProfile(),
+                cost: self.cost(),
+                weight: self.totalWeight(),
                 used: self.used()
             };
         };
@@ -190,18 +181,28 @@ $(function() {
                     if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
                     return 0;
                 },
-                "profile": function(a, b) {
+                "material": function(a, b) {
                     // sorts ascending
-                    if (a["profileName"].toLocaleLowerCase() < b["profileName"].toLocaleLowerCase()) return -1;
-                    if (a["profileName"].toLocaleLowerCase() > b["profileName"].toLocaleLowerCase()) return 1;
+                    if (a["profile"]["material"].toLocaleLowerCase()
+                        < b["profile"]["material"].toLocaleLowerCase()) return -1;
+                    if (a["profile"]["material"].toLocaleLowerCase()
+                        > b["profile"]["material"].toLocaleLowerCase()) return 1;
+                    return 0;
+                },
+                "vendor": function(a, b) {
+                    // sorts ascending
+                    if (a["profile"]["vendor"].toLocaleLowerCase()
+                        < b["profile"]["vendor"].toLocaleLowerCase()) return -1;
+                    if (a["profile"]["vendor"].toLocaleLowerCase()
+                        > b["profile"]["vendor"].toLocaleLowerCase()) return 1;
                     return 0;
                 },
                 "remaining": function(a, b) {
                     // sorts descending
-                    va = parseFloat(a.profile.weight) - parseFloat(a.used);
-                    vb = parseFloat(b.profile.weight) - parseFloat(b.used);
-                    if (va > vb) return -1;
-                    if (va < vb) return 1;
+                    ra = parseFloat(a.weight) - parseFloat(a.used);
+                    rb = parseFloat(b.weight) - parseFloat(b.used);
+                    if (ra > rb) return -1;
+                    if (ra < rb) return 1;
                     return 0;
                 }
             },
@@ -337,6 +338,8 @@ $(function() {
                     // because knockout observable array doesn't observe properties of items
                     return { id: spool.id,
                              name: spool.name,
+                             cost: spool.cost,
+                             weight: spool.weight,
                              used: spool.used,
                              profile_id: spool.profile_id,
                              profile: profile };

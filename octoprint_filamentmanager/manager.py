@@ -20,17 +20,18 @@ class FilamentManager(object):
         scheme.append(
             """ CREATE TABLE IF NOT EXISTS profiles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    cost REAL NOT NULL,
-                    weight REAL NOT NULL,
-                    density REAL NOT NULL,
-                    diameter REAL NOT NULL);
+                    vendor TEXT NOT NULL DEFAULT "",
+                    material TEXT NOT NULL DEFAULT "",
+                    density REAL NOT NULL DEFAULT 0,
+                    diameter REAL NOT NULL DEFAULT 0);
 
                 CREATE TABLE IF NOT EXISTS spools (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     profile_id INTEGER NOT NULL,
-                    name TEXT NOT NULL,
-                    used REAL NOT NULL,
+                    name TEXT NOT NULL DEFAULT "",
+                    cost REAL NOT NULL DEFAULT 0,
+                    weight REAL NOT NULL DEFAULT 0,
+                    used REAL NOT NULL DEFAULT 0,
                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT);
 
                 CREATE TABLE IF NOT EXISTS modifications (
@@ -46,9 +47,12 @@ class FilamentManager(object):
                             INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
                         END; """.format(table=table, action=action))
 
+        self.execute_script("".join(scheme))
+
+    def execute_script(self, script):
         try:
             with self._db_lock, self._db as db:
-                db.executescript("".join(scheme))
+                db.executescript(script)
                 return True
         except sqlite3.Error as error:
             self._log_error(error)
@@ -57,7 +61,7 @@ class FilamentManager(object):
     def get_all_profiles(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM profiles ORDER BY name COLLATE NOCASE")
+                cursor = db.execute("SELECT * FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE")
                 return self._cursor_to_dict(cursor)
         except sqlite3.Error as error:
             self._log_error(error)
@@ -84,8 +88,8 @@ class FilamentManager(object):
     def create_profile(self, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "INSERT INTO profiles (name, cost, weight, density, diameter) VALUES (?, ?, ?, ?, ?)"
-                cursor = db.execute(sql, (data.get("name", ""), data.get("cost", 0), data.get("weight", 0),
+                sql = "INSERT INTO profiles (material, vendor, density, diameter) VALUES (?, ?, ?, ?)"
+                cursor = db.execute(sql, (data.get("material", ""), data.get("vendor", ""),
                                           data.get("density", 0), data.get("diameter", 0)))
                 data["id"] = cursor.lastrowid
                 return data
@@ -96,9 +100,9 @@ class FilamentManager(object):
     def update_profile(self, identifier, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "UPDATE profiles SET name = ?, cost = ?, weight = ?, density = ?, diameter = ? WHERE id = ?"
-                db.execute(sql, (data.get("name"), data.get("cost"), data.get("weight"),
-                                 data.get("density"), data.get("diameter"), identifier))
+                sql = "UPDATE profiles SET material = ?, vendor = ?, density = ?, diameter = ? WHERE id = ?"
+                db.execute(sql, (data.get("material"), data.get("vendor"), data.get("density"),
+                                 data.get("diameter"), identifier))
                 return data
         except sqlite3.Error as error:
             self._log_error(error)
@@ -143,8 +147,9 @@ class FilamentManager(object):
     def create_spool(self, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "INSERT INTO spools (name, profile_id, used) VALUES (?, ?, ?)"
-                cursor = db.execute(sql, (data.get("name", ""), data.get("profile_id", 0), data.get("used", 0)))
+                sql = "INSERT INTO spools (name, profile_id, cost, weight, used) VALUES (?, ?, ?, ?, ?)"
+                cursor = db.execute(sql, (data.get("name", ""), data.get("profile_id", 0), data.get("cost", 0),
+                                    data.get("weight", 0), data.get("used", 0)))
                 data["id"] = cursor.lastrowid
                 return data
         except sqlite3.Error as error:
@@ -154,8 +159,9 @@ class FilamentManager(object):
     def update_spool(self, identifier, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "UPDATE spools SET name = ?, profile_id = ?, used = ? WHERE id = ?"
-                db.execute(sql, (data.get("name"), data.get("profile_id"), data.get("used"), identifier))
+                sql = "UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ? WHERE id = ?"
+                db.execute(sql, (data.get("name"), data.get("profile_id"), data.get("cost"),
+                                 data.get("weight"), data.get("used"), identifier))
                 return data
         except sqlite3.Error as error:
             self._log_error(error)

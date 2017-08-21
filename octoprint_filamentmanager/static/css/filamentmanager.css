@@ -21,9 +21,15 @@ table th.settings_plugin_filamentmanager_spools_name {
     text-align: left;
 }
 
-table td.settings_plugin_filamentmanager_spools_profile,
-table th.settings_plugin_filamentmanager_spools_profile {
-    width: 25%;
+table td.settings_plugin_filamentmanager_spools_material,
+table th.settings_plugin_filamentmanager_spools_material {
+    width: 15%;
+    text-align: left;
+}
+
+table td.settings_plugin_filamentmanager_spools_vendor,
+table th.settings_plugin_filamentmanager_spools_vendor {
+    width: 20%;
     text-align: left;
 }
 
@@ -47,7 +53,7 @@ table th.settings_plugin_filamentmanager_spools_used {
 
 table td.settings_plugin_filamentmanager_spools_action,
 table th.settings_plugin_filamentmanager_spools_action {
-    width: 10%;
+    width: 60px;
     text-align: center;
 }
 

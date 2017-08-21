@@ -9,6 +9,8 @@
 
         <form class="form-horizontal">
 
+            <!-- name -->
+
             <div class="control-group" data-bind="css: {error: spoolEditor.nameInvalid()}">
                 <label class="control-label">{{ _('Name') }}</label>
                 <div class="controls">
@@ -19,14 +21,42 @@
                 </div>
             </div>
 
+            <!-- profile -->
+
             <div class="control-group">
                 <label class="control-label">{{ _('Profile') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <select data-bind="options: profiles, optionsText: function(item) { return item.name; }, optionsValue: function(item) { return item.id; }, value: spoolEditor.selectedProfile"></select>
+                        <select data-bind="options: profiles, optionsText: function(item) { return item.material + ' (' + item.vendor + ')'; }, optionsValue: function(item) { return item.id; }, value: spoolEditor.selectedProfile"></select>
                     </div>
                 </div>
             </div>
+
+            <!-- price -->
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Price') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: spoolEditor.cost">
+                        <span class="add-on">€</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- weight -->
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Weight') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: spoolEditor.totalWeight">
+                        <span class="add-on">g</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- remaining -->
 
             <div class="control-group">
                 <label class="control-label">{{ _('Remaining') }}</label>

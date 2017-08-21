@@ -6,7 +6,7 @@
     <div class="control-group">
         <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>
         <div class="controls">
-            <select data-bind="options: $root.spools.items, optionsText: function(item) { return item.name + ' ' + (item.profile.weight - item.used).toFixed(0) + 'g - ' + item.profile.name; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
+            <select data-bind="options: $root.spools.items, optionsText: function(item) { return item.name + ' ' + (item.weight - item.used).toFixed(0) + 'g - ' + item.profile.material + ' (' + item.profile.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
         </div>
     </div>
     <!-- /ko -->
@@ -42,7 +42,11 @@
 
         <span class="pull-right">
             <small>
-                {{ _("Sort by") }}: <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('profile'); }">{{ _("Profile (ascending)") }}</a> | <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
+                {{ _("Sort by") }}:
+                <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { spools.changeSorting('material'); }">{{ _("Material (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { spools.changeSorting('vendor'); }">{{ _("Vendor (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
             </small>
         </span>
     </div>
@@ -53,7 +57,8 @@
     <thead>
         <tr>
             <th class="settings_plugin_filamentmanager_spools_name">{{ _('Name') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_profile">{{ _('Profile') }}</th>
+            <th class="settings_plugin_filamentmanager_spools_material">{{ _('Material') }}</th>
+            <th class="settings_plugin_filamentmanager_spools_vendor">{{ _('Vendor') }}</th>
             <th class="settings_plugin_filamentmanager_spools_weight">{{ _('Weight') }}</th>
             <th class="settings_plugin_filamentmanager_spools_remaining">{{ _('Remaining') }}</th>
             <th class="settings_plugin_filamentmanager_spools_used">{{ _('Used') }}</th>
@@ -63,12 +68,14 @@
     <tbody data-bind="foreach: spools.paginatedItems">
         <tr>
             <td class="settings_plugin_filamentmanager_spools_name" data-bind="text: name"></td>
-            <td class="settings_plugin_filamentmanager_spools_profile" data-bind="text: profile.name"></td>
-            <td class="settings_plugin_filamentmanager_spools_weight"><span data-bind="text: profile.weight"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: (profile.weight - used).toFixed(0)"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: (used * 100 / profile.weight).toFixed(0)"></span>%</td>
+            <td class="settings_plugin_filamentmanager_spools_material" data-bind="text: profile.material"></td>
+            <td class="settings_plugin_filamentmanager_spools_vendor" data-bind="text: profile.vendor"></td>
+            <td class="settings_plugin_filamentmanager_spools_weight"><span data-bind="text: weight"></span>g</td>
+            <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
+            <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: (used * 100 / weight).toFixed(0)"></span>%</td>
             <td class="settings_plugin_filamentmanager_spools_action">
-                <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
+                <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a> |
+                <a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
             </td>
         </tr>
     </tbody>

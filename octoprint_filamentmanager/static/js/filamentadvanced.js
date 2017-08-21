@@ -82,7 +82,7 @@ $(function() {
                 }
 
                 if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
-                    var remaining = spoolsData[i].profile.weight - spoolsData[i].used;
+                    var remaining = spoolsData[i].weight - spoolsData[i].used;
 
                     if (needed > remaining) {
                         self._showWarning();
