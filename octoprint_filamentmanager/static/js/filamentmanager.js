@@ -27,6 +27,11 @@ $(function() {
         };
     };
 
+    var validFloat = function(value, def) {
+        var f = parseFloat(value);
+        return isNaN(f) ? def : f;
+    };
+
     function ProfileEditorViewModel(profiles) {
         var self = this;
 
@@ -86,11 +91,6 @@ $(function() {
         self.toProfileData = function() {
             var defaultProfile = cleanProfile();
 
-            var validFloat = function(value, def) {
-                var f = parseFloat(value);
-                return isNaN(f) ? def : f;
-            };
-
             return {
                 id: self.id(),
                 vendor: self.vendor(),
@@ -114,7 +114,6 @@ $(function() {
         self.selectedProfile = ko.observable();
         self.cost = ko.observable();
         self.totalWeight = ko.observable();
-        self.used = ko.observable();
 
         self.remaining = ko.observable();
 
@@ -143,23 +142,19 @@ $(function() {
         };
 
         self.toSpoolData = function() {
+            var defaultSpool = cleanSpool();
+            var weight = validFloat(self.totalWeight(), defaultSpool.weight);
+            var remaining = Math.min(validFloat(self.remaining(), defaultSpool.weight), weight);
+
             return {
                 id: self.id(),
                 name: self.name(),
                 profile_id: self.selectedProfile(),
-                cost: self.cost(),
-                weight: self.totalWeight(),
-                used: self.used()
+                cost: validFloat(self.cost(), defaultSpool.cost),
+                weight: weight,
+                used: weight - remaining
             };
         };
-
-        self.remaining.subscribe(function() {
-            self.used(self.totalWeight() - self.remaining());
-        });
-
-        self.totalWeight.subscribe(function() {
-            self.used(self.totalWeight() - self.remaining());
-        });
     }
 
     function FilamentManagerViewModel(parameters) {
