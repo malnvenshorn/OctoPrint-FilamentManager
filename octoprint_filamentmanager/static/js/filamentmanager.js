@@ -113,6 +113,7 @@ $(function() {
         self.name = ko.observable();
         self.selectedProfile = ko.observable();
         self.cost = ko.observable();
+        self.currency = ko.observble()
         self.totalWeight = ko.observable();
 
         self.remaining = ko.observable();
@@ -138,6 +139,7 @@ $(function() {
             self.selectedProfile(data.profile_id);
             self.totalWeight(data.weight);
             self.cost(data.cost);
+            self.currency("$")
             self.remaining(data.weight - data.used);
         };
 
