@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the 
 
 import math
 import os
+import locale
 import hashlib
 from flask import jsonify, request, make_response
 from werkzeug.exceptions import BadRequest
@@ -30,6 +31,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentManager = None
         self.filamentOdometer = FilamentOdometer()
         self.odometerEnabled = False
+
+        try:
+            locale.setlocale(locale.LC_MONETARY, '')
+            self.currency = locale.localeconv()['currency_symbol']
+        except Exception as e:
+            self._logger.error("Error retrieving local currency symbol [%s]", e)
+            self.currency = ""
 
     # StartupPlugin
 
@@ -70,6 +78,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             dict(type="generic", template="filamentmanager_profiledialog.jinja2"),
             dict(type="generic", template="filamentmanager_spooldialog.jinja2")
         ]
+
+    def get_template_vars(self):
+        self._logger.debug("Getting template vars")
+        return dict(currency=self.currency)
 
     # BlueprintPlugin
 
