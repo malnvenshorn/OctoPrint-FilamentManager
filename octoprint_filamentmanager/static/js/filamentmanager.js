@@ -226,17 +226,9 @@ $(function() {
         };
 
         self.onBeforeBinding = function() {
-            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-            var selectedSpoolsCount = Object.keys(selectedSpools).length;
-            for (var i = 0; i < selectedSpoolsCount; ++i) {
-                var id = "tool" + i;
-                selectedSpools[id].subscribe(self._updateSelectedSpoolData);
-            }
-
-
-            self._syncWithExtruderCount();
+            self._syncWithExtruderCount();     // set initial number of tools
             self.settings.printerProfiles.currentProfileData.subscribe(function() {
-                self._syncWithExtruderCount();
+                self._syncWithExtruderCount(); // update number of tools on changes
             });
         };
 
@@ -249,6 +241,8 @@ $(function() {
             self.requestData("spools");
         };
 
+        self.spoolSubscriptions = [];
+
         /*
          * Sets number of tools for template generation and if neccessary adds
          * dictionary entries in the settings to save the selected spools.
@@ -256,19 +250,27 @@ $(function() {
         self._syncWithExtruderCount = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
             var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
-            self.tools(new Array(numExtruders));
 
             var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-            var selectedSpoolsCount = Object.keys(selectedSpools).length;
 
-            if (selectedSpoolsCount < numExtruders) {
-                // add observables for new tools in the settings
-                for (var i = selectedSpoolsCount; i < numExtruders; ++i) {
-                    var id = "tool" + i;
-                    selectedSpools[id] = ko.observable(0);
-                    selectedSpools[id].subscribe(self._updateSelectedSpoolData);
+            for (var i = 0; i < numExtruders; ++i) {
+                var id = "tool" + i;
+                if (selectedSpools[id] === undefined) {
+                    // create missing observables in config
+                    selectedSpools[id] = ko.observable();
+                }
+                if (i >= self.tools().length) {
+                    // subscribe if number of tools has increased
+                    self.spoolSubscriptions.push(selectedSpools[id].subscribe(self._updateSelectedSpoolData));
                 }
             }
+
+            for (var i = numExtruders; i < self.tools().length; ++i) {
+                // unsubscribe if number of tools has decreased
+                self.spoolSubscriptions[i].dispose();
+            }
+
+            self.tools(new Array(numExtruders));
         };
 
         self._updateSelectedSpoolData = function() {
