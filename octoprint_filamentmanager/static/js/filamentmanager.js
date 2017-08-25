@@ -214,6 +214,7 @@ $(function() {
         });
 
         self.selectedSpools = ko.observableArray([]);
+        self.selectedSpoolsHelper = ko.observableArray([]);
 
         self.tools = ko.observableArray([]);
 
@@ -243,6 +244,14 @@ $(function() {
             self.requestData("spools");
         };
 
+        self.onSettingsBeforeSave = function() {
+            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+            for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
+                var id = "tool" + i;
+                selectedSpools[id] = self.selectedSpoolsHelper()[i];
+            }
+        };
+
         self.spoolSubscriptions = [];
 
         /*
@@ -258,12 +267,14 @@ $(function() {
             for (var i = 0; i < numExtruders; ++i) {
                 var id = "tool" + i;
                 if (selectedSpools[id] === undefined) {
-                    // create missing observables in config
+                    // create missing observables in config, this ensures that we have at least
+                    // the same object length as selectedSpoolsHelper
                     selectedSpools[id] = ko.observable();
                 }
                 if (i >= self.tools().length) {
                     // subscribe if number of tools has increased
-                    self.spoolSubscriptions.push(selectedSpools[id].subscribe(self._updateSelectedSpoolData));
+                    self.selectedSpoolsHelper()[i] = ko.observable();
+                    self.spoolSubscriptions.push(self.selectedSpoolsHelper()[i].subscribe(self._updateSelectedSpoolData));
                 }
             }
 
@@ -279,7 +290,7 @@ $(function() {
             var list = []
             if (self.spools.items().length > 0) {
                 for (var i = 0; i < self.tools().length; ++i) {
-                    var id = self.settings.settings.plugins.filamentmanager.selectedSpools["tool"+i]();
+                    var id = self.selectedSpoolsHelper()[i]();
                     if (id === undefined) {
                         list.push(undefined);
                         continue;
@@ -326,8 +337,8 @@ $(function() {
             else if (data.hasOwnProperty("spools")) self.spoolsRaw(data.spools);
             else return;
 
-            // spool list has to be updated in either case
-            if (self.profiles().length > 0) {
+            // spool list has to be updated in either case (if we have received the dataset)
+            if (self.profiles().length > 0 && self.spoolsRaw().length > 0) {
                 var rows = ko.utils.arrayMap(self.spoolsRaw(), function (spool) {
                     var profile = ko.utils.arrayFirst(self.profiles(), function(item) {
                         return item.id == spool.profile_id;
@@ -345,8 +356,13 @@ $(function() {
 
                 });
                 self.spools.updateItems(rows);
-                if (self.selectedSpools().length > 0) {  // on start the selected spools data gets updated by the
-                    self._updateSelectedSpoolData();     // options field, so we update only on changes after that
+                if (self.selectedSpools().length == 0) {
+                    // load selected spools from settings, after we have received the initial dataset
+                    var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+                    for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
+                        var id = "tool" + i;
+                        self.selectedSpoolsHelper()[i](selectedSpools[id]());
+                    }
                 }
             } else {
                 self.spools.updateItems([]);
