@@ -2,29 +2,40 @@
 
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Plugin Configuration') }}></h3>
+        <h3>{{ _('Plugin Configuration') }}</h3>
     </div>
 
     <div class="modal-body">
 
         <form class="form-horizontal">
 
-            <legend>{{ _("Features") }}</legend>
+            <!-- enable odometer -->
 
             <div class="control-group">
-               <div class="controls">
-                   <label class="checkbox">
-                       <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
-                   </label>
-               </div>
-           </div>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
+                    </label>
+                </div>
+            </div>
 
-           <div class="control-group">
-              <div class="controls">
-                  <label class="checkbox">
-                      <input type="checkbox" data-bind="checked: config_enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
-                  </label>
-              </div>
+            <!-- enable warning -->
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
+                    </label>
+                </div>
+            </div>
+
+            <!-- currency symbol -->
+
+            <div class="control-group">
+                <label class="control-label">{{ _('Currency symbol') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-mini text-center" data-bind="value: config_currencySymbol">
+                </div>
             </div>
 
         </form>

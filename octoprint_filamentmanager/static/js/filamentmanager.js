@@ -164,6 +164,7 @@ $(function() {
 
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
+        self.config_currencySymbol = ko.observable();
 
         self.requestInProgress = ko.observable(false);
 
@@ -233,6 +234,8 @@ $(function() {
         };
 
         self.onBeforeBinding = function() {
+            self.config_currencySymbol(self.settings.settings.plugins.filamentmanager.currencySymbol());
+
             self._syncWithExtruderCount();     // set initial number of tools
             self.settings.printerProfiles.currentProfileData.subscribe(function() {
                 self._syncWithExtruderCount(); // update number of tools on changes
@@ -316,7 +319,8 @@ $(function() {
                 plugins: {
                     filamentmanager: {
                         enableOdometer: self.config_enableOdometer(),
-                        enableWarning: self.config_enableWarning()
+                        enableWarning: self.config_enableWarning(),
+                        currencySymbol: self.config_currencySymbol()
                     }
                 }
             };
@@ -336,6 +340,7 @@ $(function() {
             var pluginSettings = self.settings.settings.plugins.filamentmanager;
             self.config_enableOdometer(pluginSettings.enableOdometer());
             self.config_enableWarning(pluginSettings.enableWarning());
+            self.config_currencySymbol(pluginSettings.currencySymbol());
         }
 
         self.showSettingsDialog = function() {

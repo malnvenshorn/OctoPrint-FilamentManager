@@ -51,7 +51,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             _db_version=1,
             selectedSpools=dict(),
             enableOdometer=True,
-            enableWarning=True
+            enableWarning=True,
+            currencySymbol="€"
         )
 
     # AssetPlugin
