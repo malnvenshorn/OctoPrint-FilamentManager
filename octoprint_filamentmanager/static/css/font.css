@@ -1,0 +1,18 @@
+@font-face {
+  font-family: 'icomoon';
+  src:  url('../fonts/icomoon.eot?2tngg');
+  src:  url('../fonts/icomoon.eot?2tngg#iefix') format('embedded-opentype'),
+    url('../fonts/icomoon.ttf?2tngg') format('truetype'),
+    url('../fonts/icomoon.woff?2tngg') format('woff'),
+    url('../fonts/icomoon.svg?2tngg#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.fa-reel {
+  font-family: icomoon;
+}
+
+.fa-reel:before {
+  content: "\e900";
+}

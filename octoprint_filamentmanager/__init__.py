@@ -58,7 +58,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def get_assets(self):
         return dict(
-            css=["css/filamentmanager.css"],
+            css=["css/filamentmanager.css", "css/font.css"],
             js=["js/filamentmanager.js", "js/filamentadvanced.js"]
         )
 
@@ -69,7 +69,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             dict(type="settings", template="filamentmanager_settings.jinja2"),
             dict(type="generic", template="filamentmanager_profiledialog.jinja2"),
             dict(type="generic", template="filamentmanager_spooldialog.jinja2"),
-            dict(type="sidebar", icon="tint", template="filamentmanager_sidebar.jinja2")
+            dict(type="sidebar", icon="reel", template="filamentmanager_sidebar.jinja2")
         ]
 
     # BlueprintPlugin
