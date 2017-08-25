@@ -223,6 +223,8 @@ $(function() {
         self.onStartup = function() {
             self.profileDialog = $("#settings_plugin_filamentmanager_profiledialog");
             self.spoolDialog = $("#settings_plugin_filamentmanager_spooldialog");
+
+            $("#sidebar_plugin_filamentmanager_wrapper").insertAfter("#state_wrapper");
         };
 
         self.onBeforeBinding = function() {
@@ -526,6 +528,7 @@ $(function() {
         dependencies: ["settingsViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
-                   "#settings_plugin_filamentmanager_spooldialog"]
+                   "#settings_plugin_filamentmanager_spooldialog",
+                   "#sidebar_plugin_filamentmanager"]
     });
 });

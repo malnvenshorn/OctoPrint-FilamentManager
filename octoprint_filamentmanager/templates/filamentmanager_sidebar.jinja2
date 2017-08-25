@@ -1,0 +1,8 @@
+<!-- ko foreach: tools -->
+<div class="control-group">
+   <div class="controls form-inline">
+       <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>&nbsp;
+       <select data-bind="options: $root.spools.items, optionsText: function(item) { return item.name + ' ' + (item.weight - item.used).toFixed(0) + 'g - ' + item.profile.material + ' (' + item.profile.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.settings.settings.plugins.filamentmanager.selectedSpools['tool'+($index())]"></select>
+   </div>
+</div>
+<!-- /ko -->

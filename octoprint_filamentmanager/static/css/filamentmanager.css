@@ -69,3 +69,7 @@ table td.settings_plugin_filamentmanager_spools_action a {
 .settings_plugin_filamentmanager_profiledialog_select button.btn-small {
     margin-bottom: 10px;
 }
+
+#sidebar_plugin_filamentmanager .accordion-inner {
+    padding-bottom: 0px;
+}
