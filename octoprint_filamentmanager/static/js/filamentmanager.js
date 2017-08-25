@@ -162,6 +162,9 @@ $(function() {
 
         self.settings = parameters[0];
 
+        self.config_enableOdometer = ko.observable();
+        self.config_enableWarning = ko.observable();
+
         self.requestInProgress = ko.observable(false);
 
         self.profiles = ko.observableArray([]);
@@ -224,6 +227,7 @@ $(function() {
         self.onStartup = function() {
             self.profileDialog = $("#settings_plugin_filamentmanager_profiledialog");
             self.spoolDialog = $("#settings_plugin_filamentmanager_spooldialog");
+            self.configurationDialog = $("#settings_plugin_filamentmanager_configurationdialog");
 
             $("#sidebar_plugin_filamentmanager_wrapper").insertAfter("#state_wrapper");
         };
@@ -302,6 +306,41 @@ $(function() {
                 }
             }
             self.selectedSpools(list);
+        };
+
+        self.savePluginSettings = function(viewModel, event) {
+            var target = $(event.target);
+            target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+
+            var data = {
+                plugins: {
+                    filamentmanager: {
+                        enableOdometer: self.config_enableOdometer(),
+                        enableWarning: self.config_enableWarning()
+                    }
+                }
+            };
+            self.settings.saveData(data, {
+                success: function() {
+                    self.configurationDialog.modal("hide");
+                    self._copyConfig();
+                },
+                complete: function() {
+                    $("i.fa-spinner", target).remove();
+                },
+                sending: true
+            });
+        };
+
+        self._copyConfig = function() {
+            var pluginSettings = self.settings.settings.plugins.filamentmanager;
+            self.config_enableOdometer(pluginSettings.enableOdometer());
+            self.config_enableWarning(pluginSettings.enableWarning());
+        }
+
+        self.showSettingsDialog = function() {
+            self._copyConfig();
+            self.configurationDialog.modal("show");
         };
 
         self.showProfilesDialog = function() {
@@ -545,6 +584,7 @@ $(function() {
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog",
+                   "#settings_plugin_filamentmanager_configurationdialog",
                    "#sidebar_plugin_filamentmanager"]
     });
 });

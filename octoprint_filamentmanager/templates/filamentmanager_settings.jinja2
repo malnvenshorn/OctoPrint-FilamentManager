@@ -1,6 +1,12 @@
 <form class="form-horizontal">
 
+    <div class="pull-right">
+        <button class="btn btn-small" title="{{ _('Plugin Configuration') }}" data-bind="click: function() { showSettingsDialog(); }"><span class="icon-wrench"></span></button>
+    </div>
+
     <h3>{{ _("Selected Spools") }}</h3>
+
+
 
     <!-- ko foreach: tools -->
     <div class="control-group">
@@ -11,21 +17,6 @@
     </div>
     <!-- /ko -->
 
-    <div class="control-group">
-       <div class="controls">
-           <label class="checkbox">
-               <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableOdometer">{{ _("Enable filament odometer") }}
-           </label>
-       </div>
-   </div>
-
-   <div class="control-group">
-      <div class="controls">
-          <label class="checkbox">
-              <input type="checkbox" data-bind="checked: $root.settings.settings.plugins.filamentmanager.enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
-          </label>
-      </div>
-    </div>
 
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 

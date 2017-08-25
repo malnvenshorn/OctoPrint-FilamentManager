@@ -69,6 +69,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             dict(type="settings", template="filamentmanager_settings.jinja2"),
             dict(type="generic", template="filamentmanager_profiledialog.jinja2"),
             dict(type="generic", template="filamentmanager_spooldialog.jinja2"),
+            dict(type="generic", template="filamentmanager_configurationdialog.jinja2"),
             dict(type="sidebar", icon="reel", template="filamentmanager_sidebar.jinja2")
         ]
 
