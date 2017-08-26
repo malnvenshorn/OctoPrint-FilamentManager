@@ -7,9 +7,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint-FilamentManager 0.1.0\n"
+"Project-Id-Version: OctoPrint-FilamentManager 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-08-21 16:32+0200\n"
+"POT-Creation-Date: 2017-08-27 00:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,34 +28,62 @@ msgstr ""
 msgid "Filament warning"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:376
-#: octoprint_filamentmanager/static/js/filamentmanager.js:400
-#: octoprint_filamentmanager/static/js/filamentmanager.js:423
-#: octoprint_filamentmanager/static/js/filamentmanager.js:461
-#: octoprint_filamentmanager/static/js/filamentmanager.js:486
-#: octoprint_filamentmanager/static/js/filamentmanager.js:509
+#: octoprint_filamentmanager/static/js/filamentmanager.js:447
+#: octoprint_filamentmanager/static/js/filamentmanager.js:471
+#: octoprint_filamentmanager/static/js/filamentmanager.js:494
+#: octoprint_filamentmanager/static/js/filamentmanager.js:532
+#: octoprint_filamentmanager/static/js/filamentmanager.js:557
+#: octoprint_filamentmanager/static/js/filamentmanager.js:580
 msgid "There was an unexpected database error, please consult the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:377
-#: octoprint_filamentmanager/static/js/filamentmanager.js:401
-#: octoprint_filamentmanager/static/js/filamentmanager.js:424
-#: octoprint_filamentmanager/static/js/filamentmanager.js:462
-#: octoprint_filamentmanager/static/js/filamentmanager.js:487
-#: octoprint_filamentmanager/static/js/filamentmanager.js:510
+#: octoprint_filamentmanager/static/js/filamentmanager.js:448
+#: octoprint_filamentmanager/static/js/filamentmanager.js:472
+#: octoprint_filamentmanager/static/js/filamentmanager.js:495
+#: octoprint_filamentmanager/static/js/filamentmanager.js:533
+#: octoprint_filamentmanager/static/js/filamentmanager.js:558
+#: octoprint_filamentmanager/static/js/filamentmanager.js:581
 msgid "Saving failed"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:431
+#: octoprint_filamentmanager/static/js/filamentmanager.js:502
 #, python-format
 msgid ""
 "You are about to delete the filament profile \"%(name)s\". Please notice "
 "that it is not possible to delete profiles with associated spools."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:517
+#: octoprint_filamentmanager/static/js/filamentmanager.js:588
 #, python-format
 msgid "You are about to delete the filament spool \"%(name)s\"."
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:5
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:4
+msgid "Plugin Configuration"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:17
+msgid "Enable filament odometer"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:27
+msgid "Warn if print job exceeds remaining filament"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:35
+msgid "Currency symbol"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:45
+#: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:75
+msgid "Cancel"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_configurationdialog.jinja2:46
+#: octoprint_filamentmanager/templates/filamentmanager_profiledialog.jinja2:16
+#: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:76
+msgid "Save"
 msgstr ""
 
 #: octoprint_filamentmanager/templates/filamentmanager_profiledialog.jinja2:5
@@ -78,13 +106,8 @@ msgstr ""
 msgid "Save profile"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_profiledialog.jinja2:16
-#: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:76
-msgid "Save"
-msgstr ""
-
 #: octoprint_filamentmanager/templates/filamentmanager_profiledialog.jinja2:26
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:61
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:38
 msgid "Vendor"
 msgstr ""
 
@@ -93,7 +116,7 @@ msgid "Vendor must be set"
 msgstr ""
 
 #: octoprint_filamentmanager/templates/filamentmanager_profiledialog.jinja2:38
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:60
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:37
 msgid "Material"
 msgstr ""
 
@@ -113,91 +136,79 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:3
-msgid "Selected Spools"
-msgstr ""
-
 #: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:7
-msgid "Tool"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:9
-msgid "--- Select Spool ---"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:17
-msgid "Enable filament odometer"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:25
-msgid "Warn if print job exceeds remaining filament"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:30
 msgid "Filament Spools"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:36
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:13
 msgid "Items per page"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:45
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:22
 msgid "Sort by"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:46
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:23
 msgid "Name (ascending)"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:47
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:24
 msgid "Material (ascending)"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:48
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:25
 msgid "Vendor (ascending)"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:49
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:26
 msgid "Remaining (descending)"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:59
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:36
 #: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:15
 msgid "Name"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:62
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:39
 #: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:50
 msgid "Weight"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:63
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:40
 #: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:62
 msgid "Remaining"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:64
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:41
 msgid "Used"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:65
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:42
 msgid "Action"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:77
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:54
 msgid "Edit Spool"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:78
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:55
 msgid "Delete Spool"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:101
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:78
 msgid "Manage Profiles"
 msgstr ""
 
-#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:102
+#: octoprint_filamentmanager/templates/filamentmanager_settings.jinja2:79
 msgid "Add Spool"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_sidebar.jinja2:4
+msgid "Tool"
+msgstr ""
+
+#: octoprint_filamentmanager/templates/filamentmanager_sidebar.jinja2:5
+msgid "--- Select Spool ---"
 msgstr ""
 
 #: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:5
@@ -214,9 +225,5 @@ msgstr ""
 
 #: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:38
 msgid "Price"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/filamentmanager_spooldialog.jinja2:75
-msgid "Cancel"
 msgstr ""
 
