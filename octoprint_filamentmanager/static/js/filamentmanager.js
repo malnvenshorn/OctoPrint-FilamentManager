@@ -409,9 +409,12 @@ $(function() {
                         var id = "tool" + i;
                         self.selectedSpoolsHelper()[i](selectedSpools[id]());
                     }
+                } else {
+                    self._updateSelectedSpoolData();
                 }
             } else {
                 self.spools.updateItems([]);
+                self._updateSelectedSpoolData();
             }
         };
 
