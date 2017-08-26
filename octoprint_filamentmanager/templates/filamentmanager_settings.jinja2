@@ -4,20 +4,6 @@
         <button class="btn btn-small" title="{{ _('Plugin Configuration') }}" data-bind="click: function() { showSettingsDialog(); }"><span class="icon-wrench"></span></button>
     </div>
 
-    <h3>{{ _("Selected Spools") }}</h3>
-
-
-
-    <!-- ko foreach: tools -->
-    <div class="control-group">
-        <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>
-        <div class="controls">
-            <select data-bind="options: $root.spools.items, optionsText: function(item) { return item.name + ' ' + (item.weight - item.used).toFixed(0) + 'g - ' + item.profile.material + ' (' + item.profile.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.selectedSpoolsHelper()[$index()]"></select>
-        </div>
-    </div>
-    <!-- /ko -->
-
-
     <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
 
     <div class="settings_plugin_filamentmanager_spools_header">
