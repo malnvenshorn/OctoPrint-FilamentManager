@@ -252,14 +252,6 @@ $(function() {
             self.requestData("spools");
         };
 
-        self.onSettingsBeforeSave = function() {
-            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-            for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
-                var id = "tool" + i;
-                selectedSpools[id] = self.selectedSpoolsHelper()[i];
-            }
-        };
-
         self.spoolSubscriptions = [];
 
         /*
@@ -309,8 +301,18 @@ $(function() {
                     });
                     list.push(data);
                 }
+                self._saveSelectedSpools();
             }
             self.selectedSpools(list);
+        };
+
+        self._saveSelectedSpools = function() {
+            var data = { plugins: { filamentmanager: { selectedSpools: {} } } };
+            for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
+                var id = "tool" + i;
+                data["plugins"]["filamentmanager"]["selectedSpools"][id] = self.selectedSpoolsHelper()[i]();
+            }
+            self.settings.saveData(data, {sending: true});
         };
 
         self.savePluginSettings = function(viewModel, event) {
