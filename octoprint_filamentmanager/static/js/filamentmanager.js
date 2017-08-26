@@ -205,7 +205,7 @@ $(function() {
                     return 0;
                 }
             },
-            {}, "name", [], [], 5
+            {}, "name", [], [], 10
         );
 
         self.pageSize = ko.pureComputed({
@@ -281,7 +281,8 @@ $(function() {
                 if (i >= self.tools().length) {
                     // subscribe if number of tools has increased
                     self.selectedSpoolsHelper()[i] = ko.observable();
-                    self.spoolSubscriptions.push(self.selectedSpoolsHelper()[i].subscribe(self._updateSelectedSpoolData));
+                    self.spoolSubscriptions.push(
+                        self.selectedSpoolsHelper()[i].subscribe(self._updateSelectedSpoolData));
                 }
             }
 
