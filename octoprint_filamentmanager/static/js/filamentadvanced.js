@@ -31,29 +31,20 @@ $(function() {
                 if (item.nodeType === Node.COMMENT_NODE) {
                     if (item.nodeValue === " ko foreach: filament ") {
                         item.nodeValue = " ko foreach: [] ";
-                        return false; // break loop
+                        $("<!-- ko foreach: filamentWithWeight -->" +
+                                      "<span data-bind=\"text: 'Filament (' + name() + '): ', " +
+                                      "title: 'Filament usage for ' + name()\"></span>" +
+                                      "<strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>" +
+                                      "<!-- /ko -->").insertBefore(item);
+                        return false; // exit loop
                     }
                 }
             });
-
-            var element = $("#state").find(".accordion-inner br:nth-of-type(3)");
-            if (element.length) {
-                element.after("<!-- ko foreach: filamentWithWeight -->" +
-                              "<span data-bind=\"text: 'Filament (' + name() + '): ', " +
-                              "title: 'Filament usage for ' + name()\"></span>" +
-                              "<strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>" +
-                              "<!-- /ko -->");
-            }
         };
 
         self.onBeforeBinding = function() {
-            self.printerState.filament.subscribe(function() {
-                self._processData();
-            });
-
-            self.filamentManager.selectedSpools.subscribe(function() {
-                self._processData();
-            });
+            self.printerState.filament.subscribe(self._processData);
+            self.filamentManager.selectedSpools.subscribe(self._processData);
         }
 
         self._processData = function() {
