@@ -61,7 +61,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_assets(self):
         return dict(
             css=["css/filamentmanager.css", "css/font.css"],
-            js=["js/filamentmanager.js", "js/filamentadvanced.js"]
+            js=["js/filamentmanager.js", "js/sidebar.js"]
         )
 
     # TemplatePlugin

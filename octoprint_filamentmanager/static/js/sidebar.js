@@ -5,7 +5,7 @@
  * License: AGPLv3
  */
 $(function() {
-    function FilamentWarningViewModel(parameters) {
+    function FilamentSidebarViewModel(parameters) {
         var self = this;
 
         self.filamentManager = parameters[0];
@@ -32,10 +32,10 @@ $(function() {
                     if (item.nodeValue === " ko foreach: filament ") {
                         item.nodeValue = " ko foreach: [] ";
                         $("<!-- ko foreach: filamentWithWeight -->" +
-                                      "<span data-bind=\"text: 'Filament (' + name() + '): ', " +
-                                      "title: 'Filament usage for ' + name()\"></span>" +
-                                      "<strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>" +
-                                      "<!-- /ko -->").insertBefore(item);
+                          "<span data-bind=\"text: 'Filament (' + name() + '): ', " +
+                          "title: 'Filament usage for ' + name()\"></span>" +
+                          "<strong data-bind=\"text: $root.formatFilamentWithWeight(data())\"></strong><br>" +
+                          "<!-- /ko -->").insertBefore(item);
                         return false; // exit loop
                     }
                 }
@@ -63,6 +63,7 @@ $(function() {
                 var length = filament[i].data().length;
                 var diameter = spoolData[i].profile.diameter;
                 var density = spoolData[i].profile.density;
+
                 var requiredFilament = self._calculateFilamentWeight(length, diameter, density);
 
                 filament[i].data().weight = requiredFilament;
@@ -101,7 +102,7 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: FilamentWarningViewModel,
+        construct: FilamentSidebarViewModel,
         dependencies: ["filamentManagerViewModel", "printerStateViewModel", "settingsViewModel"],
         elements: []
     });
