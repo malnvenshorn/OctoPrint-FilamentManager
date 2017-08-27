@@ -162,6 +162,7 @@ $(function() {
 
         self.settings = parameters[0];
         self.printerState = parameters[1];
+        self.loginState = parameters[2];
 
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
@@ -592,7 +593,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilamentManagerViewModel,
-        dependencies: ["settingsViewModel", "printerStateViewModel"],
+        dependencies: ["settingsViewModel", "printerStateViewModel", "loginStateViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog",
