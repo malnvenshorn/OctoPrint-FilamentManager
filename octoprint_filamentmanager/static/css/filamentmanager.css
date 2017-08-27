@@ -2,16 +2,6 @@
     margin-bottom: 10px;
 }
 
-.settings_plugin_filamentmanager_spools_header input[type=number]::-webkit-inner-spin-button,
-.settings_plugin_filamentmanager_spools_header input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.settings_plugin_filamentmanager_spools_header input[type=number] {
-    -moz-appearance: textfield;
-}
-
 .settings_plugin_filamentmanager_spools_header input[type=number] {
     width: 14px;
     height: 11px;
