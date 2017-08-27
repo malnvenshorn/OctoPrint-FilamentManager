@@ -49,41 +49,42 @@ $(function() {
 
         self._processData = function() {
             var filament = self.printerState.filament();
-            var spoolsData = self.filamentManager.selectedSpools();
+            var spoolData = self.filamentManager.selectedSpools();
             var fileHasChanged = (self.filename !== self.printerState.filename());
+            var warningIsShown = false;
 
-            for (var i = 0; i < filament.length && i < spoolsData.length; ++i) {
-                if (spoolsData[i] === undefined) {
+            for (var i = 0; i < filament.length && i < spoolData.length; ++i) {
+                if (spoolData[i] === undefined) {
                     // skip tools with no selected spool
                     filament[i].data().weight = 0;
                     continue;
                 }
 
                 var length = filament[i].data().length;
-                var diameter = spoolsData[i].profile.diameter;
-                var density = spoolsData[i].profile.density;
-                var needed = self._calculateFilamentWeight(length, diameter, density);
+                var diameter = spoolData[i].profile.diameter;
+                var density = spoolData[i].profile.density;
+                var requiredFilament = self._calculateFilamentWeight(length, diameter, density);
 
-                filament[i].data().weight = needed;
+                filament[i].data().weight = requiredFilament;
 
                 if (!fileHasChanged && self.previousData !== undefined
-                    && JSON.stringify(spoolsData[i]) === JSON.stringify(self.previousData[i])) {
+                    && JSON.stringify(spoolData[i]) === JSON.stringify(self.previousData[i])) {
                     // skip check if file and data hasn't changed, this prevents warning message spamming
                     continue;
                 }
 
                 if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
-                    var remaining = spoolsData[i].weight - spoolsData[i].used;
+                    var remainingFilament = spoolData[i].weight - spoolData[i].used;
 
-                    if (needed > remaining) {
+                    if (requiredFilament > remainingFilament && !warningIsShown) {
                         self._showWarning();
-                        break;
+                        warningIsShown = true;
                     }
                 }
             }
 
             self.filename = self.printerState.filename();
-            self.previousData = spoolsData;
+            self.previousData = spoolData;
             self.printerState.filamentWithWeight(filament);;
         };
 
