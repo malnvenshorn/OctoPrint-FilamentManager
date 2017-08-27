@@ -88,8 +88,8 @@ $(function() {
         };
 
         self._showWarning = function() {
-            var text = gettext("The current print job needs more material than whats remaining on the selected spool.");
-            new PNotify({title: gettext("Filament warning"), text: text, type: "warning", hide: false});
+            var text = gettext("The current print job needs more material than what's remaining on the selected spool.");
+            new PNotify({title: gettext("Insufficient filament"), text: text, type: "warning", hide: false});
         };
 
         self._calculateFilamentWeight = function(length, diameter, density) {

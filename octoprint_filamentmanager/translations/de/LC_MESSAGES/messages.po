@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint-FilamentManager 0.1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-08-27 00:06+0200\n"
-"PO-Revision-Date: 2017-08-27 00:08+0200\n"
+"POT-Creation-Date: 2017-08-27 21:19+0200\n"
+"PO-Revision-Date: 2017-08-27 21:22+0200\n"
 "Last-Translator: Sven Lohrmann <malnvenshorn@gmail.com>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
@@ -20,27 +20,17 @@ msgstr ""
 "Generated-By: Babel 2.4.0\n"
 "X-Generator: Poedit 2.0.3\n"
 
-#: octoprint_filamentmanager/static/js/filamentadvanced.js:100
+#: octoprint_filamentmanager/static/js/filamentadvanced.js:91
 msgid ""
-"The current print job needs more material than whats remaining on the selected "
+"The current print job needs more material than what's remaining on the selected "
 "spool."
 msgstr ""
-"Der aktuelle Druckauftrag benötigt mehr Material als auf der zugewiesenen Spule "
+"Der aktuelle Druckauftrag benötigt mehr Material als auf der ausgewählten Spule "
 "vorhanden ist."
 
-#: octoprint_filamentmanager/static/js/filamentadvanced.js:101
-msgid "Filament warning"
-msgstr "Filament-Warnung"
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:447
-#: octoprint_filamentmanager/static/js/filamentmanager.js:471
-#: octoprint_filamentmanager/static/js/filamentmanager.js:494
-#: octoprint_filamentmanager/static/js/filamentmanager.js:532
-#: octoprint_filamentmanager/static/js/filamentmanager.js:557
-#: octoprint_filamentmanager/static/js/filamentmanager.js:580
-msgid "There was an unexpected database error, please consult the logs."
-msgstr ""
-"Ein unerwarteter Datenbankfehler ist aufgetreten, bitte konsultiere die Logs."
+#: octoprint_filamentmanager/static/js/filamentadvanced.js:92
+msgid "Insufficient filament"
+msgstr "Filament nicht ausreichend"
 
 #: octoprint_filamentmanager/static/js/filamentmanager.js:448
 #: octoprint_filamentmanager/static/js/filamentmanager.js:472
@@ -48,10 +38,20 @@ msgstr ""
 #: octoprint_filamentmanager/static/js/filamentmanager.js:533
 #: octoprint_filamentmanager/static/js/filamentmanager.js:558
 #: octoprint_filamentmanager/static/js/filamentmanager.js:581
+msgid "There was an unexpected database error, please consult the logs."
+msgstr ""
+"Ein unerwarteter Datenbankfehler ist aufgetreten, bitte konsultiere die Logs."
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:449
+#: octoprint_filamentmanager/static/js/filamentmanager.js:473
+#: octoprint_filamentmanager/static/js/filamentmanager.js:496
+#: octoprint_filamentmanager/static/js/filamentmanager.js:534
+#: octoprint_filamentmanager/static/js/filamentmanager.js:559
+#: octoprint_filamentmanager/static/js/filamentmanager.js:582
 msgid "Saving failed"
 msgstr "Speichern fehlgeschlagen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:502
+#: octoprint_filamentmanager/static/js/filamentmanager.js:503
 #, python-format
 msgid ""
 "You are about to delete the filament profile \"%(name)s\". Please notice that it "
@@ -60,7 +60,7 @@ msgstr ""
 "Du bist dabei das Filament-Profil \"%(name)s\" zu löschen. Bitte beachte, dass "
 "es nicht möglich ist Profile zu löschen die Spulen zugewiesen wurden."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:588
+#: octoprint_filamentmanager/static/js/filamentmanager.js:589
 #, python-format
 msgid "You are about to delete the filament spool \"%(name)s\"."
 msgstr "Du bist dabei die Filament-Spule \"%(name)s\" zu löschen."
@@ -239,3 +239,6 @@ msgstr "Preis"
 
 #~ msgid "Selected Spools"
 #~ msgstr "Ausgewählte Spulen"
+
+#~ msgid "Filament warning"
+#~ msgstr "Filament-Warnung"
