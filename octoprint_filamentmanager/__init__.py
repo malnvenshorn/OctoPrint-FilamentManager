@@ -28,7 +28,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def __init__(self):
         self.filamentManager = None
-        self.filamentOdometer = FilamentOdometer()
+        self.filamentOdometer = None
         self.odometerEnabled = False
 
     # StartupPlugin
@@ -38,6 +38,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentManager = FilamentManager(db_path, self._logger)
         self.filamentManager.init_database()
         self.migrate_db_scheme()
+        self.filamentOdometer = FilamentOdometer(self._logger)
 
     def migrate_db_scheme(self):
         current_version = self._settings.get(["_db_version"])

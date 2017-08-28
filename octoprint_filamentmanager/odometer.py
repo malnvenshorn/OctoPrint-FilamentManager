@@ -11,7 +11,8 @@ class FilamentOdometer(object):
     regexE = re.compile(r'.*E(-?\d+(\.\d+)?)')
     regexT = re.compile(r'^T(\d+)')
 
-    def __init__(self):
+    def __init__(self, logger):
+        self._logger = logger
         self.reset()
 
     def reset(self):
@@ -50,9 +51,9 @@ class FilamentOdometer(object):
             if e is not None:
                 self.lastExtrusion[self.currentTool] = e
         elif gcode == "M82":  # set extruder to absolute mode
-            relativeExtrusion = False
+            self.relativeExtrusion = False
         elif gcode == "M83":  # set extruder to relative mode
-            relativeExtrusion = True
+            self.relativeExtrusion = True
         elif gcode.startswith("T"):  # select tool
             t = self._get_int(cmd, self.regexT)
             if t is not None:
