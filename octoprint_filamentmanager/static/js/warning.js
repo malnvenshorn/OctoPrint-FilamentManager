@@ -5,7 +5,7 @@
  * License: AGPLv3
  */
 $(function() {
-    function FilamentSidebarViewModel(parameters) {
+    function FilamentWarningViewModel(parameters) {
         var self = this;
 
         self.filamentManager = parameters[0];
@@ -102,7 +102,7 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: FilamentSidebarViewModel,
+        construct: FilamentWarningViewModel,
         dependencies: ["filamentManagerViewModel", "printerStateViewModel", "settingsViewModel"],
         elements: []
     });
