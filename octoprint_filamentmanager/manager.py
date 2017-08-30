@@ -126,11 +126,20 @@ class FilamentManager(object):
 
     # spools
 
+    def _resolve_foreign_keys_for_spool(self, spool):
+        # TODO resolve foreign keys, is there a better way to do this?
+        profile = self.get_profile(spool["profile_id"])[0]
+        del spool["profile_id"]
+        spool["profile"] = profile
+        return spool
+
     def get_all_spools(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM spools ORDER BY name COLLATE NOCASE")
-                return self._cursor_to_dict(cursor)
+                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used FROM spools
+                                        ORDER BY name COLLATE NOCASE """)
+                result = self._cursor_to_dict(cursor)
+            return [self._resolve_foreign_keys_for_spool(row) for row in result]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -138,7 +147,7 @@ class FilamentManager(object):
     def get_spools_modifications(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM modifications WHERE table_name = 'spools'")
+                cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'spools'")
                 return self._cursor_to_dict(cursor)
         except sqlite3.Error as error:
             self._log_error(error)
@@ -147,8 +156,10 @@ class FilamentManager(object):
     def get_spool(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM spools WHERE id = ?", (identifier,))
-                return self._cursor_to_dict(cursor)
+                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used FROM spools
+                                        WHERE id = ? """, (identifier,))
+                result = self._cursor_to_dict(cursor)
+            return [self._resolve_foreign_keys_for_spool(row) for row in result]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -157,7 +168,7 @@ class FilamentManager(object):
         try:
             with self._db_lock, self._db as db:
                 sql = "INSERT INTO spools (name, profile_id, cost, weight, used) VALUES (?, ?, ?, ?, ?)"
-                cursor = db.execute(sql, (data.get("name", ""), data.get("profile_id", 0), data.get("cost", 0),
+                cursor = db.execute(sql, (data.get("name", ""), data["profile"].get("id", 0), data.get("cost", 0),
                                     data.get("weight", 0), data.get("used", 0)))
                 data["id"] = cursor.lastrowid
                 return data
@@ -169,7 +180,7 @@ class FilamentManager(object):
         try:
             with self._db_lock, self._db as db:
                 sql = "UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ? WHERE id = ?"
-                db.execute(sql, (data.get("name"), data.get("profile_id"), data.get("cost"),
+                db.execute(sql, (data.get("name"), data["profile"].get("id"), data.get("cost"),
                                  data.get("weight"), data.get("used"), identifier))
                 return data
         except sqlite3.Error as error:
@@ -190,9 +201,6 @@ class FilamentManager(object):
     def _resolve_foreign_keys_for_selection(self, selection):
         # TODO resolve foreign keys, is there a better way to do this?
         spool = self.get_spool(selection["spool_id"])[0]
-        profile = self.get_profile(spool["profile_id"])[0]
-        del spool["profile_id"]
-        spool["profile"] = profile
         del selection["spool_id"]
         selection["spool"] = spool
         return selection

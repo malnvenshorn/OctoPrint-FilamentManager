@@ -225,9 +225,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         new_spool = json_data["spool"]
 
-        for key in ["name", "profile_id", "cost", "weight", "used"]:
+        for key in ["name", "profile", "cost", "weight", "used"]:
             if key not in new_spool:
                 return make_response("Spool does not contain mandatory '{}' field".format(key), 400)
+
+        if "id" not in new_spool.get("profile", {}):
+            return make_response("Spool does not contain mandatory 'id (profile)' field", 400)
 
         saved_spool = self.filamentManager.create_spool(new_spool)
 

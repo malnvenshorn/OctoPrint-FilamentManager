@@ -20,10 +20,12 @@ $(function() {
         return {
             id: 0,
             name: "",
-            profile_id: 0,
             cost: 20,
             weight: 1000,
-            used: 0
+            used: 0,
+            profile: {
+                id: 0
+            }
         };
     };
 
@@ -128,14 +130,14 @@ $(function() {
                 data = cleanSpool();
                 if (self.profiles().length > 0) {
                     // automatically select first profile in list
-                    data.profile_id = self.profiles()[0].id;
+                    data.profile.id = self.profiles()[0].id;
                 }
             }
 
             // populate data
             self.id(data.id);
             self.name(data.name);
-            self.selectedProfile(data.profile_id);
+            self.selectedProfile(data.profile.id);
             self.totalWeight(data.weight);
             self.cost(data.cost);
             self.remaining(data.weight - data.used);
@@ -149,10 +151,12 @@ $(function() {
             return {
                 id: self.id(),
                 name: self.name(),
-                profile_id: self.selectedProfile(),
                 cost: validFloat(self.cost(), defaultSpool.cost),
                 weight: weight,
-                used: weight - remaining
+                used: weight - remaining,
+                profile: {
+                    id: self.selectedProfile()
+                }
             };
         };
     }
@@ -171,8 +175,6 @@ $(function() {
         self.requestInProgress = ko.observable(false);
 
         self.profiles = ko.observableArray([]);
-        self.spoolsRaw = ko.observableArray([]);
-
         self.spools = new ItemListHelper(
             "filamentSpools",
             {
@@ -209,6 +211,7 @@ $(function() {
             },
             {}, "name", [], [], 10
         );
+        self.selectedSpools = ko.observableArray([]);
 
         self.pageSize = ko.pureComputed({
             read : function(){
@@ -218,10 +221,6 @@ $(function() {
                 self.spools.pageSize(parseInt(value));
             }
         });
-
-        self.selectedSpools = ko.observableArray([]);
-
-
 
         self.profileEditor = new ProfileEditorViewModel(self.profiles);
         self.spoolEditor = new SpoolEditorViewModel(self.profiles);
@@ -235,8 +234,7 @@ $(function() {
         };
 
         self.onBeforeBinding = function() {
-            self.config_currencySymbol(self.settings.settings.plugins.filamentmanager.currencySymbol());
-
+            self._copyConfig();
             self.onExtruderCountChange();     // set initial number of tools
             self.settings.printerProfiles.currentProfileData.subscribe(function() {
                 self.onExtruderCountChange(); // update number of tools on changes
@@ -244,16 +242,17 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
-            self.requestData("profiles");
-            self.requestData("spools");
+            self.requestProfiles();
+            self.requestSpools();
+            self.requestSelectedSpools();
         };
 
         self.onEventPrinterStateChanged = function() {
             self.requestData("spools");
         };
 
-        //************************************************************************************************************
-        // spool selection (updating on change)
+        //*************************************************************
+        // spool selection
 
         self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
         self.spoolSubscriptions = [];                       // subscription objects from the helper
@@ -327,7 +326,25 @@ $(function() {
             self.selectedSpools.valueHasMutated(); // notifies observers
         };
 
-        //************************************************************************************************************
+        self.requestSelectedSpools = function() {
+            $.ajax({
+                url: "plugin/filamentmanager/selections",
+                type: "GET",
+                dataType: "json",
+            })
+            .done(function(data) {
+                self._updateSelectedSpoolData(data);
+            })
+            .fail(function() {
+                var text = gettext("There was an unexpected database error, please consult the logs.");
+                new PNotify({title: gettext("Failed to query selected spools"), text: text, type: "error", hide: false});
+            })
+            .always(function() {
+                self.requestInProgress(false);
+            });
+        };
+
+        //************************************************************
         // plugin settings
 
         self.showSettingsDialog = function() {
@@ -368,80 +385,30 @@ $(function() {
             self.config_currencySymbol(pluginSettings.currencySymbol());
         };
 
-        //************************************************************************************************************
+        //************************************************************
+        // profiles
 
-        self.showProfilesDialog = function() {
-            self.profileDialog.modal("show");
-        };
-
-        self.showSpoolDialog = function(data) {
-            self.spoolEditor.fromSpoolData(data);
-            self.spoolDialog.modal("show");
-        };
-
-        self.hideSpoolDialog = function() {
-            self.spoolDialog.modal("hide");
-        };
-
-        self.requestData = function(data) {
+        self.requestProfiles = function() {
             self.requestInProgress(true);
             $.ajax({
-                url: "plugin/filamentmanager/" + data,
+                url: "plugin/filamentmanager/profiles",
                 type: "GET",
                 dataType: "json",
             })
             .done(function(data) {
-                self.fromResponse(data);
+                self.profiles(data.profiles);
+            })
+            .fail(function() {
+                var text = gettext("There was an unexpected database error, please consult the logs.");
+                new PNotify({title: gettext("Failed to query profiles"), text: text, type: "error", hide: false});
             })
             .always(function() {
                 self.requestInProgress(false);
             });
         };
 
-        self.fromResponse = function(data) {
-            if (data.hasOwnProperty("profiles")) self.profiles(data.profiles);
-            else if (data.hasOwnProperty("spools")) {
-                self.spoolsRaw(data.spools);
-                self.requestData("selections");
-            }
-            else if (data.hasOwnProperty("selections")) {
-                self._updateSelectedSpoolData(data);
-            }
-            else return;
-
-            // spool list has to be updated in either case (if we have received the dataset)
-            if (self.profiles().length > 0 && self.spoolsRaw().length > 0) {
-                var rows = ko.utils.arrayMap(self.spoolsRaw(), function (spool) {
-                    var profile = ko.utils.arrayFirst(self.profiles(), function(item) {
-                        return item.id == spool.profile_id;
-                    });
-
-                    // need to create a new dictionary, otherwise the ui doesn't get updated properly on changes,
-                    // because knockout observable array doesn't observe properties of items
-                    return { id: spool.id,
-                             name: spool.name,
-                             cost: spool.cost,
-                             weight: spool.weight,
-                             used: spool.used,
-                             profile_id: spool.profile_id,
-                             profile: profile };
-
-                });
-                self.spools.updateItems(rows);
-                // if (self.selectedSpools().length == 0) {
-                //     // load selected spools from settings, after we have received the initial dataset
-                //     var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-                //     for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
-                //         var id = "tool" + i;
-                //         self.selectedSpoolsHelper()[i](selectedSpools[id]());
-                //     }
-                // } else {
-                //     self._updateSelectedSpoolData();
-                // }
-            } else {
-                self.spools.updateItems([]);
-                // self._updateSelectedSpoolData();
-            }
+        self.showProfilesDialog = function() {
+            self.profileDialog.modal("show");
         };
 
         self.saveProfile = function(data) {
@@ -465,7 +432,7 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("profiles");
+                self.requestProfiles();
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -489,7 +456,9 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("profiles")
+                self.requestProfiles();
+                self.requestSpools();
+                self.requestSelectedSpools();
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -512,7 +481,7 @@ $(function() {
                     type: "DELETE"
                 })
                 .done(function() {
-                    self.requestData("profiles");
+                    self.requestProfiles();
                 })
                 .fail(function() {
                     var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -526,6 +495,37 @@ $(function() {
             var text = gettext("You are about to delete the filament profile \"%(name)s\"." //\
                                + " Please notice that it is not possible to delete profiles with associated spools.");
             showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
+        };
+
+        //************************************************************
+        // spools
+
+        self.requestSpools = function() {
+            self.requestInProgress(true);
+            $.ajax({
+                url: "plugin/filamentmanager/spools",
+                type: "GET",
+                dataType: "json",
+            })
+            .done(function(data) {
+                self.spools.updateItems(data.spools);
+            })
+            .fail(function() {
+                var text = gettext("There was an unexpected database error, please consult the logs.");
+                new PNotify({title: gettext("Failed to query spools"), text: text, type: "error", hide: false});
+            })
+            .always(function() {
+                self.requestInProgress(false);
+            });
+        };
+
+        self.showSpoolDialog = function(data) {
+            self.spoolEditor.fromSpoolData(data);
+            self.spoolDialog.modal("show");
+        };
+
+        self.hideSpoolDialog = function() {
+            self.spoolDialog.modal("hide");
         };
 
         self.saveSpool = function(data) {
@@ -549,7 +549,7 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("spools");
+                self.requestSpools();
                 self.hideSpoolDialog();
             })
             .fail(function() {
@@ -574,7 +574,8 @@ $(function() {
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function() {
-                self.requestData("spools");
+                self.requestSpools();
+                self.requestSelectedSpools();
                 self.hideSpoolDialog();
             })
             .fail(function() {
@@ -598,7 +599,7 @@ $(function() {
                     type: "DELETE"
                 })
                 .done(function() {
-                    self.requestData("spools")
+                    self.requestSpools();
                 })
                 .fail(function() {
                     var text = gettext("There was an unexpected database error, please consult the logs.");
