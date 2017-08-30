@@ -347,20 +347,15 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         extrusion = self.filamentOdometer.get_values()
         numTools = min(printer_profile['extruder']['count'], len(extrusion))
 
-        for i in range(0, numTools):
-            tool = self._settings.get(["selectedSpools", "tool" + str(i)])
-            if tool is not None:
-                spool_list = self.filamentManager.get_spool(tool)
-                if spool_list is not None and len(spool_list) > 0:
-                    spool = spool_list[0]
-                    profile_list = self.filamentManager.get_profile(spool['profile_id'])
-                    if profile_list is not None and len(profile_list) > 0:
-                        profile = profile_list[0]
-                        # update spool
-                        volume = self._calculate_volume(profile['diameter'], extrusion[i]) / 1000
-                        spool['used'] += volume * profile['density']
-                        self.filamentManager.update_spool(spool['id'], spool)
-                        self._logger.info("Filament used: " + str(extrusion[i]) + " mm (tool" + str(i) + ")")
+        for tool in xrange(0, numTools):
+            selection = self.filamentManager.get_selection(tool)
+            if selection is not None:
+                spool = selection[0]["spool"]
+                # update spool
+                volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
+                spool['used'] += volume * spool["profile"]['density']
+                self.filamentManager.update_spool(spool["id"], spool)
+                self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
 
     def _calculate_volume(self, diameter, length):
         radius = diameter / 2

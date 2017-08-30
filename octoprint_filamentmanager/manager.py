@@ -215,6 +215,17 @@ class FilamentManager(object):
             self._log_error(error)
             return None
 
+    def get_selection(self, identifier):
+        try:
+            with self._db_lock, self._db as db:
+                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE spool_id IS NOT NULL AND tool = ?",
+                                    (identifier,))
+                result = self._cursor_to_dict(cursor)
+            return [self._resolve_foreign_keys_for_selection(row) for row in result]
+        except sqlite3.Error as error:
+            self._log_error(error)
+            return None
+
     def update_selections(self, data):
         try:
             with self._db_lock, self._db as db:
