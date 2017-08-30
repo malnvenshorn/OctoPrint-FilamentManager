@@ -182,8 +182,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
-        mods = self.filamentManager.get_spools_modifications()
-        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        mod_spool = self.filamentManager.get_spools_modifications()
+        mod_profile = self.filamentManager.get_profiles_modifications()
+        lm = max(mod_spool[0]["changed_at"] if len(mod_spool) > 0 else 0,
+                 mod_profile[0]["changed_at"] if len(mod_profile) > 0 else 0)
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if check_lastmodified(int(lm)) and check_etag(etag):
