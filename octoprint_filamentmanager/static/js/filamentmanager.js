@@ -171,6 +171,7 @@ $(function() {
         self.settings = parameters[0];
         self.printerState = parameters[1];
         self.loginState = parameters[2];
+        self.temperature = parameters[3];
 
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
@@ -312,6 +313,7 @@ $(function() {
             })
             .done(function(data) {
                 self._updateSelectedSpoolData(data);
+                self._applyTemperatureOffsets();
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -330,6 +332,20 @@ $(function() {
             self.selectedSpools.valueHasMutated(); // notifies observers
         };
 
+        self._applyTemperatureOffsets = function() {
+            var selectedSpools = self.selectedSpools();
+            var tools = self.temperature.tools();
+            for (var i = 0; i < tools.length; ++i) {
+                var tool = tools[i];
+                var spool = selectedSpools[i];
+                self.temperature.changingOffset.item = tool;
+                self.temperature.changingOffset.name(tool.name());
+                self.temperature.changingOffset.offset(tool.offset());
+                self.temperature.changingOffset.newOffset(spool !== undefined ? spool.temp_offset : 0);
+                self.temperature.confirmChangeOffset();
+            }
+        };
+
         self.requestSelectedSpools = function() {
             $.ajax({
                 url: "plugin/filamentmanager/selections",
@@ -338,6 +354,7 @@ $(function() {
             })
             .done(function(data) {
                 self._updateSelectedSpoolData(data);
+                self._applyTemperatureOffsets();
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -621,7 +638,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilamentManagerViewModel,
-        dependencies: ["settingsViewModel", "printerStateViewModel", "loginStateViewModel"],
+        dependencies: ["settingsViewModel", "printerStateViewModel", "loginStateViewModel", "temperatureViewModel"],
         elements: ["#settings_plugin_filamentmanager",
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog",
