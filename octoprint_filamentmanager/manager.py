@@ -136,7 +136,7 @@ class FilamentManager(object):
     def get_all_spools(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used FROM spools
+                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used, temp_offset FROM spools
                                         ORDER BY name COLLATE NOCASE """)
                 result = self._cursor_to_dict(cursor)
             return [self._resolve_foreign_keys_for_spool(row) for row in result]
@@ -156,7 +156,7 @@ class FilamentManager(object):
     def get_spool(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used FROM spools
+                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used, temp_offset FROM spools
                                         WHERE id = ? """, (identifier,))
                 result = self._cursor_to_dict(cursor)
             return [self._resolve_foreign_keys_for_spool(row) for row in result]
@@ -167,9 +167,9 @@ class FilamentManager(object):
     def create_spool(self, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "INSERT INTO spools (name, profile_id, cost, weight, used) VALUES (?, ?, ?, ?, ?)"
+                sql = "INSERT INTO spools (name, profile_id, cost, weight, used, temp_offset) VALUES (?, ?, ?, ?, ?, ?)"
                 cursor = db.execute(sql, (data.get("name", ""), data["profile"].get("id", 0), data.get("cost", 0),
-                                    data.get("weight", 0), data.get("used", 0)))
+                                    data.get("weight", 0), data.get("used", 0), data.get("temp_offset", 0)))
                 data["id"] = cursor.lastrowid
                 return data
         except sqlite3.Error as error:
@@ -179,9 +179,9 @@ class FilamentManager(object):
     def update_spool(self, identifier, data):
         try:
             with self._db_lock, self._db as db:
-                sql = "UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ? WHERE id = ?"
-                db.execute(sql, (data.get("name"), data["profile"].get("id"), data.get("cost"),
-                                 data.get("weight"), data.get("used"), identifier))
+                db.execute(""" UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ?,
+                               temp_offset = ? WHERE id = ? """, (data.get("name"), data["profile"].get("id"),
+                           data.get("cost"), data.get("weight"), data.get("used"), data.get("temp_offset"), identifier))
                 return data
         except sqlite3.Error as error:
             self._log_error(error)

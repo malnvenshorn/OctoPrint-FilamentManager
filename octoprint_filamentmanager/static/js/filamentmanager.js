@@ -23,6 +23,7 @@ $(function() {
             cost: 20,
             weight: 1000,
             used: 0,
+            temp_offset: 0,
             profile: {
                 id: 0
             }
@@ -116,6 +117,7 @@ $(function() {
         self.selectedProfile = ko.observable();
         self.cost = ko.observable();
         self.totalWeight = ko.observable();
+        self.temp_offset = ko.observable();
 
         self.remaining = ko.observable();
 
@@ -141,6 +143,7 @@ $(function() {
             self.totalWeight(data.weight);
             self.cost(data.cost);
             self.remaining(data.weight - data.used);
+            self.temp_offset(data.temp_offset);
         };
 
         self.toSpoolData = function() {
@@ -154,6 +157,7 @@ $(function() {
                 cost: validFloat(self.cost(), defaultSpool.cost),
                 weight: weight,
                 used: weight - remaining,
+                temp_offset: self.temp_offset(),
                 profile: {
                     id: self.selectedProfile()
                 }
@@ -248,7 +252,7 @@ $(function() {
         };
 
         self.onEventPrinterStateChanged = function() {
-            self.requestData("spools");
+            self.requestSpools();
         };
 
         //*************************************************************

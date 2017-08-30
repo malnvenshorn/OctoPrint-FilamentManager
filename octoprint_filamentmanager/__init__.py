@@ -41,20 +41,24 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentOdometer = FilamentOdometer(self._logger)
 
     def migrate_db_scheme(self):
-        current_version = self._settings.get(["_db_version"])
-        if current_version == 1:
+        if 1 == self._settings.get(["_db_version"]):
             selections = self._settings.get(["selectedSpools"])
-            data = []
-            for key in selections:
-                data.append(dict(
-                                tool=key.replace("tool", ""),
-                                spool=dict(
-                                    id=selections[key]
-                                )
-                            ))
-            self.filamentManager.update_selections(data)
-            self._settings.set(["selectedSpools"], None)
+            if selections is not None:
+                data = []
+                for key in selections:
+                    data.append(dict(
+                                    tool=key.replace("tool", ""),
+                                    spool=dict(
+                                        id=selections[key]
+                                    )
+                                ))
+                self.filamentManager.update_selections(data)
+                self._settings.set(["selectedSpools"], None)
             self._settings.set(["_db_version"], 2)
+        if 2 == self._settings.get(["_db_version"]):
+            sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
+            self.filamentManager.execute_script(sql)
+            self._settings.set(["_db_version"], 3)
 
     # SettingsPlugin
 
@@ -227,7 +231,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         new_spool = json_data["spool"]
 
-        for key in ["name", "profile", "cost", "weight", "used"]:
+        for key in ["name", "profile", "cost", "weight", "used", "temp_offset"]:
             if key not in new_spool:
                 return make_response("Spool does not contain mandatory '{}' field".format(key), 400)
 
