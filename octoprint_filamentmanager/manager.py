@@ -34,6 +34,11 @@ class FilamentManager(object):
                     used REAL NOT NULL DEFAULT 0,
                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT);
 
+                CREATE TABLE IF NOT EXISTS selections (
+                    tool INTEGER PRIMARY KEY ON CONFLICT REPLACE,
+                    spool_id INTEGER,
+                    FOREIGN KEY (spool_id) REFERENCES spools(id) ON DELETE CASCADE);
+
                 CREATE TABLE IF NOT EXISTS modifications (
                     table_name TEXT NOT NULL PRIMARY KEY ON CONFLICT REPLACE,
                     action TEXT NOT NULL,
@@ -57,6 +62,8 @@ class FilamentManager(object):
         except sqlite3.Error as error:
             self._log_error(error)
             return False
+
+    # profiles
 
     def get_all_profiles(self):
         try:
@@ -117,6 +124,8 @@ class FilamentManager(object):
             self._log_error(error)
             return False
 
+    # spools
+
     def get_all_spools(self):
         try:
             with self._db_lock, self._db as db:
@@ -175,6 +184,41 @@ class FilamentManager(object):
         except sqlite3.Error as error:
             self._log_error(error)
             return False
+
+    # selections
+
+    def _resolve_foreign_keys_for_selection(self, selection):
+        # TODO resolve foreign keys, is there a better way to do this?
+        spool = self.get_spool(selection["spool_id"])[0]
+        profile = self.get_profile(spool["profile_id"])[0]
+        del spool["profile_id"]
+        spool["profile"] = profile
+        del selection["spool_id"]
+        selection["spool"] = spool
+        return selection
+
+    def get_all_selections(self):
+        try:
+            with self._db_lock, self._db as db:
+                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE spool_id IS NOT NULL ORDER BY tool")
+                result = self._cursor_to_dict(cursor)
+            return [self._resolve_foreign_keys_for_selection(row) for row in result]
+        except sqlite3.Error as error:
+            self._log_error(error)
+            return None
+
+    def update_selections(self, data):
+        try:
+            with self._db_lock, self._db as db:
+                for selection in data:
+                    db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
+                               (selection["tool"], selection["spool"]["id"]))
+            return self.get_all_selections()
+        except sqlite3.Error as error:
+            self._log_error(error)
+            return None
+
+    # helper
 
     def _cursor_to_dict(self, cursor):
         return [dict((cursor.description[i][0], value) for i, value in enumerate(row))

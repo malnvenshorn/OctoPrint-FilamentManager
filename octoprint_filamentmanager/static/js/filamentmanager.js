@@ -220,9 +220,8 @@ $(function() {
         });
 
         self.selectedSpools = ko.observableArray([]);
-        self.selectedSpoolsHelper = ko.observableArray([]);
 
-        self.tools = ko.observableArray([]);
+
 
         self.profileEditor = new ProfileEditorViewModel(self.profiles);
         self.spoolEditor = new SpoolEditorViewModel(self.profiles);
@@ -238,9 +237,9 @@ $(function() {
         self.onBeforeBinding = function() {
             self.config_currencySymbol(self.settings.settings.plugins.filamentmanager.currencySymbol());
 
-            self._syncWithExtruderCount();     // set initial number of tools
+            self.onExtruderCountChange();     // set initial number of tools
             self.settings.printerProfiles.currentProfileData.subscribe(function() {
-                self._syncWithExtruderCount(); // update number of tools on changes
+                self.onExtruderCountChange(); // update number of tools on changes
             });
         };
 
@@ -253,67 +252,87 @@ $(function() {
             self.requestData("spools");
         };
 
-        self.spoolSubscriptions = [];
+        //************************************************************************************************************
+        // spool selection (updating on change)
 
-        /*
-         * Sets number of tools for template generation and if neccessary adds
-         * dictionary entries in the settings to save the selected spools.
-         */
-        self._syncWithExtruderCount = function() {
+        self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
+        self.spoolSubscriptions = [];                       // subscription objects from the helper
+        self.tools = ko.observableArray([]);                // number of tools to generate select elements in template
+
+        self.onExtruderCountChange = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
             var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
 
-            var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-
-            for (var i = 0; i < numExtruders; ++i) {
-                var id = "tool" + i;
-                if (selectedSpools[id] === undefined) {
-                    // create missing observables in config, this ensures that we have at least
-                    // the same object length as selectedSpoolsHelper
-                    selectedSpools[id] = ko.observable();
-                }
-                if (i >= self.tools().length) {
-                    // subscribe if number of tools has increased
-                    self.selectedSpoolsHelper()[i] = ko.observable();
+            if (self.selectedSpoolsHelper().length < numExtruders) {
+                // number of extruders has increased
+                for (var i = self.selectedSpoolsHelper().length; i < numExtruders; ++i) {
+                    // add observables
+                    self.selectedSpools.push(undefined); // notifies observers
+                    self.selectedSpoolsHelper().push(ko.observable(undefined));
+                    // add subscription
                     self.spoolSubscriptions.push(
-                        self.selectedSpoolsHelper()[i].subscribe(self._updateSelectedSpoolData));
+                        self.selectedSpoolsHelper()[i].subscribe(self.onSelectedSpoolChange));
                 }
-            }
-
-            for (var i = numExtruders; i < self.tools().length; ++i) {
-                // unsubscribe if number of tools has decreased
-                self.spoolSubscriptions[i].dispose();
+            } else {
+                // number of extruders has decreased
+                for (var i = numExtruders; i < self.selectedSpoolsHelper().length; ++i) {
+                    // remove subscription
+                    self.spoolSubscriptions[i].dispose();
+                    self.spoolSubscriptions.pop();
+                    // remove observables
+                    self.selectedSpoolsHelper().pop();
+                    self.selectedSpools.pop(); // notifies observers
+                }
             }
 
             self.tools(new Array(numExtruders));
         };
 
-        self._updateSelectedSpoolData = function() {
-            var list = []
-            if (self.spools.items().length > 0) {
-                for (var i = 0; i < self.tools().length; ++i) {
-                    var id = self.selectedSpoolsHelper()[i]();
-                    if (id === undefined) {
-                        list.push(undefined);
-                        continue;
-                    };
-                    var data = ko.utils.arrayFirst(self.spools.items(), function(item) {
-                        return item.id == id;
-                    });
-                    list.push(data);
-                }
-                self._saveSelectedSpools();
-            }
-            self.selectedSpools(list);
+        self.onSelectedSpoolChange = function() {
+            // TODO is there a way to identify the tool which has changed?
+            // in that case we don't have to update all tools every time
+
+            var data = _.map(self.selectedSpoolsHelper(), function(element, index){
+                return {
+                    tool: index,
+                    spool: {
+                        id: element() !== undefined ? element() : null
+                    }
+                };
+            });
+
+            $.ajax({
+                url: "plugin/filamentmanager/selections",
+                type: "POST",
+                data: JSON.stringify({selections: data}),
+                contentType: "application/json; charset=UTF-8"
+            })
+            .done(function(data) {
+                self._updateSelectedSpoolData(data);
+            })
+            .fail(function() {
+                var text = gettext("There was an unexpected database error, please consult the logs.");
+                new PNotify({title: gettext("Spool selection failed"), text: text, type: "error", hide: false});
+            });
         };
 
-        self._saveSelectedSpools = function() {
-            var data = { plugins: { filamentmanager: { selectedSpools: {} } } };
-            for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
-                var id = "tool" + i;
-                data["plugins"]["filamentmanager"]["selectedSpools"][id] = self.selectedSpoolsHelper()[i]();
-            }
-            self.settings.saveData(data, {sending: true});
+        self._updateSelectedSpoolData = function(data) {
+            _.each(self.selectedSpools(), function(element, index) {
+                self.selectedSpools()[index] = undefined;
+            });
+            _.each(data["selections"], function(element, index) {
+                self.selectedSpools()[element.tool] = element.spool;
+                self.selectedSpoolsHelper()[element.tool](element.spool.id);
+            });
+            self.selectedSpools.valueHasMutated(); // notifies observers
+        };
+
+        //************************************************************************************************************
+        // plugin settings
+
+        self.showSettingsDialog = function() {
+            self._copyConfig();
+            self.configurationDialog.modal("show");
         };
 
         self.savePluginSettings = function(viewModel, event) {
@@ -329,6 +348,7 @@ $(function() {
                     }
                 }
             };
+
             self.settings.saveData(data, {
                 success: function() {
                     self.configurationDialog.modal("hide");
@@ -346,12 +366,9 @@ $(function() {
             self.config_enableOdometer(pluginSettings.enableOdometer());
             self.config_enableWarning(pluginSettings.enableWarning());
             self.config_currencySymbol(pluginSettings.currencySymbol());
-        }
-
-        self.showSettingsDialog = function() {
-            self._copyConfig();
-            self.configurationDialog.modal("show");
         };
+
+        //************************************************************************************************************
 
         self.showProfilesDialog = function() {
             self.profileDialog.modal("show");
@@ -383,7 +400,13 @@ $(function() {
 
         self.fromResponse = function(data) {
             if (data.hasOwnProperty("profiles")) self.profiles(data.profiles);
-            else if (data.hasOwnProperty("spools")) self.spoolsRaw(data.spools);
+            else if (data.hasOwnProperty("spools")) {
+                self.spoolsRaw(data.spools);
+                self.requestData("selections");
+            }
+            else if (data.hasOwnProperty("selections")) {
+                self._updateSelectedSpoolData(data);
+            }
             else return;
 
             // spool list has to be updated in either case (if we have received the dataset)
@@ -405,19 +428,19 @@ $(function() {
 
                 });
                 self.spools.updateItems(rows);
-                if (self.selectedSpools().length == 0) {
-                    // load selected spools from settings, after we have received the initial dataset
-                    var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
-                    for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
-                        var id = "tool" + i;
-                        self.selectedSpoolsHelper()[i](selectedSpools[id]());
-                    }
-                } else {
-                    self._updateSelectedSpoolData();
-                }
+                // if (self.selectedSpools().length == 0) {
+                //     // load selected spools from settings, after we have received the initial dataset
+                //     var selectedSpools = self.settings.settings.plugins.filamentmanager.selectedSpools;
+                //     for (var i = 0; i < self.selectedSpoolsHelper().length; ++i) {
+                //         var id = "tool" + i;
+                //         self.selectedSpoolsHelper()[i](selectedSpools[id]());
+                //     }
+                // } else {
+                //     self._updateSelectedSpoolData();
+                // }
             } else {
                 self.spools.updateItems([]);
-                self._updateSelectedSpoolData();
+                // self._updateSelectedSpoolData();
             }
         };
 

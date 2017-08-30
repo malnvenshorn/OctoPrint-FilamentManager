@@ -43,7 +43,17 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def migrate_db_scheme(self):
         current_version = self._settings.get(["_db_version"])
         if current_version == 1:
-            pass
+            selections = self._settings.get(["selectedSpools"])
+            for key in selections:
+                identifier = key.replace("tool", "")
+                data = dict(
+                    spool=dict(
+                        id=selections[key]
+                    )
+                )
+                self.filamentManager.update_selection(identifier, data)
+                self._settings.set(["selectedSpools", key], None)
+            # self._settings.set(["_db_version"], 2)
 
     # SettingsPlugin
 
@@ -260,6 +270,51 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         noerror = self.filamentManager.delete_spool(identifier)
         if noerror:
             return make_response("", 204)
+        else:
+            return make_response("Database error", 500)
+
+    @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
+    def get_selections_list(self):
+        # mods = self.filamentManager.get_spools_modifications()
+        # lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        # etag = (hashlib.sha1(str(lm))).hexdigest()
+        #
+        # if check_lastmodified(int(lm)) and check_etag(etag):
+        #     return make_response("Not Modified", 304)
+
+        all_selections = self.filamentManager.get_all_selections()
+        if all_selections is not None:
+            response = jsonify(dict(selections=all_selections))
+            # response.set_etag(etag)
+            # response.headers["Last-Modified"] = http_date(lm)
+            # response.headers["Cache-Control"] = "max-age=0"
+            return response
+        else:
+            return make_response("Database error", 500)
+
+    @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["POST"])
+    def update_selections(self):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
+        try:
+            json_data = request.json
+        except BadRequest:
+            return make_response("Malformed JSON body in request", 400)
+
+        if "selections" not in json_data:
+            return make_response("No selections included in request", 400)
+
+        selections = json_data["selections"]
+
+        for item in selections:
+            if "tool" not in item or "id" not in item.get("spool", {}):
+                    return make_response("Selection does not contain mandatory fields", 400)
+
+        saved_selections = self.filamentManager.update_selections(selections)
+
+        if saved_selections is not None:
+            return jsonify(dict(selections=saved_selections))
         else:
             return make_response("Database error", 500)
 
