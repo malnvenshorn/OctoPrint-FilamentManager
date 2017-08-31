@@ -44,15 +44,14 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if 1 == self._settings.get(["_db_version"]):
             selections = self._settings.get(["selectedSpools"])
             if selections is not None:
-                data = []
                 for key in selections:
-                    data.append(dict(
-                                    tool=key.replace("tool", ""),
-                                    spool=dict(
-                                        id=selections[key]
-                                    )
-                                ))
-                self.filamentManager.update_selections(data)
+                    data = dict(
+                                tool=key.replace("tool", ""),
+                                spool=dict(
+                                    id=selections[key]
+                                )
+                           )
+                    self.filamentManager.update_selection(data)
                 self._settings.set(["selectedSpools"], None)
             self._settings.set(["_db_version"], 2)
         if 2 == self._settings.get(["_db_version"]):
