@@ -260,8 +260,9 @@ $(function() {
         // spool selection
 
         self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
-        self.spoolSubscriptions = [];                       // subscription objects from the helper
         self.tools = ko.observableArray([]);                // number of tools to generate select elements in template
+        self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent selection update
+                                                            // when settings selections
 
         self.onExtruderCountChange = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -273,16 +274,10 @@ $(function() {
                     // add observables
                     self.selectedSpools.push(undefined); // notifies observers
                     self.selectedSpoolsHelper().push(ko.observable(undefined));
-                    // add subscription
-                    self.spoolSubscriptions.push(
-                        self.selectedSpoolsHelper()[i].subscribe(self.onSelectedSpoolChange));
                 }
             } else {
                 // number of extruders has decreased
                 for (var i = numExtruders; i < self.selectedSpoolsHelper().length; ++i) {
-                    // remove subscription
-                    self.spoolSubscriptions[i].dispose();
-                    self.spoolSubscriptions.pop();
                     // remove observables
                     self.selectedSpoolsHelper().pop();
                     self.selectedSpools.pop(); // notifies observers
@@ -292,28 +287,29 @@ $(function() {
             self.tools(new Array(numExtruders));
         };
 
-        self.onSelectedSpoolChange = function() {
-            // TODO is there a way to identify the tool which has changed?
-            // in that case we don't have to update all tools every time
+        self.onSelectedSpoolChange = function(tool) {
+            if (!self.onSelectedSpoolChangeEnabled) return;
 
-            var data = _.map(self.selectedSpoolsHelper(), function(element, index){
-                return {
-                    tool: index,
+            spool = self.selectedSpoolsHelper()[tool]();
+            var data = {
+                tool: tool,
                     spool: {
-                        id: element() !== undefined ? element() : null
+                        id: spool !== undefined ? spool : null
                     }
                 };
-            });
 
             $.ajax({
-                url: "plugin/filamentmanager/selections",
+                url: "plugin/filamentmanager/selections/" + tool,
                 type: "POST",
-                data: JSON.stringify({selections: data}),
+                data: JSON.stringify({selection: data}),
                 contentType: "application/json; charset=UTF-8"
             })
             .done(function(data) {
-                self._updateSelectedSpoolData(data);
-                self._applyTemperatureOffsets();
+                if (data.hasOwnProperty("selection")) {
+                    var selection = data["selection"];
+                    self._updateSelectedSpoolData(selection);
+                    self._applyTemperatureOffset(selection);
+                }
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
@@ -322,26 +318,21 @@ $(function() {
         };
 
         self._updateSelectedSpoolData = function(data) {
-            _.each(self.selectedSpools(), function(element, index) {
-                self.selectedSpools()[index] = undefined;
-            });
-            _.each(data["selections"], function(element, index) {
-                self.selectedSpools()[element.tool] = element.spool;
-                self.selectedSpoolsHelper()[element.tool](element.spool.id);
-            });
-            self.selectedSpools.valueHasMutated(); // notifies observers
+            if (data.tool < self.tools().length) {
+                self.selectedSpoolsHelper()[data.tool](data.spool != null ? data.spool.id : undefined);
+                self.selectedSpools()[data.tool] = (data.spool != null ? data.spool : undefined);
+                self.selectedSpools.valueHasMutated(); // notifies observers
+            }
         };
 
-        self._applyTemperatureOffsets = function() {
-            var selectedSpools = self.selectedSpools();
-            var tools = self.temperature.tools();
-            for (var i = 0; i < tools.length; ++i) {
-                var tool = tools[i];
-                var spool = selectedSpools[i];
+        self._applyTemperatureOffset = function(data) {
+            if (data.tool < self.tools().length) {
+                var tool = self.temperature.tools()[data.tool];
+                var spool = data.spool;
                 self.temperature.changingOffset.item = tool;
                 self.temperature.changingOffset.name(tool.name());
                 self.temperature.changingOffset.offset(tool.offset());
-                self.temperature.changingOffset.newOffset(spool !== undefined ? spool.temp_offset : 0);
+                self.temperature.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
                 self.temperature.confirmChangeOffset();
             }
         };
@@ -353,8 +344,14 @@ $(function() {
                 dataType: "json",
             })
             .done(function(data) {
-                self._updateSelectedSpoolData(data);
-                self._applyTemperatureOffsets();
+                if (data.hasOwnProperty("selections")) {
+                    self.onSelectedSpoolChangeEnabled = false;
+                    _.each(data["selections"], function(selection, index) {
+                        self._updateSelectedSpoolData(selection);
+                        self._applyTemperatureOffset(selection);
+                    });
+                    self.onSelectedSpoolChangeEnabled = true;
+                }
             })
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");

@@ -301,8 +301,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["POST"])
-    def update_selections(self):
+    @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["POST"])
+    def update_selection(self, identifier):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
 
@@ -311,19 +311,20 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         except BadRequest:
             return make_response("Malformed JSON body in request", 400)
 
-        if "selections" not in json_data:
-            return make_response("No selections included in request", 400)
+        if "selection" not in json_data:
+            return make_response("No selection included in request", 400)
 
-        selections = json_data["selections"]
+        selection = json_data["selection"]
 
-        for item in selections:
-            if "tool" not in item or "id" not in item.get("spool", {}):
-                    return make_response("Selection does not contain mandatory fields", 400)
+        if "tool" not in selection:
+                return make_response("Selection does not contain mandatory 'tool' field", 400)
+        if "id" not in selection.get("spool", {}):
+            return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
 
-        saved_selections = self.filamentManager.update_selections(selections)
+        saved_selection = self.filamentManager.update_selection(identifier, selection)
 
-        if saved_selections is not None:
-            return jsonify(dict(selections=saved_selections))
+        if saved_selection is not None:
+            return jsonify(dict(selection=saved_selection))
         else:
             return make_response("Database error", 500)
 

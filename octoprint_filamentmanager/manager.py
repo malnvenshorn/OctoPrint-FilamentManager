@@ -200,7 +200,10 @@ class FilamentManager(object):
 
     def _resolve_foreign_keys_for_selection(self, selection):
         # TODO resolve foreign keys, is there a better way to do this?
-        spool = self.get_spool(selection["spool_id"])[0]
+        if selection["spool_id"] is None:
+            spool = None
+        else:
+            spool = self.get_spool(selection["spool_id"])[0]
         del selection["spool_id"]
         selection["spool"] = spool
         return selection
@@ -208,7 +211,7 @@ class FilamentManager(object):
     def get_all_selections(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE spool_id IS NOT NULL ORDER BY tool")
+                cursor = db.execute("SELECT tool, spool_id FROM selections ORDER BY tool")
                 result = self._cursor_to_dict(cursor)
             return [self._resolve_foreign_keys_for_selection(row) for row in result]
         except sqlite3.Error as error:
@@ -218,21 +221,19 @@ class FilamentManager(object):
     def get_selection(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE spool_id IS NOT NULL AND tool = ?",
-                                    (identifier,))
+                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE tool = ?", (identifier,))
                 result = self._cursor_to_dict(cursor)
             return [self._resolve_foreign_keys_for_selection(row) for row in result]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
 
-    def update_selections(self, data):
+    def update_selection(self, identifier, data):
         try:
             with self._db_lock, self._db as db:
-                for selection in data:
                     db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
-                               (selection["tool"], selection["spool"]["id"]))
-            return self.get_all_selections()
+                               (identifier, data["spool"]["id"]))
+            return self.get_selection(identifier)[0]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
