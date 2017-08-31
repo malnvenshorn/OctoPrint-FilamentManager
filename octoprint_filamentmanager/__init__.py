@@ -42,6 +42,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def migrate_db_scheme(self):
         if 1 == self._settings.get(["_db_version"]):
+            # add temperature column
+            sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
+            self.filamentManager.execute_script(sql)
+
+            # migrate selected spools from config.yaml to database
             selections = self._settings.get(["selectedSpools"])
             if selections is not None:
                 for key in selections:
@@ -54,10 +59,6 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
             self._settings.set(["_db_version"], 2)
-        if 2 == self._settings.get(["_db_version"]):
-            sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
-            self.filamentManager.execute_script(sql)
-            self._settings.set(["_db_version"], 3)
 
     # SettingsPlugin
 
