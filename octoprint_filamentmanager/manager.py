@@ -68,8 +68,9 @@ class FilamentManager(object):
     def get_all_profiles(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE")
-                return self._cursor_to_dict(cursor)
+                cursor = db.execute(""" SELECT id, vendor, material, density, diameter
+                                        FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """)
+            return self._cursor_to_dict(cursor)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -77,8 +78,8 @@ class FilamentManager(object):
     def get_profiles_modifications(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM modifications WHERE table_name = 'profiles'")
-                return self._cursor_to_dict(cursor)
+                cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'profiles'")
+                return self._cursor_to_dict(cursor, one=True)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -86,8 +87,10 @@ class FilamentManager(object):
     def get_profile(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT * FROM profiles WHERE id = ?", (identifier,))
-                return self._cursor_to_dict(cursor)
+                cursor = db.execute(""" SELECT id, vendor, material, density, diameter
+                                        FROM profiles WHERE id = ?
+                                        ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """, (identifier,))
+            return self._cursor_to_dict(cursor, one=True)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -126,20 +129,23 @@ class FilamentManager(object):
 
     # spools
 
-    def _resolve_foreign_keys_for_spool(self, spool):
-        # TODO resolve foreign keys, is there a better way to do this?
-        profile = self.get_profile(spool["profile_id"])[0]
-        del spool["profile_id"]
-        spool["profile"] = profile
+    def _build_spool_dict(self, row, column_names):
+        spool = dict(profile=dict())
+        for i, value in enumerate(row):
+            if i < 6:
+                spool[column_names[i][0]] = value
+            else:
+                spool["profile"][column_names[i][0]] = value
         return spool
 
     def get_all_spools(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used, temp_offset FROM spools
-                                        ORDER BY name COLLATE NOCASE """)
-                result = self._cursor_to_dict(cursor)
-            return [self._resolve_foreign_keys_for_spool(row) for row in result]
+                cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                               p.id, p.vendor, p.material, p.density, p.diameter
+                                        FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
+                                        ORDER BY s.name COLLATE NOCASE """)
+            return [self._build_spool_dict(row, cursor.description) for row in cursor.fetchall()]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -148,7 +154,7 @@ class FilamentManager(object):
         try:
             with self._db_lock, self._db as db:
                 cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'spools'")
-                return self._cursor_to_dict(cursor)
+                return self._cursor_to_dict(cursor, one=True)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -156,10 +162,12 @@ class FilamentManager(object):
     def get_spool(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, profile_id, name, cost, weight, used, temp_offset FROM spools
-                                        WHERE id = ? """, (identifier,))
-                result = self._cursor_to_dict(cursor)
-            return [self._resolve_foreign_keys_for_spool(row) for row in result]
+                cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                               p.id, p.vendor, p.material, p.density, p.diameter
+                                        FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
+                                        AND s.id = ? """, (identifier,))
+            result = cursor.fetchone()
+            return self._build_spool_dict(result, cursor.description) if result is not None else dict()
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -198,22 +206,25 @@ class FilamentManager(object):
 
     # selections
 
-    def _resolve_foreign_keys_for_selection(self, selection):
-        # TODO resolve foreign keys, is there a better way to do this?
-        if selection["spool_id"] is None:
-            spool = None
-        else:
-            spool = self.get_spool(selection["spool_id"])[0]
-        del selection["spool_id"]
-        selection["spool"] = spool
+    def _build_selection_dict(self, row, column_names):
+        selection = dict(spool=dict(profile=dict()))
+        for i, value in enumerate(row):
+            if i < 1:
+                selection[column_names[i][0]] = value
+            if i < 7:
+                selection["spool"][column_names[i][0]] = value
+            else:
+                selection["spool"]["profile"][column_names[i][0]] = value
         return selection
 
     def get_all_selections(self):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT tool, spool_id FROM selections ORDER BY tool")
-                result = self._cursor_to_dict(cursor)
-            return [self._resolve_foreign_keys_for_selection(row) for row in result]
+                cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                               p.id, p.vendor, p.material, p.density, p.diameter
+                                        FROM selections AS t, spools AS s, profiles AS p
+                                        WHERE t.spool_id = s.id AND s.profile_id = p.id ORDER BY tool """)
+            return [self._build_selection_dict(row, cursor.description) for row in cursor.fetchall()]
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -221,9 +232,13 @@ class FilamentManager(object):
     def get_selection(self, identifier):
         try:
             with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT tool, spool_id FROM selections WHERE tool = ?", (identifier,))
-                result = self._cursor_to_dict(cursor)
-            return [self._resolve_foreign_keys_for_selection(row) for row in result]
+                cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                               p.id, p.vendor, p.material, p.density, p.diameter
+                                        FROM selections AS t, spools AS s, profiles AS p
+                                        WHERE t.spool_id = s.id AND s.profile_id = p.id
+                                        AND t.tool = ? """, (identifier,))
+            result = cursor.fetchone()
+            return self._build_selection_dict(result, cursor.description) if result is not None else dict()
         except sqlite3.Error as error:
             self._log_error(error)
             return None
@@ -233,16 +248,23 @@ class FilamentManager(object):
             with self._db_lock, self._db as db:
                     db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
                                (identifier, data["spool"]["id"]))
-            return self.get_selection(identifier)[0]
+            return self.get_selection(identifier)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
 
     # helper
 
-    def _cursor_to_dict(self, cursor):
-        return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
-                for row in cursor.fetchall()]
+    def _cursor_to_dict(self, cursor, one=False):
+        if one:
+            result = cursor.fetchone()
+            if result is not None:
+                return dict((cursor.description[i][0], value) for i, value in enumerate(result))
+            else:
+                return dict()
+        else:
+            return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
+                    for row in cursor.fetchall()]
 
     def _log_error(self, error):
         self._logger.error("SQL Error: {}".format(error.args[0]))

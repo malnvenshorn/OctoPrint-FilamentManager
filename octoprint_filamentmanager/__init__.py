@@ -93,8 +93,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
-        mods = self.filamentManager.get_profiles_modifications()
-        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        mod = self.filamentManager.get_profiles_modifications()
+        lm = mod["changed_at"] if mod else 0
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if check_lastmodified(int(lm)) and check_etag(etag):
@@ -114,8 +114,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_profile(self, identifier):
         profile = self.filamentManager.get_profile(identifier)
         if profile is not None:
-            if len(profile) > 0:
-                return jsonify(dict(profile=profile[0]))
+            if profile:
+                return jsonify(dict(profile=profile))
             else:
                 return make_response("Unknown profile", 404)
         else:
@@ -163,11 +163,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         profile = self.filamentManager.get_profile(identifier)
         if profile is None:
             return make_response("Database error", 500)
-        if len(profile) < 1:
+        if not profile:
             return make_response("Unknown profile", 404)
 
         updated_profile = json_data["profile"]
-        merged_profile = dict_merge(profile[0], updated_profile)
+        merged_profile = dict_merge(profile, updated_profile)
 
         saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
 
@@ -188,8 +188,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_spools_list(self):
         mod_spool = self.filamentManager.get_spools_modifications()
         mod_profile = self.filamentManager.get_profiles_modifications()
-        lm = max(mod_spool[0]["changed_at"] if len(mod_spool) > 0 else 0,
-                 mod_profile[0]["changed_at"] if len(mod_profile) > 0 else 0)
+        lm = max(mod_spool["changed_at"] if mod_spool else 0,
+                 mod_profile["changed_at"] if mod_profile else 0)
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if check_lastmodified(int(lm)) and check_etag(etag):
@@ -209,8 +209,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_spool(self, identifier):
         spool = self.filamentManager.get_spool(identifier)
         if spool is not None:
-            if len(spool) > 0:
-                return jsonify(dict(spool=spool[0]))
+            if spool:
+                return jsonify(dict(spool=spool))
             else:
                 return make_response("Unknown spool", 404)
         else:
@@ -261,11 +261,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         spool = self.filamentManager.get_spool(identifier)
         if spool is None:
             return make_response("Database error", 500)
-        if len(spool) < 1:
+        if not spool:
             return make_response("Unknown spool", 404)
 
         updated_spool = json_data["spool"]
-        merged_spool = dict_merge(spool[0], updated_spool)
+        merged_spool = dict_merge(spool, updated_spool)
 
         saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
 
@@ -317,7 +317,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         selection = json_data["selection"]
 
         if "tool" not in selection:
-                return make_response("Selection does not contain mandatory 'tool' field", 400)
+            return make_response("Selection does not contain mandatory 'tool' field", 400)
         if "id" not in selection.get("spool", {}):
             return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
 
