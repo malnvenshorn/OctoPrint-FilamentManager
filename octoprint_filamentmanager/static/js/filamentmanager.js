@@ -297,7 +297,7 @@ $(function() {
                         id: spool !== undefined ? spool : null
                     }
                 };
-
+            self.requestInProgress(true);
             $.ajax({
                 url: "plugin/filamentmanager/selections/" + tool,
                 type: "POST",
@@ -314,6 +314,9 @@ $(function() {
             .fail(function() {
                 var text = gettext("There was an unexpected database error, please consult the logs.");
                 new PNotify({title: gettext("Spool selection failed"), text: text, type: "error", hide: false});
+            })
+            .always(function() {
+                self.requestInProgress(false);
             });
         };
 
@@ -640,6 +643,6 @@ $(function() {
                    "#settings_plugin_filamentmanager_profiledialog",
                    "#settings_plugin_filamentmanager_spooldialog",
                    "#settings_plugin_filamentmanager_configurationdialog",
-                   "#sidebar_plugin_filamentmanager"]
+                   "#sidebar_plugin_filamentmanager_wrapper"]
     });
 });
