@@ -238,7 +238,10 @@ class FilamentManager(object):
                                         WHERE t.spool_id = s.id AND s.profile_id = p.id
                                         AND t.tool = ? """, (identifier,))
             result = cursor.fetchone()
-            return self._build_selection_dict(result, cursor.description) if result is not None else dict()
+            if result is not None:
+                return self._build_selection_dict(result, cursor.description)
+            else:
+                return dict(tool=identifier, spool=None)
         except sqlite3.Error as error:
             self._log_error(error)
             return None
