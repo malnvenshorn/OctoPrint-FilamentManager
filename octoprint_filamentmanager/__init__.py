@@ -86,7 +86,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             dict(type="generic", template="settings_profiledialog.jinja2"),
             dict(type="generic", template="settings_spooldialog.jinja2"),
             dict(type="generic", template="settings_configdialog.jinja2"),
-            dict(type="sidebar", icon="reel", template="sidebar.jinja2")
+            dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2")
         ]
 
     # BlueprintPlugin
