@@ -26,6 +26,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.BlueprintPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
+    DB_VERSION = 2
+
     def __init__(self):
         self.filamentManager = None
         self.filamentOdometer = None
@@ -34,17 +36,28 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     # StartupPlugin
 
     def on_startup(self, host, port):
+        self.filamentOdometer = FilamentOdometer(self._logger)
+
         db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
         self.filamentManager = FilamentManager(db_path, self._logger)
-        self.filamentManager.init_database()
-        self.migrate_db_scheme()
-        self.filamentOdometer = FilamentOdometer(self._logger)
+
+        if self.filamentManager.init_database():
+            if self._settings.get(["_db_version"]) is None:             # inital startup
+                self._settings.set(["_db_version"], self.DB_VERSION)    # we got the latest db scheme
+            else:
+                self.migrate_db_scheme()
+        else:
+            self._logger.error("Failed to create database")
 
     def migrate_db_scheme(self):
         if 1 == self._settings.get(["_db_version"]):
             # add temperature column
             sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
-            self.filamentManager.execute_script(sql)
+            if self.filamentManager.execute_script(sql):
+                self._settings.set(["_db_version"], 2)
+            else:
+                self._logger.error("Database migration failed from version {} to {}"
+                                   .format(self._settings.get(["_db_version"]), 2))
 
             # migrate selected spools from config.yaml to database
             selections = self._settings.get(["selectedSpools"])
@@ -58,13 +71,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                            )
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
-            self._settings.set(["_db_version"], 2)
 
     # SettingsPlugin
 
     def get_settings_defaults(self):
         return dict(
-            _db_version=1,
+            _db_version=None,
             enableOdometer=True,
             enableWarning=True,
             currencySymbol="€"

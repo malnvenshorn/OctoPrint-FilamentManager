@@ -32,6 +32,7 @@ class FilamentManager(object):
                     cost REAL NOT NULL DEFAULT 0,
                     weight REAL NOT NULL DEFAULT 0,
                     used REAL NOT NULL DEFAULT 0,
+                    temp_offset INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT);
 
                 CREATE TABLE IF NOT EXISTS selections (
@@ -52,7 +53,7 @@ class FilamentManager(object):
                             INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
                         END; """.format(table=table, action=action))
 
-        self.execute_script("".join(scheme))
+        return self.execute_script("".join(scheme))
 
     def execute_script(self, script):
         try:
