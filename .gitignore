@@ -7,5 +7,5 @@ dist
 *.egg*
 .DS_Store
 *.zip
-design
 .atom
+.docker
