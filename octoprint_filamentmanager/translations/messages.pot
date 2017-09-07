@@ -7,9 +7,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint-FilamentManager 0.2.2\n"
+"Project-Id-Version: OctoPrint-FilamentManager 0.3.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-08-31 13:24+0200\n"
+"POT-Creation-Date: 2017-09-08 01:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,54 +18,89 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.4.0\n"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:315
-#: octoprint_filamentmanager/static/js/filamentmanager.js:357
-#: octoprint_filamentmanager/static/js/filamentmanager.js:420
-#: octoprint_filamentmanager/static/js/filamentmanager.js:456
-#: octoprint_filamentmanager/static/js/filamentmanager.js:482
-#: octoprint_filamentmanager/static/js/filamentmanager.js:505
-#: octoprint_filamentmanager/static/js/filamentmanager.js:532
-#: octoprint_filamentmanager/static/js/filamentmanager.js:574
-#: octoprint_filamentmanager/static/js/filamentmanager.js:600
-#: octoprint_filamentmanager/static/js/filamentmanager.js:623
-msgid "There was an unexpected database error, please consult the logs."
-msgstr ""
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:316
-msgid "Spool selection failed"
-msgstr ""
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:358
-msgid "Failed to query selected spools"
-msgstr ""
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:421
-msgid "Failed to query profiles"
-msgstr ""
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:457
-#: octoprint_filamentmanager/static/js/filamentmanager.js:483
-#: octoprint_filamentmanager/static/js/filamentmanager.js:506
-#: octoprint_filamentmanager/static/js/filamentmanager.js:575
-#: octoprint_filamentmanager/static/js/filamentmanager.js:601
-#: octoprint_filamentmanager/static/js/filamentmanager.js:624
-msgid "Saving failed"
-msgstr ""
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:513
-#, python-format
+#: octoprint_filamentmanager/static/js/filamentmanager.js:311
 msgid ""
-"You are about to delete the filament profile \"%(name)s\". Please notice "
-"that it is not possible to delete profiles with associated spools."
+"There was an unexpected error while selecting the spool, please consult "
+"the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:533
-msgid "Failed to query spools"
+#: octoprint_filamentmanager/static/js/filamentmanager.js:312
+msgid "Could not select spool"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:631
-#, python-format
-msgid "You are about to delete the filament spool \"%(name)s\"."
+#: octoprint_filamentmanager/static/js/filamentmanager.js:435
+msgid ""
+"There was an unexpected error while saving the filament profile, please "
+"consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:437
+msgid "Could not add profile"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:461
+msgid ""
+"There was an unexpected error while updating the filament profile, please"
+" consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:463
+msgid "Could not update profile"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:481
+msgid "Cannot delete profiles with associated spools."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:483
+msgid ""
+"There was an unexpected error while removing the filament profile, please"
+" consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:486
+msgid "Could not delete profile"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:492
+msgid ""
+"You are about to delete the filament profile \"${data.material} "
+"(${data.vendor})\".Please notice that it is not possible to delete "
+"profiles with associated spools."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:541
+msgid ""
+"There was an unexpected error while saving the filament spool, please "
+"consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:543
+msgid "Could not add spool"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:566
+msgid ""
+"There was an unexpected error while updating the filament spool, please "
+"consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:568
+msgid "Could not update spool"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:585
+msgid ""
+"There was an unexpected error while removing the filament spool, please "
+"consult the logs."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:587
+msgid "Could not delete spool"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:592
+msgid "You are about to delete the filament spool \"${data.name}\"."
 msgstr ""
 
 #: octoprint_filamentmanager/static/js/warning.js:93

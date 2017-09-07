@@ -88,7 +88,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_assets(self):
         return dict(
             css=["css/style.css", "css/font.css"],
-            js=["js/filamentmanager.js", "js/warning.js"]
+            js=["js/filamentmanager.js", "js/warning.js", "js/client/profiles.js", "js/client/spools.js",
+                "js/client/selections.js"]
         )
 
     # TemplatePlugin
@@ -314,7 +315,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
-    @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["POST"])
+    @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["PATCH"])
     def update_selection(self, identifier):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)

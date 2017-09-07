@@ -230,12 +230,6 @@ $(function() {
         self.profileEditor = new ProfileEditorViewModel(self.profiles);
         self.spoolEditor = new SpoolEditorViewModel(self.profiles);
 
-        self.onStartup = function() {
-            self.profileDialog = $("#settings_plugin_filamentmanager_profiledialog");
-            self.spoolDialog = $("#settings_plugin_filamentmanager_spooldialog");
-            self.configurationDialog = $("#settings_plugin_filamentmanager_configurationdialog");
-        };
-
         self.onBeforeBinding = function() {
             self._copyConfig();
             self.onExtruderCountChange();     // set initial number of tools
@@ -245,9 +239,16 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
-            self.requestProfiles();
-            self.requestSpools();
-            self.requestSelectedSpools();
+            self.requestInProgress(true);
+            $.when(self.requestProfiles(), self.requestSpools(), self.requestSelectedSpools())
+                .done(function(profiles, spools, selections) {
+                    self.processProfiles(profiles[0]);
+                    self.processSpools(spools[0]);
+                    self.processSelectedSpools(selections[0]);
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
         };
 
         self.onEventPrinterStateChanged = function() {
@@ -295,28 +296,38 @@ $(function() {
                         id: spool !== undefined ? spool : null
                     }
                 };
+            self.updateSelectedSpool(data);
+        };
+
+        self.updateSelectedSpool = function(data) {
             self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/selections/" + tool,
-                type: "POST",
-                data: JSON.stringify({selection: data}),
-                contentType: "application/json; charset=UTF-8"
-            })
+            OctoPrint.filamentselections.update(data.tool, data)
             .done(function(data) {
-                if (data.hasOwnProperty("selection")) {
-                    var selection = data["selection"];
-                    self._updateSelectedSpoolData(selection);
-                    self._applyTemperatureOffset(selection);
-                }
+                var spool = data["selection"];
+                self._updateSelectedSpoolData(spool);
+                self._applyTemperatureOffset(spool);
             })
             .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Spool selection failed"), text: text, type: "error", hide: false});
+                var text = gettext("There was an unexpected error while selecting the spool, please consult the logs.");
+                new PNotify({title: gettext("Could not select spool"), text: text, type: "error", hide: false});
             })
             .always(function() {
                 self.requestInProgress(false);
             });
         };
+
+        self.requestSelectedSpools = function() {
+            return OctoPrint.filamentselections.list();
+        };
+
+        self.processSelectedSpools = function(data) {
+            self.onSelectedSpoolChangeEnabled = false;
+            _.each(data["selections"], function(selection, index) {
+                self._updateSelectedSpoolData(selection);
+                self._applyTemperatureOffset(selection);
+            });
+            self.onSelectedSpoolChangeEnabled = true;
+        }
 
         self._updateSelectedSpoolData = function(data) {
             if (data.tool < self.tools().length) {
@@ -338,37 +349,16 @@ $(function() {
             }
         };
 
-        self.requestSelectedSpools = function() {
-            $.ajax({
-                url: "plugin/filamentmanager/selections",
-                type: "GET",
-                dataType: "json",
-            })
-            .done(function(data) {
-                if (data.hasOwnProperty("selections")) {
-                    self.onSelectedSpoolChangeEnabled = false;
-                    _.each(data["selections"], function(selection, index) {
-                        self._updateSelectedSpoolData(selection);
-                        self._applyTemperatureOffset(selection);
-                    });
-                    self.onSelectedSpoolChangeEnabled = true;
-                }
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Failed to query selected spools"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
-        };
-
         //************************************************************
         // plugin settings
 
         self.showSettingsDialog = function() {
             self._copyConfig();
-            self.configurationDialog.modal("show");
+            $("#settings_plugin_filamentmanager_configurationdialog").modal("show");
+        };
+
+        self.hideSettingsDialog = function() {
+            $("#settings_plugin_filamentmanager_configurationdialog").modal("hide");
         };
 
         self.savePluginSettings = function(viewModel, event) {
@@ -387,7 +377,7 @@ $(function() {
 
             self.settings.saveData(data, {
                 success: function() {
-                    self.configurationDialog.modal("hide");
+                    self.hideSettingsDialog();
                     self._copyConfig();
                 },
                 complete: function() {
@@ -407,27 +397,16 @@ $(function() {
         //************************************************************
         // profiles
 
-        self.requestProfiles = function() {
-            self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/profiles",
-                type: "GET",
-                dataType: "json",
-            })
-            .done(function(data) {
-                self.profiles(data.profiles);
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Failed to query profiles"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
+        self.showProfilesDialog = function() {
+            $("#settings_plugin_filamentmanager_profiledialog").modal("show");
         };
 
-        self.showProfilesDialog = function() {
-            self.profileDialog.modal("show");
+        self.requestProfiles = function() {
+            return OctoPrint.filamentprofiles.list();
+        };
+
+        self.processProfiles = function(data) {
+            self.profiles(data.profiles);
         };
 
         self.saveProfile = function(data) {
@@ -444,20 +423,18 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/profiles",
-                type: "POST",
-                data: JSON.stringify({profile: data}),
-                contentType: "application/json; charset=UTF-8"
-            })
+            OctoPrint.filamentprofiles.add(data)
             .done(function() {
-                self.requestProfiles();
+                self.requestProfiles()
+                    .done(self.processProfiles)
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
             })
             .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
+                var text = gettext("There was an unexpected error while saving the filament profile, " +
+                                   "please consult the logs.");
+                new PNotify({title: gettext("Could not add profile"), text: text, type: "error", hide: false});
                 self.requestInProgress(false);
             });
         };
@@ -468,83 +445,73 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/profiles/" + data.id,
-                type: "PATCH",
-                data: JSON.stringify({profile: data}),
-                contentType: "application/json; charset=UTF-8"
-            })
-            .done(function() {
-                self.requestProfiles();
-                self.requestSpools();
-                self.requestSelectedSpools();
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
+            OctoPrint.filamentprofiles.update(data.id, data)
+                .done(function() {
+                    $.when(self.requestProfiles(), self.requestSpools(), self.requestSelectedSpools())
+                    .done(function(profiles, spools, selections) {
+                        self.processProfiles(profiles[0]);
+                        self.processSpools(spools[0]);
+                        self.processSelectedSpools(selections[0]);
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+                })
+                .fail(function() {
+                    var text = gettext("There was an unexpected error while updating the filament profile, " +
+                                       "please consult the logs.");
+                    new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
+                    self.requestInProgress(false);
+                });
         };
 
         self.removeProfile = function(data) {
-            if (data === undefined) {
-                data = self.profileEditor.toProfileData();
-            }
-
             var perform = function() {
-                self.requestInProgress(true);
-                $.ajax({
-                    url: "plugin/filamentmanager/profiles/" + data.id,
-                    type: "DELETE"
-                })
-                .done(function() {
-                    self.requestProfiles();
-                })
-                .fail(function() {
-                    var text = gettext("There was an unexpected database error, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+                OctoPrint.filamentprofiles.delete(data.id)
+                    .done(function() {
+                        self.requestProfiles()
+                        .done(self.processProfiles)
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
+                    })
+                    .fail(function(xhr) {
+                        var text;
+                        if (xhr.status == 409) {
+                            text = gettext("Cannot delete profiles with associated spools.");
+                        } else {
+                            text = gettext("There was an unexpected error while removing the filament profile, " +
+                                           "please consult the logs.");
+                        }
+                        var title = gettext("Could not delete profile");;
+                        new PNotify({title: title, text: text, type: "error", hide: false});
+                        self.requestInProgress(false);
+                    });
             };
 
-            var text = gettext("You are about to delete the filament profile \"%(name)s\"." //\
-                               + " Please notice that it is not possible to delete profiles with associated spools.");
-            showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
+            var text = gettext(`You are about to delete the filament profile "${data.material} (${data.vendor})".` +
+                               "Please notice that it is not possible to delete profiles with associated spools.");
+            showConfirmationDialog(text, perform);
         };
 
         //************************************************************
         // spools
 
-        self.requestSpools = function() {
-            self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/spools",
-                type: "GET",
-                dataType: "json",
-            })
-            .done(function(data) {
-                self.spools.updateItems(data.spools);
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Failed to query spools"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
-        };
-
         self.showSpoolDialog = function(data) {
             self.spoolEditor.fromSpoolData(data);
-            self.spoolDialog.modal("show");
+            $("#settings_plugin_filamentmanager_spooldialog").modal("show");
         };
 
         self.hideSpoolDialog = function() {
-            self.spoolDialog.modal("hide");
+            $("#settings_plugin_filamentmanager_spooldialog").modal("hide");
+        };
+
+        self.requestSpools = function() {
+            return OctoPrint.filamentspools.list();
+        }
+
+        self.processSpools = function(data) {
+            self.spools.updateItems(data.spools);
         };
 
         self.saveSpool = function(data) {
@@ -561,23 +528,20 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/spools",
-                type: "POST",
-                data: JSON.stringify({spool: data}),
-                contentType: "application/json; charset=UTF-8"
-            })
-            .done(function() {
-                self.requestSpools();
-                self.hideSpoolDialog();
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
+            OctoPrint.filamentspools.add(data)
+                .done(function() {
+                    self.hideSpoolDialog();
+                    self.requestSpools()
+                        .done(self.processSpools)
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
+                })
+                .fail(function() {
+                    var text = gettext("There was an unexpected error while saving the filament spool, " +
+                                       "please consult the logs.");
+                    new PNotify({title: gettext("Could not add spool"), text: text, type: "error", hide: false});
+                });
         };
 
         self.updateSpool = function(data) {
@@ -586,51 +550,47 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            $.ajax({
-                url: "plugin/filamentmanager/spools/" + data.id,
-                type: "PATCH",
-                data: JSON.stringify({spool: data}),
-                contentType: "application/json; charset=UTF-8"
-            })
-            .done(function() {
-                self.requestSpools();
-                self.requestSelectedSpools();
-                self.hideSpoolDialog();
-            })
-            .fail(function() {
-                var text = gettext("There was an unexpected database error, please consult the logs.");
-                new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-            })
-            .always(function() {
-                self.requestInProgress(false);
-            });
+            OctoPrint.filamentspools.update(data.id, data)
+                .done(function() {
+                    self.hideSpoolDialog();
+                    $.when(self.requestSpools(), self.requestSelectedSpools())
+                        .done(function(spools, selections) {
+                            self.processSpools(spools[0]);
+                            self.processSelectedSpools(selections[0]);
+                        })
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
+                })
+                .fail(function() {
+                    var text = gettext("There was an unexpected error while updating the filament spool, " +
+                                       "please consult the logs.");
+                    new PNotify({title: gettext("Could not update spool"), text: text, type: "error", hide: false});
+                    self.requestInProgress(false);
+                });
         };
 
         self.removeSpool = function(data) {
-            if (data === undefined) {
-                data = self.spoolEditor.toSpoolData();
-            }
-
             var perform = function() {
                 self.requestInProgress(true);
-                $.ajax({
-                    url: "plugin/filamentmanager/spools/" + data.id,
-                    type: "DELETE"
-                })
-                .done(function() {
-                    self.requestSpools();
-                })
-                .fail(function() {
-                    var text = gettext("There was an unexpected database error, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+                OctoPrint.filamentspools.delete(data.id)
+                    .done(function() {
+                        self.requestSpools()
+                            .done(self.processSpools)
+                            .always(function() {
+                                self.requestInProgress(false);
+                            });
+                    })
+                    .fail(function() {
+                        var text = gettext("There was an unexpected error while removing the filament spool, " +
+                                           "please consult the logs.");
+                        new PNotify({title: gettext("Could not delete spool"), text: text, type: "error", hide: false});
+                        self.requestInProgress(false);
+                    });
             };
 
-            var text = gettext("You are about to delete the filament spool \"%(name)s\".");
-            showConfirmationDialog(_.sprintf(text, {name: data.name}), perform);
+            var text = gettext(`You are about to delete the filament spool "${data.name}".`);
+            showConfirmationDialog(text, perform);
         };
     }
 
