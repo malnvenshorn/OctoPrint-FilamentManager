@@ -40,6 +40,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentOdometer = FilamentOdometer(self._logger)
 
         db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+
+        if os.path.isfile(db_path) and self._settings.get(["_db_version"]) is None:
+            # correct missing _db_version
+            self._settings.set(["_db_version"], 1)
+
         self.filamentManager = FilamentManager(db_path, self._logger)
 
         if self.filamentManager.init_database():
