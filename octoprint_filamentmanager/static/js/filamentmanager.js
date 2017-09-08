@@ -252,7 +252,15 @@ $(function() {
         };
 
         self.onEventPrinterStateChanged = function() {
-            self.requestSpools();
+            self.requestInProgress(true);
+            $.when(self.requestSpools(), self.requestSelectedSpools())
+                .done(function(spools, selections) {
+                    self.processSpools(spools[0]);
+                    self.processSelectedSpools(selections[0]);
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
         };
 
         //*************************************************************
