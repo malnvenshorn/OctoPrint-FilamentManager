@@ -32,7 +32,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentManager = None
         self.filamentOdometer = None
         self.odometerEnabled = False
-        self.printPaused = False
+        self.lastPrintState = False
 
     # StartupPlugin
 
@@ -346,27 +346,24 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event == Events.PRINTER_STATE_CHANGED:
+            self._logger.debug("State: {}".format(payload['state_string']))
+
             if payload['state_id'] == "PRINTING":
-                if self.printPaused:
-                    # resuming print
-                    self.odometerEnabled = self._settings.get(["enableOdometer"])
-                else:
-                    # starting new print
-                    self.odometerEnabled = self._settings.get(["enableOdometer"])
-                    self.filamentOdometer.reset()
-                self.printPaused = False
-            elif payload['state_id'] == "PAUSED":
-                if self.odometerEnabled:
-                    # take into account a possible filament change
-                    self._update_filament_usage()
+                if self.lastPrintState == "PAUSED":
+                    # resuming print, reset only extruded length
                     self.filamentOdometer.reset_extruded_length()
-                self.odometerEnabled = False
-                self.printPaused = True
-            else:
+                else:
+                    # starting new print, full reset
+                    self.filamentOdometer.reset()
+                self.odometerEnabled = self._settings.get(["enableOdometer"])
+            elif self.lastPrintState == "PRINTING":
+                # print state changed from printing, update filament usage
                 if self.odometerEnabled:
                     self._update_filament_usage()
-                self.odometerEnabled = False
-                self.printPaused = False
+                    self.odometerEnabled = False
+
+            # update last print state
+            self.lastPrintState = payload['state_id']
 
     def _update_filament_usage(self):
         printer_profile = self._printer_profile_manager.get_current_or_default()
