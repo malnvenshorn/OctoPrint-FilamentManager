@@ -377,13 +377,14 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         for tool in xrange(0, numTools):
             selection = self.filamentManager.get_selection(tool)
-            if selection is not None and selection:
+            if selection is not None:
                 spool = selection["spool"]
-                # update spool
-                volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
-                spool['used'] += volume * spool["profile"]['density']
-                self.filamentManager.update_spool(spool["id"], spool)
-                self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
+                if spool is not None:
+                    # update spool
+                    volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
+                    spool['used'] += volume * spool["profile"]['density']
+                    self.filamentManager.update_spool(spool["id"], spool)
+                    self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
 
     def _calculate_volume(self, diameter, length):
         radius = diameter / 2
