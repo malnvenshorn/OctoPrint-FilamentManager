@@ -5,8 +5,9 @@ This OctoPrint plugin helps to manage your filament spools. The project is still
 ## Additional features
 
 * Replacing filament volume with weight in sidebar
-* Filament odometer to keep track of remaining filament on spool
+* Filament odometer to keep track of remaining filament on spool (doesn't work when printing from SD)
 * Enable warning if print exceeds remaining filament on spool
+* Assign temperature offset to spools
 
 ## Screenshots
 

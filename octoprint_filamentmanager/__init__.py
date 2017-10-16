@@ -26,31 +26,63 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.BlueprintPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
+    DB_VERSION = 2
+
     def __init__(self):
         self.filamentManager = None
         self.filamentOdometer = None
         self.odometerEnabled = False
+        self.lastPrintState = False
 
     # StartupPlugin
 
     def on_startup(self, host, port):
-        db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
-        self.filamentManager = FilamentManager(db_path, self._logger)
-        self.filamentManager.init_database()
-        self.migrate_db_scheme()
         self.filamentOdometer = FilamentOdometer(self._logger)
 
+        db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+
+        if os.path.isfile(db_path) and self._settings.get(["_db_version"]) is None:
+            # correct missing _db_version
+            self._settings.set(["_db_version"], 1)
+
+        self.filamentManager = FilamentManager(db_path, self._logger)
+
+        if self.filamentManager.init_database():
+            if self._settings.get(["_db_version"]) is None:             # inital startup
+                self._settings.set(["_db_version"], self.DB_VERSION)    # we got the latest db scheme
+            else:
+                self.migrate_db_scheme()
+        else:
+            self._logger.error("Failed to create database")
+
     def migrate_db_scheme(self):
-        current_version = self._settings.get(["_db_version"])
-        if current_version == 1:
-            pass
+        if 1 == self._settings.get(["_db_version"]):
+            # add temperature column
+            sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
+            if self.filamentManager.execute_script(sql):
+                self._settings.set(["_db_version"], 2)
+            else:
+                self._logger.error("Database migration failed from version {} to {}"
+                                   .format(self._settings.get(["_db_version"]), 2))
+
+            # migrate selected spools from config.yaml to database
+            selections = self._settings.get(["selectedSpools"])
+            if selections is not None:
+                for key in selections:
+                    data = dict(
+                                tool=key.replace("tool", ""),
+                                spool=dict(
+                                    id=selections[key]
+                                )
+                           )
+                    self.filamentManager.update_selection(key.replace("tool", ""), data)
+                self._settings.set(["selectedSpools"], None)
 
     # SettingsPlugin
 
     def get_settings_defaults(self):
         return dict(
-            _db_version=1,
-            selectedSpools=dict(),
+            _db_version=None,
             enableOdometer=True,
             enableWarning=True,
             currencySymbol="€"
@@ -60,27 +92,28 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def get_assets(self):
         return dict(
-            css=["css/filamentmanager.css", "css/font.css"],
-            js=["js/filamentmanager.js", "js/filamentadvanced.js"]
+            css=["css/style.css", "css/font.css"],
+            js=["js/filamentmanager.js", "js/warning.js", "js/client/profiles.js", "js/client/spools.js",
+                "js/client/selections.js"]
         )
 
     # TemplatePlugin
 
     def get_template_configs(self):
         return [
-            dict(type="settings", template="filamentmanager_settings.jinja2"),
-            dict(type="generic", template="filamentmanager_profiledialog.jinja2"),
-            dict(type="generic", template="filamentmanager_spooldialog.jinja2"),
-            dict(type="generic", template="filamentmanager_configurationdialog.jinja2"),
-            dict(type="sidebar", icon="reel", template="filamentmanager_sidebar.jinja2")
+            dict(type="settings", template="settings.jinja2"),
+            dict(type="generic", template="settings_profiledialog.jinja2"),
+            dict(type="generic", template="settings_spooldialog.jinja2"),
+            dict(type="generic", template="settings_configdialog.jinja2"),
+            dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2")
         ]
 
     # BlueprintPlugin
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
-        mods = self.filamentManager.get_profiles_modifications()
-        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        mod = self.filamentManager.get_profiles_modifications()
+        lm = mod["changed_at"] if mod else 0
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if check_lastmodified(int(lm)) and check_etag(etag):
@@ -100,8 +133,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_profile(self, identifier):
         profile = self.filamentManager.get_profile(identifier)
         if profile is not None:
-            if len(profile) > 0:
-                return jsonify(dict(profile=profile[0]))
+            if profile:
+                return jsonify(dict(profile=profile))
             else:
                 return make_response("Unknown profile", 404)
         else:
@@ -149,11 +182,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         profile = self.filamentManager.get_profile(identifier)
         if profile is None:
             return make_response("Database error", 500)
-        if len(profile) < 1:
+        if not profile:
             return make_response("Unknown profile", 404)
 
         updated_profile = json_data["profile"]
-        merged_profile = dict_merge(profile[0], updated_profile)
+        merged_profile = dict_merge(profile, updated_profile)
 
         saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
 
@@ -172,8 +205,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
-        mods = self.filamentManager.get_spools_modifications()
-        lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        mod_spool = self.filamentManager.get_spools_modifications()
+        mod_profile = self.filamentManager.get_profiles_modifications()
+        lm = max(mod_spool["changed_at"] if mod_spool else 0,
+                 mod_profile["changed_at"] if mod_profile else 0)
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if check_lastmodified(int(lm)) and check_etag(etag):
@@ -193,8 +228,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_spool(self, identifier):
         spool = self.filamentManager.get_spool(identifier)
         if spool is not None:
-            if len(spool) > 0:
-                return jsonify(dict(spool=spool[0]))
+            if spool:
+                return jsonify(dict(spool=spool))
             else:
                 return make_response("Unknown spool", 404)
         else:
@@ -215,9 +250,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         new_spool = json_data["spool"]
 
-        for key in ["name", "profile_id", "cost", "weight", "used"]:
+        for key in ["name", "profile", "cost", "weight", "used", "temp_offset"]:
             if key not in new_spool:
                 return make_response("Spool does not contain mandatory '{}' field".format(key), 400)
+
+        if "id" not in new_spool.get("profile", {}):
+            return make_response("Spool does not contain mandatory 'id (profile)' field", 400)
 
         saved_spool = self.filamentManager.create_spool(new_spool)
 
@@ -242,11 +280,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         spool = self.filamentManager.get_spool(identifier)
         if spool is None:
             return make_response("Database error", 500)
-        if len(spool) < 1:
+        if not spool:
             return make_response("Unknown spool", 404)
 
         updated_spool = json_data["spool"]
-        merged_spool = dict_merge(spool[0], updated_spool)
+        merged_spool = dict_merge(spool, updated_spool)
 
         saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
 
@@ -263,44 +301,90 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         else:
             return make_response("Database error", 500)
 
+    @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
+    def get_selections_list(self):
+        # mods = self.filamentManager.get_spools_modifications()
+        # lm = mods[0]["changed_at"] if len(mods) > 0 else 0
+        # etag = (hashlib.sha1(str(lm))).hexdigest()
+        #
+        # if check_lastmodified(int(lm)) and check_etag(etag):
+        #     return make_response("Not Modified", 304)
+
+        all_selections = self.filamentManager.get_all_selections()
+        if all_selections is not None:
+            response = jsonify(dict(selections=all_selections))
+            # response.set_etag(etag)
+            # response.headers["Last-Modified"] = http_date(lm)
+            # response.headers["Cache-Control"] = "max-age=0"
+            return response
+        else:
+            return make_response("Database error", 500)
+
+    @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["PATCH"])
+    def update_selection(self, identifier):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
+        try:
+            json_data = request.json
+        except BadRequest:
+            return make_response("Malformed JSON body in request", 400)
+
+        if "selection" not in json_data:
+            return make_response("No selection included in request", 400)
+
+        selection = json_data["selection"]
+
+        if "tool" not in selection:
+            return make_response("Selection does not contain mandatory 'tool' field", 400)
+        if "id" not in selection.get("spool", {}):
+            return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
+
+        saved_selection = self.filamentManager.update_selection(identifier, selection)
+
+        if saved_selection is not None:
+            return jsonify(dict(selection=saved_selection))
+        else:
+            return make_response("Database error", 500)
+
     # EventHandlerPlugin
 
     def on_event(self, event, payload):
-        if event == Events.PRINT_STARTED:
-            self.odometerEnabled = self._settings.get(["enableOdometer"])
-            self.filamentOdometer.reset()
-        elif event in [Events.PRINT_DONE, Events.PRINT_FAILED]:
-            if self.odometerEnabled:
-                self._update_filament_usage()
-            self.odometerEnabled = False
-        elif event == Events.PRINT_PAUSED:
-            if self.odometerEnabled:
-                # take into account a possible filament change
-                self._update_filament_usage()
-                self.filamentOdometer.reset_extruded_length()
-            self.odometerEnabled = False
-        elif event == Events.PRINT_RESUMED:
-            self.odometerEnabled = self._settings.get(["enableOdometer"])
+        if event == Events.PRINTER_STATE_CHANGED:
+            self._logger.debug("State: {}".format(payload['state_string']))
+
+            if payload['state_id'] == "PRINTING":
+                if self.lastPrintState == "PAUSED":
+                    # resuming print, reset only extruded length
+                    self.filamentOdometer.reset_extruded_length()
+                else:
+                    # starting new print, full reset
+                    self.filamentOdometer.reset()
+                self.odometerEnabled = self._settings.get(["enableOdometer"])
+            elif self.lastPrintState == "PRINTING":
+                # print state changed from printing, update filament usage
+                if self.odometerEnabled:
+                    self._update_filament_usage()
+                    self.odometerEnabled = False
+
+            # update last print state
+            self.lastPrintState = payload['state_id']
 
     def _update_filament_usage(self):
         printer_profile = self._printer_profile_manager.get_current_or_default()
         extrusion = self.filamentOdometer.get_values()
         numTools = min(printer_profile['extruder']['count'], len(extrusion))
 
-        for i in range(0, numTools):
-            tool = self._settings.get(["selectedSpools", "tool" + str(i)])
-            if tool is not None:
-                spool_list = self.filamentManager.get_spool(tool)
-                if spool_list is not None and len(spool_list) > 0:
-                    spool = spool_list[0]
-                    profile_list = self.filamentManager.get_profile(spool['profile_id'])
-                    if profile_list is not None and len(profile_list) > 0:
-                        profile = profile_list[0]
-                        # update spool
-                        volume = self._calculate_volume(profile['diameter'], extrusion[i]) / 1000
-                        spool['used'] += volume * profile['density']
-                        self.filamentManager.update_spool(spool['id'], spool)
-                        self._logger.info("Filament used: " + str(extrusion[i]) + " mm (tool" + str(i) + ")")
+        for tool in xrange(0, numTools):
+            selection = self.filamentManager.get_selection(tool)
+            if selection is not None:
+                spool = selection["spool"]
+                if spool is not None:
+                    # update spool
+                    volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
+                    spool['used'] += volume * spool["profile"]['density']
+                    self.filamentManager.update_spool(spool["id"], spool)
+                    self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
 
     def _calculate_volume(self, diameter, length):
         radius = diameter / 2

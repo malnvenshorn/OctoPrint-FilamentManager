@@ -64,6 +64,11 @@ table td.settings_plugin_filamentmanager_spools_action a {
     margin-bottom: 10px;
 }
 
+#sidebar_plugin_filamentmanager_wrapper .accordion-heading i.fa-spinner {
+    float: right;
+    margin: 10px 15px;
+}
+
 #sidebar_plugin_filamentmanager .accordion-inner {
     padding-bottom: 0px;
 }
