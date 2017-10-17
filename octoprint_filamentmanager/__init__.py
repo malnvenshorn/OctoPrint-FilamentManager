@@ -393,7 +393,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     # Protocol hook
 
     def filament_odometer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-        if self.odometerEnabled and gcode is not None:
+        if self.odometerEnabled:
             self.filamentOdometer.parse(gcode, cmd)
 
     # Softwareupdate hook
