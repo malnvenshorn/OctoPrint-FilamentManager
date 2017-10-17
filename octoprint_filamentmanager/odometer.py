@@ -59,7 +59,7 @@ class FilamentOdometer(object):
             if t is not None:
                 self.currentTool = t
                 if len(self.lastExtrusion) <= self.currentTool:
-                    for i in range(len(self.lastExtrusion), self.currentTool + 1):
+                    for i in xrange(len(self.lastExtrusion), self.currentTool + 1):
                         self.lastExtrusion.append(0.0)
                         self.totalExtrusion.append(0.0)
                         self.maxExtrusion.append(0.0)
