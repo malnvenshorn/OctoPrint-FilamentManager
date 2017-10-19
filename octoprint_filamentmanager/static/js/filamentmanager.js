@@ -497,9 +497,9 @@ $(function() {
                     });
             };
 
-            var text = gettext(`You are about to delete the filament profile "${data.material} (${data.vendor})".` +
+            var text = gettext("You are about to delete the filament profile \"%s (%s)\". " +
                                "Please notice that it is not possible to delete profiles with associated spools.");
-            showConfirmationDialog(text, perform);
+            showConfirmationDialog(_.sprintf(text, data.material, data.vendor), perform);
         };
 
         //************************************************************
@@ -597,8 +597,8 @@ $(function() {
                     });
             };
 
-            var text = gettext(`You are about to delete the filament spool "${data.name}".`);
-            showConfirmationDialog(text, perform);
+            var text = gettext("You are about to delete the filament spool \"%s - %s (%s)\".");
+            showConfirmationDialog(_.sprintf(text, data.name, data.profile.material, data.profile.vendor), perform);
         };
     }
 
