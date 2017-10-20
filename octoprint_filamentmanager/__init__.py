@@ -386,6 +386,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                     self.filamentManager.update_spool(spool["id"], spool)
                     self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
 
+        self._send_client_message("updated_filaments")
+
+    def _send_client_message(self, message_type, data=None):
+        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
+
     def _calculate_volume(self, diameter, length):
         radius = diameter / 2
         return length * math.pi * radius * radius

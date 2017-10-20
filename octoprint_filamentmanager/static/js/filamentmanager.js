@@ -251,16 +251,25 @@ $(function() {
                 });
         };
 
-        self.onEventPrinterStateChanged = function() {
-            self.requestInProgress(true);
-            $.when(self.requestSpools(), self.requestSelectedSpools())
-                .done(function(spools, selections) {
-                    self.processSpools(spools[0]);
-                    self.processSelectedSpools(selections[0]);
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+        self.onDataUpdaterPluginMessage = function(plugin, data) {
+            if (plugin !== "filamentmanager") {
+                return;
+            }
+
+            var messageType = data.type;
+            var messageData = data.data;
+
+            if (messageType === "updated_filaments") {
+                self.requestInProgress(true);
+                $.when(self.requestSpools(), self.requestSelectedSpools())
+                    .done(function(spools, selections) {
+                        self.processSpools(spools[0]);
+                        self.processSelectedSpools(selections[0]);
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+            }
         };
 
         //*************************************************************
