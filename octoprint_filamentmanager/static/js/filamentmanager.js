@@ -609,6 +609,11 @@ $(function() {
             var text = gettext("You are about to delete the filament spool \"%s - %s (%s)\".");
             showConfirmationDialog(_.sprintf(text, data.name, data.profile.material, data.profile.vendor), perform);
         };
+
+        self.duplicateSpool = function(data) {
+            data.used = 0;
+            self.addSpool(data);
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
