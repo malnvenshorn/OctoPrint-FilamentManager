@@ -318,7 +318,7 @@ $(function() {
 
         self.updateSelectedSpool = function(data) {
             self.requestInProgress(true);
-            OctoPrint.filamentselections.update(data.tool, data)
+            OctoPrint.filamentmanager.selectionUpdate(data.tool, data)
             .done(function(data) {
                 var spool = data["selection"];
                 self._updateSelectedSpoolData(spool);
@@ -334,7 +334,7 @@ $(function() {
         };
 
         self.requestSelectedSpools = function() {
-            return OctoPrint.filamentselections.list();
+            return OctoPrint.filamentmanager.selectionList();
         };
 
         self.processSelectedSpools = function(data) {
@@ -419,7 +419,7 @@ $(function() {
         };
 
         self.requestProfiles = function() {
-            return OctoPrint.filamentprofiles.list();
+            return OctoPrint.filamentmanager.profileList();
         };
 
         self.processProfiles = function(data) {
@@ -440,7 +440,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentprofiles.add(data)
+            OctoPrint.filamentmanager.profileAdd(data)
             .done(function() {
                 self.requestProfiles()
                     .done(self.processProfiles)
@@ -462,7 +462,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentprofiles.update(data.id, data)
+            OctoPrint.filamentmanager.profileUpdate(data.id, data)
                 .done(function() {
                     $.when(self.requestProfiles(), self.requestSpools(), self.requestSelectedSpools())
                     .done(function(profiles, spools, selections) {
@@ -484,7 +484,7 @@ $(function() {
 
         self.removeProfile = function(data) {
             var perform = function() {
-                OctoPrint.filamentprofiles.delete(data.id)
+                OctoPrint.filamentmanager.profileDelete(data.id)
                     .done(function() {
                         self.requestProfiles()
                         .done(self.processProfiles)
@@ -524,7 +524,7 @@ $(function() {
         };
 
         self.requestSpools = function() {
-            return OctoPrint.filamentspools.list();
+            return OctoPrint.filamentmanager.spoolList();
         }
 
         self.processSpools = function(data) {
@@ -545,7 +545,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentspools.add(data)
+            OctoPrint.filamentmanager.spoolAdd(data)
                 .done(function() {
                     self.hideSpoolDialog();
                     self.requestSpools()
@@ -567,7 +567,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentspools.update(data.id, data)
+            OctoPrint.filamentmanager.spoolUpdate(data.id, data)
                 .done(function() {
                     self.hideSpoolDialog();
                     $.when(self.requestSpools(), self.requestSelectedSpools())
@@ -590,7 +590,7 @@ $(function() {
         self.removeSpool = function(data) {
             var perform = function() {
                 self.requestInProgress(true);
-                OctoPrint.filamentspools.delete(data.id)
+                OctoPrint.filamentmanager.spoolDelete(data.id)
                     .done(function() {
                         self.requestSpools()
                             .done(self.processSpools)
