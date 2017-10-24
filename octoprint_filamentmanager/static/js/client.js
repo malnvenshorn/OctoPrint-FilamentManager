@@ -84,6 +84,6 @@
         return this.base.patchJson(selectionUrl(id), data, opts);
     };
 
-    OctoPrintClient.registerComponent("filamentmanager", OctoPrintFilamentManagerClient);
+    OctoPrintClient.registerPluginComponent("filamentmanager", OctoPrintFilamentManagerClient);
     return OctoPrintFilamentManagerClient;
 });
