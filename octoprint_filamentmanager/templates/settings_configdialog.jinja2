@@ -1,7 +1,7 @@
-<div id="settings_plugin_filamentmanager_configurationdialog" class="modal hide fade">
+<div id="settings_plugin_filamentmanager_configurationdialog" class="modal hide fade" aria-hidden="true">
 
     <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <a href="#" class="close" data-dismiss="modal">&times;</a>
         <h3>{{ _('Plugin Configuration') }}</h3>
     </div>
 
@@ -39,10 +39,27 @@
             </div>
 
         </form>
+
+        <legend>{{ _("Import & Export") }}</legend>
+
+        <form class="form-inline">
+            <div class="control-group" data-bind="css: {error: invalidArchive}">
+                <div class="input-prepend input-append">
+                    <span class="btn fileinput-button">
+                        <span>{{ _("Browse...") }}</span>
+                        <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
+                    </span>
+                    <input type="text" class="input-large text-center" data-bind="value: importFilename" readonly></span>
+                    <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
+                </div>
+                <a class="btn pull-right" data-bind="attr: {href: exportUrl()}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
+            </div>
+            <div class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
+        </form>
     </div>
 
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
+        <button class="btn" data-dismiss="modal">{{ _('Cancel') }}</button>
         <button class="btn btn-primary" data-bind="click: savePluginSettings">{{ _('Save') }}</button>
     </div>
 

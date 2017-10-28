@@ -7,13 +7,17 @@ __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the 
 
 import math
 import os
+import tempfile
 import hashlib
-from flask import jsonify, request, make_response
+import shutil
+from datetime import datetime
+from flask import jsonify, request, make_response, Response
 from werkzeug.exceptions import BadRequest
 from werkzeug.http import http_date
 import octoprint.plugin
 from octoprint.events import Events
-from octoprint.server.util.flask import check_lastmodified, check_etag
+from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
+from octoprint.server import admin_permission
 from octoprint.util import dict_merge
 from .manager import FilamentManager
 from .odometer import FilamentOdometer
@@ -111,11 +115,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
+        force = request.values.get("force", False)
+
         mod = self.filamentManager.get_profiles_modifications()
         lm = mod["changed_at"] if mod else 0
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(int(lm)) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         all_profiles = self.filamentManager.get_all_profiles()
@@ -204,13 +210,15 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
+        force = request.values.get("force", False)
+
         mod_spool = self.filamentManager.get_spools_modifications()
         mod_profile = self.filamentManager.get_profiles_modifications()
         lm = max(mod_spool["changed_at"] if mod_spool else 0,
                  mod_profile["changed_at"] if mod_profile else 0)
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(int(lm)) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         all_spools = self.filamentManager.get_all_spools()
@@ -345,6 +353,76 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return jsonify(dict(selection=saved_selection))
         else:
             return make_response("Database error", 500)
+
+    @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
+    @restricted_access
+    @admin_permission.require(403)
+    def export_data(self):
+        try:
+            tempdir = tempfile.mkdtemp()
+            self.filamentManager.export_data(tempdir)
+            archive_path = shutil.make_archive(tempfile.mktemp(), "zip", tempdir)
+        except Exception as e:
+            self._logger.error("Data export failed: {message}".format(message=str(e)))
+            return make_response("Data export failed, see the log for more details", 500)
+        finally:
+            try:
+                shutil.rmtree(tempdir)
+            except Exception as e:
+                self._logger.warn("Could not remove temporary directory {path}: {message}"
+                                  .format(path=tempdir, message=str(e)))
+
+        archive_name = "filament_export_{timestamp}.zip".format(timestamp=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
+        def file_generator():
+            with open(archive_path) as f:
+                for c in f:
+                    yield c
+            try:
+                os.remove(archive_path)
+            except Exception as e:
+                self._logger.warn("Could not remove temporary file {path}: {message}"
+                                  .format(path=archive_path, message=str(e)))
+
+        return Response(file_generator(),
+                        mimetype="application/zip",
+                        headers={"Content-Disposition": "attachment; filename=" + archive_name})
+
+    @octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
+    @restricted_access
+    @admin_permission.require(403)
+    def import_data(self):
+        input_name = "file"
+        input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
+        input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
+
+        if input_upload_path not in request.values or input_upload_name not in request.values:
+            return make_response("No file included", 400)
+
+        upload_path = request.values[input_upload_path]
+        upload_name = request.values[input_upload_name]
+
+        if not upload_name.lower().endswith(".zip"):
+            return make_response("File doesn't have a valid extension for an import archive", 400)
+
+        try:
+            tempdir = tempfile.mkdtemp()
+            # python 2.7 lacks of shutil.unpack_archive ¯\_(ツ)_/¯
+            from zipfile import ZipFile
+            with ZipFile(upload_path, "r") as zip_file:
+                zip_file.extractall(tempdir)
+            self.filamentManager.import_data(tempdir)
+        except Exception as e:
+            self._logger.error("Data import failed: {message}".format(message=str(e)))
+            return make_response("Data import failed, see the log for more details", 500)
+        finally:
+            try:
+                shutil.rmtree(tempdir)
+            except Exception as e:
+                self._logger.warn("Could not remove temporary directory {path}: {message}"
+                                  .format(path=tempdir, message=str(e)))
+
+        return make_response("", 204)
 
     # EventHandlerPlugin
 

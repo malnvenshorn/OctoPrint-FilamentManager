@@ -318,7 +318,7 @@ $(function() {
 
         self.updateSelectedSpool = function(data) {
             self.requestInProgress(true);
-            OctoPrint.plugins.filamentmanager.selectionUpdate(data.tool, data)
+            OctoPrint.plugins.filamentmanager.updateSelection(data.tool, data)
             .done(function(data) {
                 var spool = data["selection"];
                 self._updateSelectedSpoolData(spool);
@@ -334,7 +334,7 @@ $(function() {
         };
 
         self.requestSelectedSpools = function() {
-            return OctoPrint.plugins.filamentmanager.selectionList();
+            return OctoPrint.plugins.filamentmanager.listSelections();
         };
 
         self.processSelectedSpools = function(data) {
@@ -418,8 +418,8 @@ $(function() {
             $("#settings_plugin_filamentmanager_profiledialog").modal("show");
         };
 
-        self.requestProfiles = function() {
-            return OctoPrint.plugins.filamentmanager.profileList();
+        self.requestProfiles = function(force=false) {
+            return OctoPrint.plugins.filamentmanager.listProfiles(force);
         };
 
         self.processProfiles = function(data) {
@@ -440,7 +440,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.plugins.filamentmanager.profileAdd(data)
+            OctoPrint.plugins.filamentmanager.addProfile(data)
             .done(function() {
                 self.requestProfiles()
                     .done(self.processProfiles)
@@ -462,7 +462,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.plugins.filamentmanager.profileUpdate(data.id, data)
+            OctoPrint.plugins.filamentmanager.updateProfile(data.id, data)
                 .done(function() {
                     $.when(self.requestProfiles(), self.requestSpools(), self.requestSelectedSpools())
                     .done(function(profiles, spools, selections) {
@@ -484,7 +484,7 @@ $(function() {
 
         self.removeProfile = function(data) {
             var perform = function() {
-                OctoPrint.plugins.filamentmanager.profileDelete(data.id)
+                OctoPrint.plugins.filamentmanager.deleteProfile(data.id)
                     .done(function() {
                         self.requestProfiles()
                         .done(self.processProfiles)
@@ -523,8 +523,8 @@ $(function() {
             $("#settings_plugin_filamentmanager_spooldialog").modal("hide");
         };
 
-        self.requestSpools = function() {
-            return OctoPrint.plugins.filamentmanager.spoolList();
+        self.requestSpools = function(force=false) {
+            return OctoPrint.plugins.filamentmanager.listSpools(force);
         }
 
         self.processSpools = function(data) {
@@ -545,7 +545,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.plugins.filamentmanager.spoolAdd(data)
+            OctoPrint.plugins.filamentmanager.addSpool(data)
                 .done(function() {
                     self.hideSpoolDialog();
                     self.requestSpools()
@@ -567,7 +567,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.plugins.filamentmanager.spoolUpdate(data.id, data)
+            OctoPrint.plugins.filamentmanager.updateSpool(data.id, data)
                 .done(function() {
                     self.hideSpoolDialog();
                     $.when(self.requestSpools(), self.requestSelectedSpools())
@@ -590,7 +590,7 @@ $(function() {
         self.removeSpool = function(data) {
             var perform = function() {
                 self.requestInProgress(true);
-                OctoPrint.plugins.filamentmanager.spoolDelete(data.id)
+                OctoPrint.plugins.filamentmanager.deleteSpool(data.id)
                     .done(function() {
                         self.requestSpools()
                             .done(self.processSpools)
@@ -613,6 +613,78 @@ $(function() {
         self.duplicateSpool = function(data) {
             data.used = 0;
             self.addSpool(data);
+        }
+
+        //************************************************************
+        // import & export
+
+        self.importFilename = ko.observable();
+
+        self.invalidArchive = ko.pureComputed(function() {
+            var name = self.importFilename();
+            return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip"));
+        });
+
+        self.enableImport = ko.pureComputed(function() {
+            var name = self.importFilename();
+            return name !== undefined && name.trim() != "" && !self.invalidArchive();
+        });
+
+        self.importButton = $("#settings_plugin_filamentmanager_import_button");
+        self.importElement = $("#settings_plugin_filamentmanager_import");
+
+        self.importElement.fileupload({
+            dataType: "json",
+            maxNumberOfFiles: 1,
+            autoUpload: false,
+            add: function(e, data) {
+                if (data.files.length == 0) {
+                    return false;
+                }
+
+                self.importFilename(data.files[0].name);
+
+                self.importButton.unbind("click");
+                self.importButton.bind("click", function(event) {
+                    event.preventDefault();
+                    data.submit();
+                });
+            },
+            done: function(e, data) {
+                new PNotify({
+                    title: gettext("Data import successfull"),
+                    type: "success",
+                    hide: true
+                });
+
+                self.importButton.unbind("click");
+                self.importFilename(undefined);
+
+                self.requestInProgress(true);
+                $.when(self.requestProfiles(true), self.requestSpools(true))
+                    .done(function(profiles, spools, selections) {
+                        self.processProfiles(profiles[0]);
+                        self.processSpools(spools[0]);
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+            },
+            fail: function(e, data) {
+                new PNotify({
+                    title: gettext("Data import failed"),
+                    text: gettext("Something went wrong, please consult the logs."),
+                    type: "error",
+                    hide: false
+                });
+
+                self.importButton.unbind("click");
+                self.importFilename(undefined);
+            }
+        });
+
+        self.exportUrl = function() {
+            return "plugin/filamentmanager/export?apikey=" + UI_API_KEY;
         }
     }
 

@@ -26,59 +26,69 @@
         this.base = base;
     };
 
-    OctoPrintFilamentManagerClient.prototype.profileList = function (opts) {
-        return this.base.get(profileUrl(), opts);
+    OctoPrintFilamentManagerClient.prototype.listProfiles = function (force, opts) {
+        force = force || false;
+        var query = {};
+        if (force) {
+            query.force = force || false;
+        }
+        return this.base.getWithQuery(profileUrl(), query, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.profileGet = function (id, opts) {
+    OctoPrintFilamentManagerClient.prototype.getProfile = function (id, opts) {
         return this.base.get(profileUrl(id), opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.profileAdd = function (profile, opts) {
+    OctoPrintFilamentManagerClient.prototype.addProfile = function (profile, opts) {
         profile = profile || {};
         var data = {profile: profile};
         return this.base.postJson(profileUrl(), data, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.profileUpdate = function (id, profile, opts) {
+    OctoPrintFilamentManagerClient.prototype.updateProfile = function (id, profile, opts) {
         profile = profile || {};
         var data = {profile: profile};
         return this.base.patchJson(profileUrl(id), data, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.profileDelete = function (id, opts) {
+    OctoPrintFilamentManagerClient.prototype.deleteProfile = function (id, opts) {
         return this.base.delete(profileUrl(id), opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.spoolList = function (opts) {
-        return this.base.get(spoolUrl(), opts);
+    OctoPrintFilamentManagerClient.prototype.listSpools = function (force, opts) {
+        force = force || false;
+        var query = {};
+        if (force) {
+            query.force = force || false;
+        }
+        return this.base.getWithQuery(spoolUrl(), query, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.spoolGet = function (id, opts) {
+    OctoPrintFilamentManagerClient.prototype.getSpool = function (id, opts) {
         return this.base.get(spoolUrl(id), opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.spoolAdd = function (spool, opts) {
+    OctoPrintFilamentManagerClient.prototype.addSpool = function (spool, opts) {
         spool = spool || {};
         var data = {spool: spool};
         return this.base.postJson(spoolUrl(), data, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.spoolUpdate = function (id, spool, opts) {
+    OctoPrintFilamentManagerClient.prototype.updateSpool = function (id, spool, opts) {
         spool = spool || {};
         var data = {spool: spool};
         return this.base.patchJson(spoolUrl(id), data, opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.spoolDelete = function (id, opts) {
+    OctoPrintFilamentManagerClient.prototype.deleteSpool = function (id, opts) {
         return this.base.delete(spoolUrl(id), opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.selectionList = function (opts) {
+    OctoPrintFilamentManagerClient.prototype.listSelections = function (opts) {
         return this.base.get(selectionUrl(), opts);
     };
 
-    OctoPrintFilamentManagerClient.prototype.selectionUpdate = function (id, selection, opts) {
+    OctoPrintFilamentManagerClient.prototype.updateSelection = function (id, selection, opts) {
         selection = selection || {};
         var data = {selection: selection};
         return this.base.patchJson(selectionUrl(id), data, opts);

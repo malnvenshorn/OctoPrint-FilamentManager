@@ -1,5 +1,7 @@
 # coding=utf-8
 import sqlite3
+import csv
+import os
 from multiprocessing import Lock
 
 __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
@@ -257,7 +259,39 @@ class FilamentManager(object):
             self._log_error(error)
             return None
 
+    def export_data(self, dirpath):
+        tablenames = ["profiles", "spools"]
+        for table in tablenames:
+            self._export_to_csv(dirpath, table)
+
+    def import_data(self, dirpath):
+        tablenames = ["profiles", "spools"]
+        for table in tablenames:
+            self._import_from_csv(dirpath, table)
+
     # helper
+
+    def _import_from_csv(self, dirpath, tablename):
+        filepath = os.path.join(dirpath, tablename + ".csv")
+        with open(filepath, "r") as csv_file:
+            csv_reader = csv.reader(csv_file)
+            header = next(csv_reader)
+            columns = ",".join(header)
+            placeholder = ",".join(["?"] * len(header))
+            with self._db_lock, self._db as db:
+                # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
+                # forcing a data update on client side is neccessary after import
+                db.executemany("INSERT OR IGNORE INTO {table} ({columns}) VALUES ({values});"
+                               .format(table=tablename, columns=columns, values=placeholder), csv_reader)
+
+    def _export_to_csv(self, dirpath, tablename):
+        with self._db_lock, self._db as db:
+            cursor = db.execute("SELECT * FROM " + tablename)
+            filepath = os.path.join(dirpath, tablename + ".csv")
+            with open(filepath, "w") as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow([i[0] for i in cursor.description])
+                csv_writer.writerows(cursor)
 
     def _cursor_to_dict(self, cursor, one=False):
         if one:
