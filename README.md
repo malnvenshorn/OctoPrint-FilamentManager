@@ -11,9 +11,19 @@ This OctoPrint plugin helps to manage your filament spools. The project is still
 
 ## FAQ
 
+[Odometer feature doesn't work when printing from SD](https://github.com/malnvenshorn/OctoPrint-FilamentManager#odometer-feature-doesnt-work-when-printing-from-sd)<br>
+[My profiles/spools will not be loaded](https://github.com/malnvenshorn/OctoPrint-FilamentManager#my-profilesspools-will-not-be-loaded)<br>
+[Is it possible to change the location of the plugin in the sidebar?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#is-it-possible-to-change-the-location-of-the-plugin-in-the-sidebar)
+
+##
+
 #### Odometer feature doesn't work when printing from SD
 
 Due to how this feature works it is not possible to count the used filament in this case.
+
+#### My profiles/spools will not be loaded
+
+Try to clear your browser cache and reload the page.
 
 #### Is it possible to change the location of the plugin in the sidebar?
 
@@ -28,10 +38,6 @@ appearance:
       - state
       - plugin_filamentmanager
 ```
-
-#### My profiles/spools will not be loaded
-
-Try to clear your browser cache and reload the page.
 
 ## Screenshots
 
