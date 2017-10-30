@@ -29,6 +29,10 @@ appearance:
       - plugin_filamentmanager
 ```
 
+#### My profiles/spools will not be loaded
+
+Try to clear your browser cache and reload the page.
+
 ## Screenshots
 
 ![FilamentManager Sidebar](screenshots/filamentmanager_sidebar.png?raw=true)
