@@ -1,4 +1,4 @@
-Before opening a new issue please take a look if there is already a ticked addressing the same problem. Also make sure you are using the latest version and that you have read the release notes before updating.
+Before opening a new issue please take a look if there is already a ticked addressing the same problem. Also make sure you are using the latest version and that you have read the FAQ and release notes.
 
 If you want to report a bug stick to the template below and provide all the requested information.
 
