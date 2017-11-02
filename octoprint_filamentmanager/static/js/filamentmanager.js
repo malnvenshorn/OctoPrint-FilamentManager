@@ -5,6 +5,7 @@
  * License: AGPLv3
  */
 $(function() {
+    "use strict";
 
     var cleanProfile = function() {
         return {

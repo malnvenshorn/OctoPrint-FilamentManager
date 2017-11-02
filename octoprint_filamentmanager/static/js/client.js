@@ -5,6 +5,8 @@
         factory(global.OctoPrintClient, global.$);
     }
 })(this, function(OctoPrintClient, $) {
+    "use strict";
+
     var pluginUrl = "plugin/filamentmanager";
 
     var profileUrl = function(profile) {
