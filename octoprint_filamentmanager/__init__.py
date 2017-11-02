@@ -36,12 +36,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentManager = None
         self.filamentOdometer = None
         self.odometerEnabled = False
-        self.lastPrintState = False
+        self.lastPrintState = None
 
     # StartupPlugin
 
     def on_startup(self, host, port):
-        self.filamentOdometer = FilamentOdometer(self._logger)
+        self.filamentOdometer = FilamentOdometer()
 
         db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
 
@@ -49,7 +49,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             # correct missing _db_version
             self._settings.set(["_db_version"], 1)
 
-        self.filamentManager = FilamentManager(db_path, self._logger)
+        self.filamentManager = FilamentManager(db_path)
 
         if self.filamentManager.init_database():
             if self._settings.get(["_db_version"]) is None:             # inital startup
@@ -63,11 +63,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if 1 == self._settings.get(["_db_version"]):
             # add temperature column
             sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
-            if self.filamentManager.execute_script(sql):
+            try:
+                self.filamentManager.execute_script(sql)
                 self._settings.set(["_db_version"], 2)
-            else:
-                self._logger.error("Database migration failed from version {} to {}"
-                                   .format(self._settings.get(["_db_version"]), 2))
+            except Exception as e:
+                self._logger.error("Database migration failed from version {old} to {new}: {message}"
+                                   .format(old=self._settings.get(["_db_version"]), new=2, message=str(e)))
+                return
 
             # migrate selected spools from config.yaml to database
             selections = self._settings.get(["selectedSpools"])
@@ -124,26 +126,30 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if not force and check_lastmodified(int(lm)) and check_etag(etag):
             return make_response("Not Modified", 304)
 
-        all_profiles = self.filamentManager.get_all_profiles()
-        if all_profiles is not None:
+        try:
+            all_profiles = self.filamentManager.get_all_profiles()
             response = jsonify(dict(profiles=all_profiles))
             response.set_etag(etag)
             response.headers["Last-Modified"] = http_date(lm)
             response.headers["Cache-Control"] = "max-age=0"
             return response
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to fetch profiles: {message}".format(message=str(e)))
+            return make_response("Failed to fetch profiles, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["GET"])
     def get_profile(self, identifier):
-        profile = self.filamentManager.get_profile(identifier)
-        if profile is not None:
+        try:
+            profile = self.filamentManager.get_profile(identifier)
             if profile:
                 return jsonify(dict(profile=profile))
             else:
+                self._logger.warn("Profile with id {id} does not exist".format(id=identifier))
                 return make_response("Unknown profile", 404)
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to fetch profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to fetch profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["POST"])
     def create_profile(self):
@@ -164,12 +170,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             if key not in new_profile:
                 return make_response("Profile does not contain mandatory '{}' field".format(key), 400)
 
-        saved_profile = self.filamentManager.create_profile(new_profile)
-
-        if saved_profile is not None:
+        try:
+            saved_profile = self.filamentManager.create_profile(new_profile)
             return jsonify(dict(profile=saved_profile))
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to create profile: {message}".format(message=str(e)))
+            return make_response("Failed to create profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["PATCH"])
     def update_profile(self, identifier):
@@ -184,29 +190,37 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "profile" not in json_data:
             return make_response("No profile included in request", 400)
 
-        profile = self.filamentManager.get_profile(identifier)
-        if profile is None:
-            return make_response("Database error", 500)
+        try:
+            profile = self.filamentManager.get_profile(identifier)
+        except Exception as e:
+            self._logger.error("Failed to fetch profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to fetch profile, see the log for more details", 500)
+
         if not profile:
+            self._logger.warn("Profile with id {id} does not exist".format(id=identifier))
             return make_response("Unknown profile", 404)
 
         updated_profile = json_data["profile"]
         merged_profile = dict_merge(profile, updated_profile)
 
-        saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
-
-        if saved_profile is not None:
+        try:
+            saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
             return jsonify(dict(profile=saved_profile))
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to update profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to update profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["DELETE"])
     def delete_profile(self, identifier):
-        noerror = self.filamentManager.delete_profile(identifier)
-        if noerror:
+        try:
+            self.filamentManager.delete_profile(identifier)
             return make_response("", 204)
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to delete profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to delete profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["GET"])
     def get_spools_list(self):
@@ -221,26 +235,30 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if not force and check_lastmodified(int(lm)) and check_etag(etag):
             return make_response("Not Modified", 304)
 
-        all_spools = self.filamentManager.get_all_spools()
-        if all_spools is not None:
+        try:
+            all_spools = self.filamentManager.get_all_spools()
             response = jsonify(dict(spools=all_spools))
             response.set_etag(etag)
             response.headers["Last-Modified"] = http_date(lm)
             response.headers["Cache-Control"] = "max-age=0"
             return response
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to fetch spools: {message}".format(message=str(e)))
+            return make_response("Failed to fetch spools, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["GET"])
     def get_spool(self, identifier):
-        spool = self.filamentManager.get_spool(identifier)
-        if spool is not None:
+        try:
+            spool = self.filamentManager.get_spool(identifier)
             if spool:
                 return jsonify(dict(spool=spool))
             else:
+                self._logger.warn("Spool with id {id} does not exist".format(id=identifier))
                 return make_response("Unknown spool", 404)
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to fetch spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to fetch spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["POST"])
     def create_spool(self):
@@ -264,12 +282,12 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "id" not in new_spool.get("profile", {}):
             return make_response("Spool does not contain mandatory 'id (profile)' field", 400)
 
-        saved_spool = self.filamentManager.create_spool(new_spool)
-
-        if saved_spool is not None:
+        try:
+            saved_spool = self.filamentManager.create_spool(new_spool)
             return jsonify(dict(spool=saved_spool))
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to create spool: {message}".format(message=str(e)))
+            return make_response("Failed to create spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["PATCH"])
     def update_spool(self, identifier):
@@ -284,48 +302,47 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "spool" not in json_data:
             return make_response("No spool included in request", 400)
 
-        spool = self.filamentManager.get_spool(identifier)
-        if spool is None:
-            return make_response("Database error", 500)
+        try:
+            spool = self.filamentManager.get_spool(identifier)
+        except Exception as e:
+            self._logger.error("Failed to fetch spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to fetch spool, see the log for more details", 500)
+
         if not spool:
+            self._logger.warn("Spool with id {id} does not exist".format(id=identifier))
             return make_response("Unknown spool", 404)
 
         updated_spool = json_data["spool"]
         merged_spool = dict_merge(spool, updated_spool)
 
-        saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
-
-        if saved_spool is not None:
+        try:
+            saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
             return jsonify(dict(spool=saved_spool))
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to update spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to update spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["DELETE"])
     def delete_spool(self, identifier):
-        noerror = self.filamentManager.delete_spool(identifier)
-        if noerror:
+        try:
+            self.filamentManager.delete_spool(identifier)
             return make_response("", 204)
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to delete spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to delete spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
     def get_selections_list(self):
-        # mods = self.filamentManager.get_spools_modifications()
-        # lm = mods[0]["changed_at"] if len(mods) > 0 else 0
-        # etag = (hashlib.sha1(str(lm))).hexdigest()
-        #
-        # if check_lastmodified(int(lm)) and check_etag(etag):
-        #     return make_response("Not Modified", 304)
-
-        all_selections = self.filamentManager.get_all_selections()
-        if all_selections is not None:
+        try:
+            all_selections = self.filamentManager.get_all_selections()
             response = jsonify(dict(selections=all_selections))
-            # response.set_etag(etag)
-            # response.headers["Last-Modified"] = http_date(lm)
-            # response.headers["Cache-Control"] = "max-age=0"
             return response
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to fetch selected spools: {message}".format(message=str(e)))
+            return make_response("Failed to fetch selected spools, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["PATCH"])
     def update_selection(self, identifier):
@@ -347,12 +364,13 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "id" not in selection.get("spool", {}):
             return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
 
-        saved_selection = self.filamentManager.update_selection(identifier, selection)
-
-        if saved_selection is not None:
+        try:
+            saved_selection = self.filamentManager.update_selection(identifier, selection)
             return jsonify(dict(selection=saved_selection))
-        else:
-            return make_response("Database error", 500)
+        except Exception as e:
+            self._logger.error("Failed to update selected spool for tool {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            return make_response("Failed to update selected spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
     @restricted_access
@@ -384,9 +402,9 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self._logger.warn("Could not remove temporary file {path}: {message}"
                                   .format(path=archive_path, message=str(e)))
 
-        return Response(file_generator(),
-                        mimetype="application/zip",
-                        headers={"Content-Disposition": "attachment; filename=" + archive_name})
+        response = Response(file_generator(), mimetype="application/zip")
+        response.headers.set('Content-Disposition', 'attachment', filename=archive_name)
+        return response
 
     @octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
     @restricted_access
@@ -428,7 +446,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event == Events.PRINTER_STATE_CHANGED:
-            self._logger.debug("State: {}".format(payload['state_string']))
+            self._logger.debug("Printer state changed to '{}'".format(payload['state_string']))
 
             if payload['state_id'] == "PRINTING":
                 if self.lastPrintState == "PAUSED":
@@ -453,15 +471,24 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         numTools = min(printer_profile['extruder']['count'], len(extrusion))
 
         for tool in xrange(0, numTools):
-            selection = self.filamentManager.get_selection(tool)
-            if selection is not None:
+            try:
+                selection = self.filamentManager.get_selection(tool)
                 spool = selection["spool"]
-                if spool is not None:
-                    # update spool
-                    volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
-                    spool['used'] += volume * spool["profile"]['density']
-                    self.filamentManager.update_spool(spool["id"], spool)
-                    self._logger.info("Filament used: " + str(extrusion[tool]) + " mm (tool" + str(tool) + ")")
+
+                if not spool:
+                    self._logger.warn("No selected spool for tool{id}".format(id=tool))
+                    continue
+
+                # update spool
+                volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
+                weight = volume * spool["profile"]['density']
+                self._logger.info("Filament used: {length}mm / {weight}g (tool{id})"
+                                  .format(length=str(extrusion[tool]), weight=str(weight), id=str(tool)))
+                spool['used'] += weight
+                self.filamentManager.update_spool(spool["id"], spool)
+            except Exception as e:
+                self._logger.error("Failed to update filament on tool{id}: {message}"
+                                   .format(id=str(tool), message=str(e)))
 
         self._send_client_message("updated_filaments")
 

@@ -11,8 +11,7 @@ class FilamentOdometer(object):
     regexE = re.compile(r'.*E(-?\d+(\.\d+)?)')
     regexT = re.compile(r'^T(\d+)')
 
-    def __init__(self, logger):
-        self._logger = logger
+    def __init__(self):
         self.reset()
 
     def reset(self):
