@@ -306,7 +306,7 @@ $(function() {
         self.onSelectedSpoolChange = function(tool) {
             if (!self.onSelectedSpoolChangeEnabled) return;
 
-            spool = self.selectedSpoolsHelper()[tool]();
+            var spool = self.selectedSpoolsHelper()[tool]();
             var data = {
                 tool: tool,
                     spool: {
