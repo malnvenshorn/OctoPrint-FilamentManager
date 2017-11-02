@@ -1,12 +1,12 @@
-Before opening a new issue please take a look if there is already a ticked addressing the same problem. Also make sure you are using the latest version and that you have read the FAQ and release notes.
+Before opening a new ticket please take a look if there is already one addressing the same concern.
 
-If you want to report a **bug** stick to the template below and provide ALL required information. Do NOT delete ANY lines from the template but those enclosed in [ and ].
+If you want to report a **bug** stick to the template below and provide ALL required information. Do NOT delete ANY lines from the template but those enclosed in [ and ]. Also make sure you are using the latest version and that you have read the FAQ and release notes.
 
-If you want to request a **new feature** mark them with a "[Request]" prefix in the title.
+If you have an other request mark them with one of the following prefixes in the title:
 
-If you have suggestions for an **existing feature** mark them with a "[Improvement]" prefix in the title.
-
-If you have a **question** mark them with a "[Question]" prefix in the title.
+- "[Request]" for a **new feature** request
+- "[Improvement]" for suggestions for an **existing feature**
+- "[Question]" for a **question**
 
 ---
 
