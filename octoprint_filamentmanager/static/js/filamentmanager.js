@@ -354,16 +354,40 @@ $(function() {
             }
         };
 
+        self._reapplySubscription = undefined;
+
         self._applyTemperatureOffset = function(data) {
-            if (data.tool < self.tools().length) {
-                var tool = self.temperature.tools()[data.tool];
-                var spool = data.spool;
-                self.temperature.changingOffset.item = tool;
-                self.temperature.changingOffset.name(tool.name());
-                self.temperature.changingOffset.offset(tool.offset());
-                self.temperature.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
-                self.temperature.confirmChangeOffset();
+            if (self.loginState.isUser()) {
+                // if logged in apply temperature offset
+                if (data.tool < self.tools().length) {
+                    var tool = self.temperature.tools()[data.tool];
+                    var spool = data.spool;
+                    self.temperature.changingOffset.item = tool;
+                    self.temperature.changingOffset.name(tool.name());
+                    self.temperature.changingOffset.offset(tool.offset());
+                    self.temperature.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
+                    self.temperature.confirmChangeOffset();
+                }
+            } else {
+                // if not logged in set a subscription to automatically apply the temperature offset after login
+                if (self._reapplySubscription === undefined) {
+                    self._reapplySubscription = self.loginState.isUser.subscribe(self._reapplyTemperatureOffset);
+                }
             }
+        };
+
+        self._reapplyTemperatureOffset = function() {
+            if (!self.loginState.isUser()) return;
+
+            // apply temperature offset
+            _.each(self.selectedSpools(), function(spool, index) {
+                var selection = {spool: spool, tool: index};
+                self._applyTemperatureOffset(selection);
+            });
+
+            // remove subscription
+            self._reapplySubscription.dispose();
+            self._reapplySubscription = undefined;
         };
 
         //************************************************************
