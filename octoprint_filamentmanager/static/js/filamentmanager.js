@@ -278,7 +278,7 @@ $(function() {
         self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
         self.tools = ko.observableArray([]);                // number of tools to generate select elements in template
         self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent selection update
-                                                            // when settings selections
+                                                            // when setting selections
 
         self.onExtruderCountChange = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -662,7 +662,7 @@ $(function() {
 
                 self.requestInProgress(true);
                 $.when(self.requestProfiles(true), self.requestSpools(true))
-                    .done(function(profiles, spools, selections) {
+                    .done(function(profiles, spools) {
                         self.processProfiles(profiles[0]);
                         self.processSpools(spools[0]);
                     })
