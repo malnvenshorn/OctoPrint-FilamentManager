@@ -156,6 +156,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to fetch profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["POST"])
+    @restricted_access
     def create_profile(self):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
@@ -182,6 +183,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to create profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["PATCH"])
+    @restricted_access
     def update_profile(self, identifier):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
@@ -217,6 +219,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to update profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["DELETE"])
+    @restricted_access
     def delete_profile(self, identifier):
         try:
             self.filamentManager.delete_profile(identifier)
@@ -265,6 +268,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to fetch spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools", methods=["POST"])
+    @restricted_access
     def create_spool(self):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
@@ -294,6 +298,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to create spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["PATCH"])
+    @restricted_access
     def update_spool(self, identifier):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
@@ -329,6 +334,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to update spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["DELETE"])
+    @restricted_access
     def delete_spool(self, identifier):
         try:
             self.filamentManager.delete_spool(identifier)
@@ -349,6 +355,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Failed to fetch selected spools, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["PATCH"])
+    @restricted_access
     def update_selection(self, identifier):
         if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
