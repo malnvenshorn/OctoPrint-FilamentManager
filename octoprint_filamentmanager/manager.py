@@ -54,7 +54,7 @@ class FilamentManager(object):
                             INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
                         END; """.format(table=table, action=action))
 
-        return self.execute_script("".join(scheme))
+        self.execute_script("".join(scheme))
 
     def execute_script(self, script):
         with self._db_lock, self._db as db:
