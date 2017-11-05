@@ -13,7 +13,8 @@ This OctoPrint plugin helps to manage your filament spools. The project is still
 
 [Odometer feature doesn't work when printing from SD](https://github.com/malnvenshorn/OctoPrint-FilamentManager#odometer-feature-doesnt-work-when-printing-from-sd)<br>
 [My profiles/spools will not be loaded](https://github.com/malnvenshorn/OctoPrint-FilamentManager#my-profilesspools-will-not-be-loaded)<br>
-[Is it possible to change the location of the plugin in the sidebar?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#is-it-possible-to-change-the-location-of-the-plugin-in-the-sidebar)
+[Is it possible to change the location of the plugin in the sidebar?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#is-it-possible-to-change-the-location-of-the-plugin-in-the-sidebar)<br>
+[How do I install the latest development version?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#how-do-i-install-the-latest-development-version)
 
 ##
 
@@ -38,6 +39,12 @@ appearance:
       - state
       - plugin_filamentmanager
 ```
+
+#### How do I install the latest development version?
+
+You can install it using the folowing link 
+
+`https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/develop.zip`
 
 ## Screenshots
 
