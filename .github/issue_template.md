@@ -1,12 +1,10 @@
-Before opening a new ticket please take a look if there is already one addressing the same concern.
+Before opening a new ticket please take a look if there is already an existing one addressing the same concern.
 
-If you want to report a **bug** stick to the template below and provide ALL required information. Do NOT delete ANY lines from the template but those enclosed in [ and ]. Also make sure you are using the latest version and that you have read the FAQ and release notes.
+Also read the FAQ: https://github.com/malnvenshorn/OctoPrint-FilamentManager#faq
 
-If you have an other request mark them with one of the following prefixes in the title:
+If you have a **request** or **question** mark them with a "[Request]" respectively "[Question]" prefix in the title.
 
-- "[Request]" for a **new feature** request
-- "[Improvement]" for suggestions for an **existing feature**
-- "[Question]" for a **question**
+For **bug** reports use the template below and provide ALL required information. Do NOT delete ANY lines from the template but those enclosed in [ and ]. Also make sure you are using the latest version and that you have read the release notes.
 
 (Before submitting your ticket, please delete this text up to and including the line too - it's only here for your information)
 
@@ -36,4 +34,4 @@ If you have an other request mark them with one of the following prefixes in the
 
 [If you have more information which could help me to understand/fix the issue feel free to add them here.]
 
-I have provided all required information.
+I have read the FAQ and provided all required information.
