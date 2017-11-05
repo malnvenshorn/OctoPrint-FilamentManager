@@ -49,15 +49,19 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             # correct missing _db_version
             self._settings.set(["_db_version"], 1)
 
-        self.filamentManager = FilamentManager(db_path)
+        try:
+            self.filamentManager = FilamentManager(db_path)
+            self.filamentManager.init_database()
 
-        if self.filamentManager.init_database():
-            if self._settings.get(["_db_version"]) is None:             # inital startup
-                self._settings.set(["_db_version"], self.DB_VERSION)    # we got the latest db scheme
+            if self._settings.get(["_db_version"]) is None:
+                # we assume the database is initialized the first time
+                # therefore we got the latest db scheme
+                self._settings.set(["_db_version"], self.DB_VERSION)
             else:
+                # migrate existing database if neccessary
                 self.migrate_db_scheme()
-        else:
-            self._logger.error("Failed to create database")
+        except Exception as e:
+            self._logger.error("Failed to create database: {message}".format(message=str(e)))
 
     def migrate_db_scheme(self):
         if 1 == self._settings.get(["_db_version"]):
