@@ -8,6 +8,8 @@ If you have an other request mark them with one of the following prefixes in the
 - "[Improvement]" for suggestions for an **existing feature**
 - "[Question]" for a **question**
 
+(Before submitting your ticket, please delete this text up to and including the line too - it's only here for your information)
+
 ---
 
 #### What were you doing?
@@ -33,3 +35,5 @@ If you have an other request mark them with one of the following prefixes in the
 #### Further information
 
 [If you have more information which could help me to understand/fix the issue feel free to add them here.]
+
+I have provided all required information.
