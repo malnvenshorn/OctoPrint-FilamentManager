@@ -14,7 +14,8 @@ This OctoPrint plugin helps to manage your filament spools. The project is still
 [Odometer feature doesn't work when printing from SD](https://github.com/malnvenshorn/OctoPrint-FilamentManager#odometer-feature-doesnt-work-when-printing-from-sd)<br>
 [My profiles/spools will not be loaded](https://github.com/malnvenshorn/OctoPrint-FilamentManager#my-profilesspools-will-not-be-loaded)<br>
 [Is it possible to change the location of the plugin in the sidebar?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#is-it-possible-to-change-the-location-of-the-plugin-in-the-sidebar)<br>
-[How do I install the latest development version?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#how-do-i-install-the-latest-development-version)
+[How do I install the latest development version?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#how-do-i-install-the-latest-development-version)<br>
+[How do I enable debug logging?](https://github.com/malnvenshorn/OctoPrint-FilamentManager#how-do-i-enable-debug-logging)
 
 ##
 
@@ -45,6 +46,16 @@ appearance:
 You can install it using the folowing link 
 
 `https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/develop.zip`
+
+#### How do I enable debug logging?
+
+The loglevel can be defined in the [logging.yaml](http://docs.octoprint.org/en/master/configuration/logging_yaml.html). To enable debug logging for this plugin add the following:
+
+```
+loggers:
+  octoprint.plugins.filamentmanager:
+    level: DEBUG
+```
 
 ## Screenshots
 
