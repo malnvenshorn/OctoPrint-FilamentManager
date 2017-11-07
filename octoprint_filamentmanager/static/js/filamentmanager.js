@@ -176,6 +176,7 @@ $(function() {
 
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
+        self.config_autoPause = ko.observable();
         self.config_currencySymbol = ko.observable();
 
         self.requestInProgress = ko.observable(false);
@@ -273,13 +274,12 @@ $(function() {
             }
         };
 
-        //*************************************************************
         // spool selection
 
         self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
         self.tools = ko.observableArray([]);                // number of tools to generate select elements in template
-        self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent selection update
-                                                            // when setting selections
+        self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent triggering the
+                                                            // change event again when setting selected spools
 
         self.onExtruderCountChange = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -366,7 +366,7 @@ $(function() {
                     self.temperature.changingOffset.item = tool;
                     self.temperature.changingOffset.name(tool.name());
                     self.temperature.changingOffset.offset(tool.offset());
-                    self.temperature.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
+                    self.temperature.changingOffset.newOffset(spool != null ? spool.temp_offset : 0);
                     self.temperature.confirmChangeOffset();
                 }
             } else {
@@ -391,7 +391,6 @@ $(function() {
             self._reapplySubscription = undefined;
         };
 
-        //************************************************************
         // plugin settings
 
         self.showSettingsDialog = function() {
@@ -412,6 +411,7 @@ $(function() {
                     filamentmanager: {
                         enableOdometer: self.config_enableOdometer(),
                         enableWarning: self.config_enableWarning(),
+                        autoPause: self.config_autoPause(),
                         currencySymbol: self.config_currencySymbol()
                     }
                 }
@@ -433,10 +433,10 @@ $(function() {
             var pluginSettings = self.settings.settings.plugins.filamentmanager;
             self.config_enableOdometer(pluginSettings.enableOdometer());
             self.config_enableWarning(pluginSettings.enableWarning());
+            self.config_autoPause(pluginSettings.autoPause());
             self.config_currencySymbol(pluginSettings.currencySymbol());
         };
 
-        //************************************************************
         // profiles
 
         self.showProfilesDialog = function() {
@@ -536,7 +536,6 @@ $(function() {
             showConfirmationDialog(_.sprintf(text, data.material, data.vendor), perform);
         };
 
-        //************************************************************
         // spools
 
         self.showSpoolDialog = function(data) {
@@ -640,7 +639,6 @@ $(function() {
             self.addSpool(data);
         }
 
-        //************************************************************
         // import & export
 
         self.importFilename = ko.observable();

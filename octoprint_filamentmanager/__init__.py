@@ -95,6 +95,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             _db_version=None,
             enableOdometer=True,
             enableWarning=True,
+            autoPause=False,
             currencySymbol="€"
         )
 
