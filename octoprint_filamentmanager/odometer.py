@@ -66,6 +66,9 @@ class FilamentOdometer(object):
     def get_values(self):
         return self.maxExtrusion
 
+    def get_current_tool(self):
+        return self.currentTool
+
     def _get_int(self, cmd, regex):
         result = regex.match(cmd)
         if result is not None:

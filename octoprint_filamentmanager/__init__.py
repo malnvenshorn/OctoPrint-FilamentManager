@@ -37,6 +37,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentOdometer = None
         self.odometerEnabled = False
         self.lastPrintState = None
+        self.pauseEnabled = False
+        self.pauseThreshold = []
 
     # StartupPlugin
 
@@ -62,6 +64,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self.migrate_db_scheme()
         except Exception as e:
             self._logger.error("Failed to create database: {message}".format(message=str(e)))
+        else:
+            self._update_pause_threshold()
 
     def migrate_db_scheme(self):
         if 1 == self._settings.get(["_db_version"]):
@@ -213,6 +217,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
+            self._update_pause_threshold()
             return jsonify(dict(profile=saved_profile))
         except Exception as e:
             self._logger.error("Failed to update profile with id {id}: {message}"
@@ -328,6 +333,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
+            self._update_pause_threshold()
             return jsonify(dict(spool=saved_spool))
         except Exception as e:
             self._logger.error("Failed to update spool with id {id}: {message}"
@@ -378,6 +384,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_selection = self.filamentManager.update_selection(identifier, selection)
+            self._update_pause_threshold()
             return jsonify(dict(selection=saved_selection))
         except Exception as e:
             self._logger.error("Failed to update selected spool for tool {id}: {message}"
@@ -465,7 +472,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 else:
                     # starting new print
                     self.filamentOdometer.reset()
-                self.odometerEnabled = self._settings.get(["enableOdometer"])
+                self.odometerEnabled = self._settings.getBoolean(["enableOdometer"])
+                self.pauseEnabled = self._settings.getBoolean(["autoPause"])
                 self._logger.debug("Printer State: {}".format(payload["state_string"]))
                 self._logger.debug("Odometer: {}".format("Enabled" if self.odometerEnabled else "Disabled"))
             elif self.lastPrintState == "PRINTING":
@@ -498,7 +506,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 spool_string = "{name} - {material} ({vendor})"
                 spool_string = spool_string.format(name=spool["name"], material=spool["profile"]["material"],
                                                    vendor=spool["profile"]["vendor"])
-                volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
+                volume = self._length_to_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
                 weight = volume * spool["profile"]['density']
                 old_value = spool["weight"] - spool["used"]
                 spool["used"] += weight
@@ -516,15 +524,45 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
 
-    def _calculate_volume(self, diameter, length):
+    def _length_to_volume(self, diameter, length):
         radius = diameter / 2
         return length * math.pi * radius * radius
+
+    def _volume_to_length(self, diameter, volume):
+        radius = diameter / 2
+        return volume / (math.pi * radius * radius)
 
     # Protocol hook
 
     def filament_odometer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         if self.odometerEnabled:
             self.filamentOdometer.parse(gcode, cmd)
+            if self.pauseEnabled:
+                extrusion = self.filamentOdometer.get_values()
+                tool = self.filamentOdometer.get_current_tool()
+                try:
+                    if self.pauseThreshold[tool] is not None and extrusion[tool] >= self.pauseThreshold[tool]:
+                        self._logger.info("Filament is running out, pausing print")
+                        self._printer.pause_print()
+                except IndexError:
+                    # Ignoring index out of range errors
+                    # This usually means that the tool has no spool assigned
+                    pass
+
+    def _update_pause_threshold(self):
+        try:
+            selections = self.filamentManager.get_all_selections()
+            tmp = []
+            for sel in selections:
+                if sel["tool"] >= len(tmp):
+                    tmp.extend([None for i in xrange(sel["tool"] - len(tmp) + 1)])
+                diameter = sel["spool"]["profile"]["diameter"]
+                volume = (sel["spool"]["weight"] - sel["spool"]["used"]) / sel["spool"]["profile"]["density"]
+                tmp.insert(sel["tool"], self._volume_to_length(diameter, volume * 1000))
+            self.pauseThreshold = tmp
+        except Exception as e:
+            self.pauseThreshold = []
+            self._logger.error("Failed to set pause tresholds: {message}".format(message=str(e)))
 
     # Softwareupdate hook
 
