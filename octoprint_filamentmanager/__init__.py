@@ -457,21 +457,22 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event == Events.PRINTER_STATE_CHANGED:
-            self._logger.debug("Printer state changed to '{}'".format(payload['state_string']))
-
             if payload['state_id'] == "PRINTING":
                 if self.lastPrintState == "PAUSED":
-                    # resuming print, reset only extruded length
+                    # resuming print
                     self.filamentOdometer.reset_extruded_length()
                 else:
-                    # starting new print, full reset
+                    # starting new print
                     self.filamentOdometer.reset()
                 self.odometerEnabled = self._settings.get(["enableOdometer"])
+                self._logger.debug("Printer State: {}".format(payload["state_string"]))
+                self._logger.debug("Odometer: {}".format("Enabled" if self.odometerEnabled else "Disabled"))
             elif self.lastPrintState == "PRINTING":
+                self._logger.debug("Printer State: {}".format(payload["state_string"]))
                 # print state changed from printing, update filament usage
                 if self.odometerEnabled:
-                    self._update_filament_usage()
                     self.odometerEnabled = False
+                    self._update_filament_usage()
 
             # update last print state
             self.lastPrintState = payload['state_id']
@@ -482,6 +483,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         numTools = min(printer_profile['extruder']['count'], len(extrusion))
 
         for tool in xrange(0, numTools):
+            self._logger.info("Filament used: {length} mm (tool{id})".format(length=str(extrusion[tool]), id=str(tool)))
+
             try:
                 selection = self.filamentManager.get_selection(tool)
                 spool = selection["spool"]
@@ -491,11 +494,17 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                     continue
 
                 # update spool
+                spool_string = "{name} - {material} ({vendor})"
+                spool_string = spool_string.format(name=spool["name"], material=spool["profile"]["material"],
+                                                   vendor=spool["profile"]["vendor"])
                 volume = self._calculate_volume(spool["profile"]['diameter'], extrusion[tool]) / 1000
                 weight = volume * spool["profile"]['density']
-                self._logger.info("Filament used: {length}mm / {weight}g (tool{id})"
-                                  .format(length=str(extrusion[tool]), weight=str(weight), id=str(tool)))
-                spool['used'] += weight
+                old_value = spool["weight"] - spool["used"]
+                spool["used"] += weight
+                new_value = spool["weight"] - spool["used"]
+                self._logger.debug("Updating remaining filament on spool '{spool}' from {old}g to {new}g ({diff}g)"
+                                   .format(spool=spool_string, old=str(old_value), new=str(new_value),
+                                           diff=str(new_value - old_value)))
                 self.filamentManager.update_spool(spool["id"], spool)
             except Exception as e:
                 self._logger.error("Failed to update filament on tool{id}: {message}"
