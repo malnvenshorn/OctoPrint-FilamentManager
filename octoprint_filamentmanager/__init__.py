@@ -522,6 +522,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                                    .format(id=str(tool), message=str(e)))
 
         self._send_client_message("updated_filaments")
+        self._update_pause_threshold()
 
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
