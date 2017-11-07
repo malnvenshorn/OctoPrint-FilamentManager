@@ -9,16 +9,6 @@
 
         <form class="form-horizontal">
 
-            <!-- enable odometer -->
-
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
-                    </label>
-                </div>
-            </div>
-
             <!-- enable warning -->
 
             <div class="control-group">
@@ -29,12 +19,22 @@
                 </div>
             </div>
 
+            <!-- enable odometer -->
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
+                    </label>
+                </div>
+            </div>
+
             <!-- enable auto pause -->
 
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_autoPause">{{ _("Pause print if filament runs out") }}
+                        <input type="checkbox" data-bind="checked: config_autoPause, enable: config_enableOdometer">{{ _("Pause print if filament runs out") }}
                     </label>
                 </div>
             </div>
@@ -45,7 +45,7 @@
                 <label class="control-label">{{ _('Pause threshold') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: config_pauseThreshold">
+                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: config_pauseThreshold, enable: config_enableOdometer() && config_autoPause()">
                         <span class="add-on">mm</span>
                     </div>
                 </div>
