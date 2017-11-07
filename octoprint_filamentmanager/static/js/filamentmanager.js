@@ -177,6 +177,7 @@ $(function() {
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
         self.config_autoPause = ko.observable();
+        self.config_pauseThreshold = ko.observable();
         self.config_currencySymbol = ko.observable();
 
         self.requestInProgress = ko.observable(false);
@@ -412,6 +413,7 @@ $(function() {
                         enableOdometer: self.config_enableOdometer(),
                         enableWarning: self.config_enableWarning(),
                         autoPause: self.config_autoPause(),
+                        pauseThreshold: self.config_pauseThreshold(),
                         currencySymbol: self.config_currencySymbol()
                     }
                 }
@@ -434,6 +436,7 @@ $(function() {
             self.config_enableOdometer(pluginSettings.enableOdometer());
             self.config_enableWarning(pluginSettings.enableWarning());
             self.config_autoPause(pluginSettings.autoPause());
+            self.config_pauseThreshold(pluginSettings.pauseThreshold());
             self.config_currencySymbol(pluginSettings.currencySymbol());
         };
 

@@ -100,6 +100,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             enableOdometer=True,
             enableWarning=True,
             autoPause=False,
+            pauseThreshold=100,
             currencySymbol="€"
         )
 
@@ -476,6 +477,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self.pauseEnabled = self._settings.getBoolean(["autoPause"])
                 self._logger.debug("Printer State: {}".format(payload["state_string"]))
                 self._logger.debug("Odometer: {}".format("Enabled" if self.odometerEnabled else "Disabled"))
+                self._logger.debug("AutoPause: {}".format("Enabled" if self.pauseEnabled else "Disabled"))
             elif self.lastPrintState == "PRINTING":
                 self._logger.debug("Printer State: {}".format(payload["state_string"]))
                 # print state changed from printing, update filament usage
@@ -558,7 +560,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                     tmp.extend([None for i in xrange(sel["tool"] - len(tmp) + 1)])
                 diameter = sel["spool"]["profile"]["diameter"]
                 volume = (sel["spool"]["weight"] - sel["spool"]["used"]) / sel["spool"]["profile"]["density"]
-                tmp.insert(sel["tool"], self._volume_to_length(diameter, volume * 1000))
+                threshold = self._volume_to_length(diameter, volume * 1000) - self._settings.getInt(["pauseThreshold"])
+                tmp.insert(sel["tool"], threshold)
             self.pauseThreshold = tmp
         except Exception as e:
             self.pauseThreshold = []
