@@ -104,6 +104,14 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             currencySymbol="€"
         )
 
+    def on_settings_save(self, data):
+        old_threshold = self._settings.getInt(["pauseThreshold"])
+        octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+        new_threshold = self._settings.getInt(["pauseThreshold"])
+
+        if old_threshold != new_threshold:
+            self._update_pause_threshold()
+
     # AssetPlugin
 
     def get_assets(self):
