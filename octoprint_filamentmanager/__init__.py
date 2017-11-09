@@ -44,6 +44,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
     def on_startup(self, host, port):
         self.filamentOdometer = FilamentOdometer()
+        self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
         db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
 
@@ -105,12 +106,18 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         )
 
     def on_settings_save(self, data):
+        # before saving
         old_threshold = self._settings.getInt(["pauseThreshold"])
+
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+
+        # after saving
         new_threshold = self._settings.getInt(["pauseThreshold"])
 
         if old_threshold != new_threshold:
             self._update_pause_threshold()
+
+        self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
     # AssetPlugin
 

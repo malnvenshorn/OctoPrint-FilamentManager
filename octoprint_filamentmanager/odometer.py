@@ -12,6 +12,7 @@ class FilamentOdometer(object):
     regexT = re.compile(r'^T(\d+)')
 
     def __init__(self):
+        self.g90_extruder = True
         self.reset()
 
     def reset(self):
@@ -43,8 +44,12 @@ class FilamentOdometer(object):
                                                           self.totalExtrusion[self.currentTool])
         elif gcode == "G90":  # set to absolute positioning
             self.relativeMode = False
+            if self.g90_extruder:
+                self.relativeExtrusion = False
         elif gcode == "G91":  # set to relative positioning
             self.relativeMode = True
+            if self.g90_extruder:
+                self.relativeExtrusion = True
         elif gcode == "G92":  # set position
             e = self._get_float(cmd, self.regexE)
             if e is not None:
@@ -62,6 +67,9 @@ class FilamentOdometer(object):
                         self.lastExtrusion.append(0.0)
                         self.totalExtrusion.append(0.0)
                         self.maxExtrusion.append(0.0)
+
+    def set_g90_extruder(flag):
+        self.g90_extruder = flag
 
     def get_values(self):
         return self.maxExtrusion
