@@ -28,7 +28,7 @@ For **bug** reports use the template below and provide ALL required information.
 
 #### Link to contents of Javascript console in the browser
 
-[If you're reporting UI issues always include the output of the javascript console of your browser.]
+[If you're reporting UI issues always include the output of the javascript console of your browser. Always include if unsure.]
 
 #### Further information
 
