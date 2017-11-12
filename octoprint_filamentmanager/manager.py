@@ -1,5 +1,7 @@
 # coding=utf-8
 import sqlite3
+import csv
+import os
 from multiprocessing import Lock
 
 __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
@@ -9,8 +11,7 @@ __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the 
 
 class FilamentManager(object):
 
-    def __init__(self, database, logger):
-        self._logger = logger
+    def __init__(self, database):
         self._db_lock = Lock()
         self._db = sqlite3.connect(database, check_same_thread=False)
         self._db.execute("PRAGMA foreign_keys = ON")
@@ -53,80 +54,49 @@ class FilamentManager(object):
                             INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
                         END; """.format(table=table, action=action))
 
-        return self.execute_script("".join(scheme))
+        self.execute_script("".join(scheme))
 
     def execute_script(self, script):
-        try:
-            with self._db_lock, self._db as db:
-                db.executescript(script)
-                return True
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return False
+        with self._db_lock, self._db as db:
+            db.executescript(script)
 
     # profiles
 
     def get_all_profiles(self):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, vendor, material, density, diameter
-                                        FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """)
-            return self._cursor_to_dict(cursor)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute(""" SELECT id, vendor, material, density, diameter
+                                    FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """)
+        return self._cursor_to_dict(cursor)
 
     def get_profiles_modifications(self):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'profiles'")
-                return self._cursor_to_dict(cursor, one=True)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'profiles'")
+        return self._cursor_to_dict(cursor, one=True)
 
     def get_profile(self, identifier):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT id, vendor, material, density, diameter
-                                        FROM profiles WHERE id = ?
-                                        ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """, (identifier,))
-            return self._cursor_to_dict(cursor, one=True)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute(""" SELECT id, vendor, material, density, diameter FROM profiles WHERE id = ?
+                                    ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """, (identifier,))
+        return self._cursor_to_dict(cursor, one=True)
 
     def create_profile(self, data):
-        try:
-            with self._db_lock, self._db as db:
-                sql = "INSERT INTO profiles (material, vendor, density, diameter) VALUES (?, ?, ?, ?)"
-                cursor = db.execute(sql, (data.get("material", ""), data.get("vendor", ""),
-                                          data.get("density", 0), data.get("diameter", 0)))
-                data["id"] = cursor.lastrowid
-                return data
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute("INSERT INTO profiles (material, vendor, density, diameter) VALUES (?, ?, ?, ?)",
+                                (data.get("material", ""), data.get("vendor", ""), data.get("density", 0),
+                                 data.get("diameter", 0)))
+            data["id"] = cursor.lastrowid
+            return data
 
     def update_profile(self, identifier, data):
-        try:
-            with self._db_lock, self._db as db:
-                sql = "UPDATE profiles SET material = ?, vendor = ?, density = ?, diameter = ? WHERE id = ?"
-                db.execute(sql, (data.get("material"), data.get("vendor"), data.get("density"),
-                                 data.get("diameter"), identifier))
-                return data
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            db.execute("UPDATE profiles SET material = ?, vendor = ?, density = ?, diameter = ? WHERE id = ?",
+                       (data.get("material"), data.get("vendor"), data.get("density"), data.get("diameter"),
+                        identifier))
+            return data
 
     def delete_profile(self, identifier):
-        try:
-            with self._db_lock, self._db as db:
-                db.execute("DELETE FROM profiles WHERE id = ?", (identifier,))
-                return True
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return False
+        with self._db_lock, self._db as db:
+            db.execute("DELETE FROM profiles WHERE id = ?", (identifier,))
 
     # spools
 
@@ -140,28 +110,19 @@ class FilamentManager(object):
         return spool
 
     def get_all_spools(self):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                               p.id, p.vendor, p.material, p.density, p.diameter
-                                        FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
-                                        ORDER BY s.name COLLATE NOCASE """)
-            return [self._build_spool_dict(row, cursor.description) for row in cursor.fetchall()]
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                           p.id, p.vendor, p.material, p.density, p.diameter
+                                    FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
+                                    ORDER BY s.name COLLATE NOCASE """)
+        return [self._build_spool_dict(row, cursor.description) for row in cursor.fetchall()]
 
     def get_spools_modifications(self):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'spools'")
-                return self._cursor_to_dict(cursor, one=True)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'spools'")
+            return self._cursor_to_dict(cursor, one=True)
 
     def get_spool(self, identifier):
-        try:
             with self._db_lock, self._db as db:
                 cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
                                                p.id, p.vendor, p.material, p.density, p.diameter
@@ -169,41 +130,25 @@ class FilamentManager(object):
                                         AND s.id = ? """, (identifier,))
             result = cursor.fetchone()
             return self._build_spool_dict(result, cursor.description) if result is not None else dict()
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
 
     def create_spool(self, data):
-        try:
-            with self._db_lock, self._db as db:
-                sql = "INSERT INTO spools (name, profile_id, cost, weight, used, temp_offset) VALUES (?, ?, ?, ?, ?, ?)"
-                cursor = db.execute(sql, (data.get("name", ""), data["profile"].get("id", 0), data.get("cost", 0),
-                                    data.get("weight", 0), data.get("used", 0), data.get("temp_offset", 0)))
-                data["id"] = cursor.lastrowid
-                return data
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            sql = "INSERT INTO spools (name, profile_id, cost, weight, used, temp_offset) VALUES (?, ?, ?, ?, ?, ?)"
+            cursor = db.execute(sql, (data.get("name", ""), data["profile"].get("id", 0), data.get("cost", 0),
+                                data.get("weight", 0), data.get("used", 0), data.get("temp_offset", 0)))
+            data["id"] = cursor.lastrowid
+            return data
 
     def update_spool(self, identifier, data):
-        try:
-            with self._db_lock, self._db as db:
-                db.execute(""" UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ?,
-                               temp_offset = ? WHERE id = ? """, (data.get("name"), data["profile"].get("id"),
-                           data.get("cost"), data.get("weight"), data.get("used"), data.get("temp_offset"), identifier))
-                return data
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            db.execute(""" UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ?,
+                           temp_offset = ? WHERE id = ? """, (data.get("name"), data["profile"].get("id"),
+                       data.get("cost"), data.get("weight"), data.get("used"), data.get("temp_offset"), identifier))
+            return data
 
     def delete_spool(self, identifier):
-        try:
-            with self._db_lock, self._db as db:
-                db.execute("DELETE FROM spools WHERE id = ?", (identifier,))
-                return True
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return False
+        with self._db_lock, self._db as db:
+            db.execute("DELETE FROM spools WHERE id = ?", (identifier,))
 
     # selections
 
@@ -219,45 +164,65 @@ class FilamentManager(object):
         return selection
 
     def get_all_selections(self):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                               p.id, p.vendor, p.material, p.density, p.diameter
-                                        FROM selections AS t, spools AS s, profiles AS p
-                                        WHERE t.spool_id = s.id AND s.profile_id = p.id ORDER BY tool """)
-            return [self._build_selection_dict(row, cursor.description) for row in cursor.fetchall()]
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                           p.id, p.vendor, p.material, p.density, p.diameter
+                                    FROM selections AS t, spools AS s, profiles AS p
+                                    WHERE t.spool_id = s.id AND s.profile_id = p.id ORDER BY tool """)
+        return [self._build_selection_dict(row, cursor.description) for row in cursor.fetchall()]
 
     def get_selection(self, identifier):
-        try:
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                               p.id, p.vendor, p.material, p.density, p.diameter
-                                        FROM selections AS t, spools AS s, profiles AS p
-                                        WHERE t.spool_id = s.id AND s.profile_id = p.id
-                                        AND t.tool = ? """, (identifier,))
-            result = cursor.fetchone()
-            if result is not None:
-                return self._build_selection_dict(result, cursor.description)
-            else:
-                return dict(tool=identifier, spool=None)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+            cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
+                                           p.id, p.vendor, p.material, p.density, p.diameter
+                                    FROM selections AS t, spools AS s, profiles AS p
+                                    WHERE t.spool_id = s.id AND s.profile_id = p.id
+                                    AND t.tool = ? """, (identifier,))
+        result = cursor.fetchone()
+        if result is not None:
+            return self._build_selection_dict(result, cursor.description)
+        else:
+            return dict(tool=identifier, spool=None)
 
     def update_selection(self, identifier, data):
-        try:
-            with self._db_lock, self._db as db:
-                    db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
-                               (identifier, data["spool"]["id"]))
-            return self.get_selection(identifier)
-        except sqlite3.Error as error:
-            self._log_error(error)
-            return None
+        with self._db_lock, self._db as db:
+                db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
+                           (identifier, data["spool"]["id"]))
+        return self.get_selection(identifier)
+
+    def export_data(self, dirpath):
+        tablenames = ["profiles", "spools"]
+        for table in tablenames:
+            self._export_to_csv(dirpath, table)
+
+    def import_data(self, dirpath):
+        tablenames = ["profiles", "spools"]
+        for table in tablenames:
+            self._import_from_csv(dirpath, table)
 
     # helper
+
+    def _import_from_csv(self, dirpath, tablename):
+        filepath = os.path.join(dirpath, tablename + ".csv")
+        with open(filepath, "r") as csv_file:
+            csv_reader = csv.reader(csv_file)
+            header = next(csv_reader)
+            columns = ",".join(header)
+            placeholder = ",".join(["?"] * len(header))
+            with self._db_lock, self._db as db:
+                # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
+                # forcing a data update on client side is neccessary after import
+                db.executemany("INSERT OR IGNORE INTO {table} ({columns}) VALUES ({values});"
+                               .format(table=tablename, columns=columns, values=placeholder), csv_reader)
+
+    def _export_to_csv(self, dirpath, tablename):
+        with self._db_lock, self._db as db:
+            cursor = db.execute("SELECT * FROM " + tablename)
+            filepath = os.path.join(dirpath, tablename + ".csv")
+            with open(filepath, "w") as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow([i[0] for i in cursor.description])
+                csv_writer.writerows(cursor)
 
     def _cursor_to_dict(self, cursor, one=False):
         if one:
@@ -269,6 +234,3 @@ class FilamentManager(object):
         else:
             return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
                     for row in cursor.fetchall()]
-
-    def _log_error(self, error):
-        self._logger.error("SQL Error: {}".format(error.args[0]))

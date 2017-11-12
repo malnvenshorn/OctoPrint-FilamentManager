@@ -5,6 +5,8 @@
  * License: AGPLv3
  */
 $(function() {
+    "use strict";
+
     function FilamentWarningViewModel(parameters) {
         var self = this;
 

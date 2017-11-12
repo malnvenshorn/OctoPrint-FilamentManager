@@ -1,6 +1,6 @@
 Before opening a new ticket please take a look if there is already an existing one addressing the same concern.
 
-Also read the FAQ: https://github.com/malnvenshorn/OctoPrint-FilamentManager#faq
+Also read the FAQ: https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq
 
 If you have a **request** or **question** mark them with a "[Request]" respectively "[Question]" prefix in the title.
 
@@ -28,7 +28,7 @@ For **bug** reports use the template below and provide ALL required information.
 
 #### Link to contents of Javascript console in the browser
 
-[If you're reporting UI issues always include the output of the javascript console of your browser.]
+[If you're reporting UI issues always include the output of the javascript console of your browser. Always include if unsure.]
 
 #### Further information
 

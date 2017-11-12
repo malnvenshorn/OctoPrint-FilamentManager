@@ -5,6 +5,7 @@
  * License: AGPLv3
  */
 $(function() {
+    "use strict";
 
     var cleanProfile = function() {
         return {
@@ -175,6 +176,8 @@ $(function() {
 
         self.config_enableOdometer = ko.observable();
         self.config_enableWarning = ko.observable();
+        self.config_autoPause = ko.observable();
+        self.config_pauseThreshold = ko.observable();
         self.config_currencySymbol = ko.observable();
 
         self.requestInProgress = ko.observable(false);
@@ -251,25 +254,33 @@ $(function() {
                 });
         };
 
-        self.onEventPrinterStateChanged = function() {
-            self.requestInProgress(true);
-            $.when(self.requestSpools(), self.requestSelectedSpools())
-                .done(function(spools, selections) {
-                    self.processSpools(spools[0]);
-                    self.processSelectedSpools(selections[0]);
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+        self.onDataUpdaterPluginMessage = function(plugin, data) {
+            if (plugin !== "filamentmanager") {
+                return;
+            }
+
+            var messageType = data.type;
+            var messageData = data.data;
+
+            if (messageType === "updated_filaments") {
+                self.requestInProgress(true);
+                $.when(self.requestSpools(), self.requestSelectedSpools())
+                    .done(function(spools, selections) {
+                        self.processSpools(spools[0]);
+                        self.processSelectedSpools(selections[0]);
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+            }
         };
 
-        //*************************************************************
         // spool selection
 
         self.selectedSpoolsHelper = ko.observableArray([]); // selected spool id for each tool
         self.tools = ko.observableArray([]);                // number of tools to generate select elements in template
-        self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent selection update
-                                                            // when settings selections
+        self.onSelectedSpoolChangeEnabled = false;          // false if querying selections to prevent triggering the
+                                                            // change event again when setting selected spools
 
         self.onExtruderCountChange = function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -297,7 +308,7 @@ $(function() {
         self.onSelectedSpoolChange = function(tool) {
             if (!self.onSelectedSpoolChangeEnabled) return;
 
-            spool = self.selectedSpoolsHelper()[tool]();
+            var spool = self.selectedSpoolsHelper()[tool]();
             var data = {
                 tool: tool,
                     spool: {
@@ -309,7 +320,7 @@ $(function() {
 
         self.updateSelectedSpool = function(data) {
             self.requestInProgress(true);
-            OctoPrint.filamentselections.update(data.tool, data)
+            OctoPrint.plugins.filamentmanager.updateSelection(data.tool, data)
             .done(function(data) {
                 var spool = data["selection"];
                 self._updateSelectedSpoolData(spool);
@@ -325,7 +336,7 @@ $(function() {
         };
 
         self.requestSelectedSpools = function() {
-            return OctoPrint.filamentselections.list();
+            return OctoPrint.plugins.filamentmanager.listSelections();
         };
 
         self.processSelectedSpools = function(data) {
@@ -345,19 +356,42 @@ $(function() {
             }
         };
 
+        self._reapplySubscription = undefined;
+
         self._applyTemperatureOffset = function(data) {
-            if (data.tool < self.tools().length) {
-                var tool = self.temperature.tools()[data.tool];
-                var spool = data.spool;
-                self.temperature.changingOffset.item = tool;
-                self.temperature.changingOffset.name(tool.name());
-                self.temperature.changingOffset.offset(tool.offset());
-                self.temperature.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
-                self.temperature.confirmChangeOffset();
+            if (self.loginState.isUser()) {
+                // if logged in apply temperature offset
+                if (data.tool < self.tools().length) {
+                    var tool = self.temperature.tools()[data.tool];
+                    var spool = data.spool;
+                    self.temperature.changingOffset.item = tool;
+                    self.temperature.changingOffset.name(tool.name());
+                    self.temperature.changingOffset.offset(tool.offset());
+                    self.temperature.changingOffset.newOffset(spool != null ? spool.temp_offset : 0);
+                    self.temperature.confirmChangeOffset();
+                }
+            } else {
+                // if not logged in set a subscription to automatically apply the temperature offset after login
+                if (self._reapplySubscription === undefined) {
+                    self._reapplySubscription = self.loginState.isUser.subscribe(self._reapplyTemperatureOffset);
+                }
             }
         };
 
-        //************************************************************
+        self._reapplyTemperatureOffset = function() {
+            if (!self.loginState.isUser()) return;
+
+            // apply temperature offset
+            _.each(self.selectedSpools(), function(spool, index) {
+                var selection = {spool: spool, tool: index};
+                self._applyTemperatureOffset(selection);
+            });
+
+            // remove subscription
+            self._reapplySubscription.dispose();
+            self._reapplySubscription = undefined;
+        };
+
         // plugin settings
 
         self.showSettingsDialog = function() {
@@ -378,6 +412,8 @@ $(function() {
                     filamentmanager: {
                         enableOdometer: self.config_enableOdometer(),
                         enableWarning: self.config_enableWarning(),
+                        autoPause: self.config_autoPause(),
+                        pauseThreshold: self.config_pauseThreshold(),
                         currencySymbol: self.config_currencySymbol()
                     }
                 }
@@ -399,18 +435,19 @@ $(function() {
             var pluginSettings = self.settings.settings.plugins.filamentmanager;
             self.config_enableOdometer(pluginSettings.enableOdometer());
             self.config_enableWarning(pluginSettings.enableWarning());
+            self.config_autoPause(pluginSettings.autoPause());
+            self.config_pauseThreshold(pluginSettings.pauseThreshold());
             self.config_currencySymbol(pluginSettings.currencySymbol());
         };
 
-        //************************************************************
         // profiles
 
         self.showProfilesDialog = function() {
             $("#settings_plugin_filamentmanager_profiledialog").modal("show");
         };
 
-        self.requestProfiles = function() {
-            return OctoPrint.filamentprofiles.list();
+        self.requestProfiles = function(force=false) {
+            return OctoPrint.plugins.filamentmanager.listProfiles(force);
         };
 
         self.processProfiles = function(data) {
@@ -431,7 +468,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentprofiles.add(data)
+            OctoPrint.plugins.filamentmanager.addProfile(data)
             .done(function() {
                 self.requestProfiles()
                     .done(self.processProfiles)
@@ -453,7 +490,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentprofiles.update(data.id, data)
+            OctoPrint.plugins.filamentmanager.updateProfile(data.id, data)
                 .done(function() {
                     $.when(self.requestProfiles(), self.requestSpools(), self.requestSelectedSpools())
                     .done(function(profiles, spools, selections) {
@@ -475,7 +512,7 @@ $(function() {
 
         self.removeProfile = function(data) {
             var perform = function() {
-                OctoPrint.filamentprofiles.delete(data.id)
+                OctoPrint.plugins.filamentmanager.deleteProfile(data.id)
                     .done(function() {
                         self.requestProfiles()
                         .done(self.processProfiles)
@@ -497,12 +534,11 @@ $(function() {
                     });
             };
 
-            var text = gettext(`You are about to delete the filament profile "${data.material} (${data.vendor})".` +
+            var text = gettext("You are about to delete the filament profile \"%s (%s)\". " +
                                "Please notice that it is not possible to delete profiles with associated spools.");
-            showConfirmationDialog(text, perform);
+            showConfirmationDialog(_.sprintf(text, data.material, data.vendor), perform);
         };
 
-        //************************************************************
         // spools
 
         self.showSpoolDialog = function(data) {
@@ -514,8 +550,8 @@ $(function() {
             $("#settings_plugin_filamentmanager_spooldialog").modal("hide");
         };
 
-        self.requestSpools = function() {
-            return OctoPrint.filamentspools.list();
+        self.requestSpools = function(force=false) {
+            return OctoPrint.plugins.filamentmanager.listSpools(force);
         }
 
         self.processSpools = function(data) {
@@ -536,7 +572,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentspools.add(data)
+            OctoPrint.plugins.filamentmanager.addSpool(data)
                 .done(function() {
                     self.hideSpoolDialog();
                     self.requestSpools()
@@ -558,7 +594,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.filamentspools.update(data.id, data)
+            OctoPrint.plugins.filamentmanager.updateSpool(data.id, data)
                 .done(function() {
                     self.hideSpoolDialog();
                     $.when(self.requestSpools(), self.requestSelectedSpools())
@@ -581,7 +617,7 @@ $(function() {
         self.removeSpool = function(data) {
             var perform = function() {
                 self.requestInProgress(true);
-                OctoPrint.filamentspools.delete(data.id)
+                OctoPrint.plugins.filamentmanager.deleteSpool(data.id)
                     .done(function() {
                         self.requestSpools()
                             .done(self.processSpools)
@@ -597,9 +633,85 @@ $(function() {
                     });
             };
 
-            var text = gettext(`You are about to delete the filament spool "${data.name}".`);
-            showConfirmationDialog(text, perform);
+            var text = gettext("You are about to delete the filament spool \"%s - %s (%s)\".");
+            showConfirmationDialog(_.sprintf(text, data.name, data.profile.material, data.profile.vendor), perform);
         };
+
+        self.duplicateSpool = function(data) {
+            data.used = 0;
+            self.addSpool(data);
+        }
+
+        // import & export
+
+        self.importFilename = ko.observable();
+
+        self.invalidArchive = ko.pureComputed(function() {
+            var name = self.importFilename();
+            return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip"));
+        });
+
+        self.enableImport = ko.pureComputed(function() {
+            var name = self.importFilename();
+            return name !== undefined && name.trim() != "" && !self.invalidArchive();
+        });
+
+        self.importButton = $("#settings_plugin_filamentmanager_import_button");
+        self.importElement = $("#settings_plugin_filamentmanager_import");
+
+        self.importElement.fileupload({
+            dataType: "json",
+            maxNumberOfFiles: 1,
+            autoUpload: false,
+            add: function(e, data) {
+                if (data.files.length == 0) {
+                    return false;
+                }
+
+                self.importFilename(data.files[0].name);
+
+                self.importButton.unbind("click");
+                self.importButton.bind("click", function(event) {
+                    event.preventDefault();
+                    data.submit();
+                });
+            },
+            done: function(e, data) {
+                new PNotify({
+                    title: gettext("Data import successfull"),
+                    type: "success",
+                    hide: true
+                });
+
+                self.importButton.unbind("click");
+                self.importFilename(undefined);
+
+                self.requestInProgress(true);
+                $.when(self.requestProfiles(true), self.requestSpools(true))
+                    .done(function(profiles, spools) {
+                        self.processProfiles(profiles[0]);
+                        self.processSpools(spools[0]);
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+            },
+            fail: function(e, data) {
+                new PNotify({
+                    title: gettext("Data import failed"),
+                    text: gettext("Something went wrong, please consult the logs."),
+                    type: "error",
+                    hide: false
+                });
+
+                self.importButton.unbind("click");
+                self.importFilename(undefined);
+            }
+        });
+
+        self.exportUrl = function() {
+            return "plugin/filamentmanager/export?apikey=" + UI_API_KEY;
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
