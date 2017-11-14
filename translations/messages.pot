@@ -7,9 +7,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint-FilamentManager 0.3.0\n"
+"Project-Id-Version: OctoPrint-FilamentManager 0.4.0\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2017-11-12 00:49+0100\n"
+"POT-Creation-Date: 2017-11-14 20:39+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -62,67 +62,82 @@ msgstr ""
 msgid "Could not delete profile"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:537
-#, python-format
-msgid ""
-"You are about to delete the filament profile \"%s (%s)\". Please notice "
-"that it is not possible to delete profiles with associated spools."
+#: octoprint_filamentmanager/static/js/filamentmanager.js:538
+msgid "Delete profile?"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:585
+#: octoprint_filamentmanager/static/js/filamentmanager.js:539
+#, python-format
+msgid ""
+"You are about to delete the filament profile <strong>%s (%s)</strong>. "
+"Please note that it is not possible to delete profiles with associated "
+"spools."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:542
+#: octoprint_filamentmanager/static/js/filamentmanager.js:645
+#: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:15
+msgid "Delete"
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:590
 msgid ""
 "There was an unexpected error while saving the filament spool, please "
 "consult the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:587
+#: octoprint_filamentmanager/static/js/filamentmanager.js:592
 msgid "Could not add spool"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:610
+#: octoprint_filamentmanager/static/js/filamentmanager.js:615
 msgid ""
 "There was an unexpected error while updating the filament spool, please "
 "consult the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:612
+#: octoprint_filamentmanager/static/js/filamentmanager.js:617
 msgid "Could not update spool"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:629
+#: octoprint_filamentmanager/static/js/filamentmanager.js:634
 msgid ""
 "There was an unexpected error while removing the filament spool, please "
 "consult the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:631
+#: octoprint_filamentmanager/static/js/filamentmanager.js:636
 msgid "Could not delete spool"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:636
-#, python-format
-msgid "You are about to delete the filament spool \"%s - %s (%s)\"."
+#: octoprint_filamentmanager/static/js/filamentmanager.js:642
+msgid "Delete spool?"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:681
+#: octoprint_filamentmanager/static/js/filamentmanager.js:643
+#, python-format
+msgid "You are about to delete the filament spool <strong>%s - %s (%s)</strong>."
+msgstr ""
+
+#: octoprint_filamentmanager/static/js/filamentmanager.js:691
 msgid "Data import successfull"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:701
+#: octoprint_filamentmanager/static/js/filamentmanager.js:711
 msgid "Data import failed"
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:702
+#: octoprint_filamentmanager/static/js/filamentmanager.js:712
 msgid "Something went wrong, please consult the logs."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/warning.js:95
+#: octoprint_filamentmanager/static/js/warning.js:103
 msgid ""
 "The current print job needs more material than what's remaining on the "
 "selected spool."
 msgstr ""
 
-#: octoprint_filamentmanager/static/js/warning.js:96
+#: octoprint_filamentmanager/static/js/warning.js:104
 msgid "Insufficient filament"
 msgstr ""
 
@@ -275,10 +290,6 @@ msgstr ""
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:14
 msgid "New"
-msgstr ""
-
-#: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:15
-msgid "Delete"
 msgstr ""
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:16
