@@ -15,7 +15,6 @@ $(function() {
         self.settings = parameters[2];
 
         self.filename = undefined;
-        self.previousData = undefined;
 
         self.printerState.filamentWithWeight = ko.observableArray([]);
 
@@ -44,19 +43,35 @@ $(function() {
             });
         };
 
+        self.waitForFilamentData = false
+
         self.onBeforeBinding = function() {
-            self.printerState.filament.subscribe(self._processData);
+            self.printerState.filament.subscribe(function() {
+                if (self.filename !== self.printerState.filename()) {
+                    if (self.printerState.filename() != undefined && self.printerState.filament().length < 1) {
+                        // file selected, but no filament data found, probably because it's still in analysis queue
+                        self.waitForFilamentData = true;
+                    } else {
+                        self._processData();
+                    }
+                }
+                else if (self.waitForFilamentData && self.printerState.filament().length > 0) {
+                    self._processData();
+                }
+            });
             self.filamentManager.selectedSpools.subscribe(self._processData);
         }
 
         self._processData = function() {
+            self.waitForFilamentData = false;
+
             var filament = self.printerState.filament();
             var spoolData = self.filamentManager.selectedSpools();
-            var fileHasChanged = (self.filename !== self.printerState.filename());
-            var warningIsShown = false;
+
+            var warningIsShown = false; // used to prevent a separate warning message for each tool
 
             for (var i = 0; i < filament.length && i < spoolData.length; ++i) {
-                if (spoolData[i] === undefined) {
+                if (spoolData[i] == undefined) {
                     // skip tools with no selected spool
                     filament[i].data().weight = 0;
                     continue;
@@ -70,12 +85,6 @@ $(function() {
 
                 filament[i].data().weight = requiredFilament;
 
-                if (!fileHasChanged && self.previousData !== undefined
-                    && JSON.stringify(spoolData[i]) === JSON.stringify(self.previousData[i])) {
-                    // skip check if file and data hasn't changed, this prevents warning message spamming
-                    continue;
-                }
-
                 if (self.settings.settings.plugins.filamentmanager.enableWarning()) {
                     var remainingFilament = spoolData[i].weight - spoolData[i].used;
 
@@ -87,7 +96,6 @@ $(function() {
             }
 
             self.filename = self.printerState.filename();
-            self.previousData = spoolData;
             self.printerState.filamentWithWeight(filament);;
         };
 

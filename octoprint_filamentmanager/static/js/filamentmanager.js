@@ -534,9 +534,14 @@ $(function() {
                     });
             };
 
-            var text = gettext("You are about to delete the filament profile \"%s (%s)\". " +
-                               "Please notice that it is not possible to delete profiles with associated spools.");
-            showConfirmationDialog(_.sprintf(text, data.material, data.vendor), perform);
+            showConfirmationDialog({
+                title: gettext("Delete profile?"),
+                message: _.sprintf(gettext("You are about to delete the filament profile <strong>%s (%s)</strong>. " +
+                                   "Please note that it is not possible to delete profiles with associated spools."),
+                                   data.material, data.vendor),
+                proceed: gettext("Delete"),
+                onproceed: perform
+            });
         };
 
         // spools
@@ -633,8 +638,13 @@ $(function() {
                     });
             };
 
-            var text = gettext("You are about to delete the filament spool \"%s - %s (%s)\".");
-            showConfirmationDialog(_.sprintf(text, data.name, data.profile.material, data.profile.vendor), perform);
+            showConfirmationDialog({
+                title: gettext("Delete spool?"),
+                message: _.sprintf(gettext("You are about to delete the filament spool <strong>%s - %s (%s)</strong>."),
+                                   data.name, data.profile.material, data.profile.vendor),
+                proceed: gettext("Delete"),
+                onproceed: perform
+            });
         };
 
         self.duplicateSpool = function(data) {
