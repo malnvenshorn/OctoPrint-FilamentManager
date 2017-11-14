@@ -1,12 +1,14 @@
 # coding=utf-8
-import sqlite3
-import csv
-import os
-from multiprocessing import Lock
 
 __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
+
+import sqlite3
+import io
+import os
+from backports import csv
+from multiprocessing import Lock
 
 
 class FilamentManager(object):
@@ -204,7 +206,7 @@ class FilamentManager(object):
 
     def _import_from_csv(self, dirpath, tablename):
         filepath = os.path.join(dirpath, tablename + ".csv")
-        with open(filepath, "r") as csv_file:
+        with io.open(filepath, mode="r", encoding="utf-8") as csv_file:
             csv_reader = csv.reader(csv_file)
             header = next(csv_reader)
             columns = ",".join(header)
@@ -219,7 +221,7 @@ class FilamentManager(object):
         with self._db_lock, self._db as db:
             cursor = db.execute("SELECT * FROM " + tablename)
             filepath = os.path.join(dirpath, tablename + ".csv")
-            with open(filepath, "w") as csv_file:
+            with io.open(filepath, mode="w", encoding="utf-8") as csv_file:
                 csv_writer = csv.writer(csv_file)
                 csv_writer.writerow([i[0] for i in cursor.description])
                 csv_writer.writerows(cursor)
