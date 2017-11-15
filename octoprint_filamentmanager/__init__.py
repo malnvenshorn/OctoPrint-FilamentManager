@@ -398,6 +398,9 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "id" not in selection.get("spool", {}):
             return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
 
+        if self._printer.is_printing():
+            return make_response("Trying to change filament while printing", 409)
+
         try:
             saved_selection = self.filamentManager.update_selection(identifier, selection)
             self._update_pause_threshold()
