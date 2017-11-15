@@ -7,77 +7,128 @@
 
     <div class="modal-body">
 
-        <form class="form-horizontal">
+        <div class="tabbable">
+            <ul class="nav nav-tabs">
+                <li data-bind="click: function(){$('#settings_plugin_filamentmanager_configurationdialog').resize()}" class="active"><a href="#settings_plugin_filamentmanager_configurationdialog_features" data-toggle="tab">{{ _("Features") }}</a></li>
+                <li data-bind="click: function(){$('#settings_plugin_filamentmanager_configurationdialog').resize()}"><a href="#settings_plugin_filamentmanager_configurationdialog_database" data-toggle="tab">{{ _("Database") }}</a></li>
+                <li data-bind="click: function(){$('#settings_plugin_filamentmanager_configurationdialog').resize()}"><a href="#settings_plugin_filamentmanager_configurationdialog_appearance" data-toggle="tab">{{ _("Appearance") }}</a></li>
+            </ul>
 
-            <!-- enable warning -->
+            <div class="tab-content">
 
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
-                    </label>
+                <div class="tab-pane active" id="settings_plugin_filamentmanager_configurationdialog_features">
+                    <!-- features -->
+                    <form class="form-horizontal">
+                        <!-- enable warning -->
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: config_enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- enable odometer -->
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- enable auto pause -->
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: config_autoPause, enable: config_enableOdometer">{{ _("Pause print if filament runs out") }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- pause threshold -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Pause threshold') }}</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: config_pauseThreshold, enable: config_enableOdometer() && config_autoPause()">
+                                    <span class="add-on">mm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane" id="settings_plugin_filamentmanager_configurationdialog_database">
+                    <!-- database connection -->
+                    <form class="form-horizontal">
+                        <!-- use external database -->
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: config_externalDatabase">{{ _("Use external database") }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- uri -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('URI') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: config_dbURI, enable: config_externalDatabase">
+                            </div>
+                        </div>
+                        <!-- database -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Database') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: config_dbName, enable: config_externalDatabase">
+                            </div>
+                        </div>
+                        <!-- username -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Username') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: config_dbUser, enable: config_externalDatabase">
+                            </div>
+                        </div>
+                        <!-- password -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Password') }}</label>
+                            <div class="controls">
+                                <input type="password" class="input-block-level" data-bind="value: config_dbPassword, enable: config_externalDatabase">
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- import & export -->
+                    <legend>{{ _("Import & Export") }}</legend>
+                    <form class="form-inline">
+                        <div class="control-group" data-bind="css: {error: invalidArchive}">
+                            <div class="input-prepend input-append">
+                                <span class="btn fileinput-button">
+                                    <span>{{ _("Browse...") }}</span>
+                                    <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
+                                </span>
+                                <input type="text" class="input-large text-center" data-bind="value: importFilename" readonly></span>
+                                <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
+                            </div>
+                            <a class="btn pull-right" data-bind="attr: {href: exportUrl()}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
+                        </div>
+                        <div class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
+                    </form>
+                </div>
+
+                <!-- appearance -->
+                <div class="tab-pane" id="settings_plugin_filamentmanager_configurationdialog_appearance">
+                    <form class="form-horizontal">
+                        <!-- currency symbol -->
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Currency symbol') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-mini text-center" data-bind="value: config_currencySymbol">
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <!-- enable odometer -->
-
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
-                    </label>
-                </div>
-            </div>
-
-            <!-- enable auto pause -->
-
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_autoPause, enable: config_enableOdometer">{{ _("Pause print if filament runs out") }}
-                    </label>
-                </div>
-            </div>
-
-            <!-- pause threshold -->
-
-            <div class="control-group">
-                <label class="control-label">{{ _('Pause threshold') }}</label>
-                <div class="controls">
-                    <div class="input-append">
-                        <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: config_pauseThreshold, enable: config_enableOdometer() && config_autoPause()">
-                        <span class="add-on">mm</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- currency symbol -->
-
-            <div class="control-group">
-                <label class="control-label">{{ _('Currency symbol') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-mini text-center" data-bind="value: config_currencySymbol">
-                </div>
-            </div>
-
-        </form>
-
-        <legend>{{ _("Import & Export") }}</legend>
-
-        <form class="form-inline">
-            <div class="control-group" data-bind="css: {error: invalidArchive}">
-                <div class="input-prepend input-append">
-                    <span class="btn fileinput-button">
-                        <span>{{ _("Browse...") }}</span>
-                        <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
-                    </span>
-                    <input type="text" class="input-large text-center" data-bind="value: importFilename" readonly></span>
-                    <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
-                </div>
-                <a class="btn pull-right" data-bind="attr: {href: exportUrl()}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
-            </div>
-            <div class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
-        </form>
+        </div>
     </div>
 
     <div class="modal-footer">

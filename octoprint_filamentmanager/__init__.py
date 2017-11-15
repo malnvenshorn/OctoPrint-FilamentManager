@@ -102,7 +102,14 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             enableWarning=True,
             autoPause=False,
             pauseThreshold=100,
-            currencySymbol="€"
+            database=dict(
+                useExternal=False,
+                uri="postgresql://",
+                name="",
+                user="",
+                password="",
+            ),
+            currencySymbol="€",
         )
 
     def on_settings_save(self, data):
