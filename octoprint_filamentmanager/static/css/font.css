@@ -10,7 +10,7 @@
 }
 
 .fa-reel {
-  font-family: icomoon;
+  font-family: icomoon !important;
 }
 
 .fa-reel:before {
