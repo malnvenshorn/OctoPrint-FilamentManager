@@ -14,11 +14,14 @@ from datetime import datetime
 from flask import jsonify, request, make_response, Response
 from werkzeug.exceptions import BadRequest
 from werkzeug.http import http_date
+
 import octoprint.plugin
+from octoprint.settings import valid_boolean_trues
 from octoprint.events import Events
 from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
 from octoprint.server import admin_permission
 from octoprint.util import dict_merge
+
 from .manager import FilamentManager
 from .odometer import FilamentOdometer
 
@@ -30,7 +33,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.BlueprintPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
-    DB_VERSION = 2
+    DB_VERSION = 3
 
     def __init__(self):
         self.filamentManager = None
@@ -53,7 +56,15 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             self._settings.set(["_db_version"], 1)
 
         try:
-            self.filamentManager = FilamentManager(db_path)
+            # settings.get() returns default values only if no property is set in the path ¯\_(ツ)_/¯
+            # therefore we merge the result with the default dictionary
+            config = dict_merge(self.get_settings_defaults()["database"], self._settings.get(["database"]))
+
+            if config["useExternal"] not in valid_boolean_trues:
+                config["uri"] = "sqlite:///" + db_path
+
+            self.filamentManager = FilamentManager(config["uri"], database=config["name"], user=config["user"],
+                                                   password=config["password"])
             self.filamentManager.init_database()
 
             if self._settings.get(["_db_version"]) is None:
@@ -62,14 +73,15 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self._settings.set(["_db_version"], self.DB_VERSION)
             else:
                 # migrate existing database if neccessary
-                self.migrate_db_scheme()
+                self.migrate_database_scheme()
         except Exception as e:
             self._logger.error("Failed to create database: {message}".format(message=str(e)))
         else:
-            self._update_pause_threshold()
+            # self._update_pause_threshold()
+            pass
 
-    def migrate_db_scheme(self):
-        if 1 == self._settings.get(["_db_version"]):
+    def migrate_database_scheme(self):
+        if 1 == self._settings.getInt(["_db_version"]):
             # add temperature column
             sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
             try:
@@ -92,6 +104,27 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                            )
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
+        if 2 == self._settings.getInt(["_db_version"]):
+            sql_before = """ DROP TABLE modifications;
+                             DROP TRIGGER profiles_onINSERT;
+                             DROP TRIGGER profiles_onUPDATE;
+                             DROP TRIGGER profiles_onDELETE;
+                             DROP TRIGGER spools_onINSERT;
+                             DROP TRIGGER spools_onUPDATE;
+                             DROP TRIGGER spools_onDELETE; """
+
+            sql_after = """ INSERT INTO modifications (table_name, action) VALUES ('profiles', 'UPDATE');
+                            INSERT INTO modifications (table_name, action) VALUES ('spools', 'UPDATE'); """
+
+            try:
+                self.filamentManager.execute_script(sql_before)
+                self.filamentManager.init_database()
+                self.filamentManager.execute_script(sql_after)
+                self._settings.set(["_db_version"], 3)
+            except Exception as e:
+                self._logger.error("Database migration failed from version {old} to {new}: {message}"
+                                   .format(old=self._settings.get(["_db_version"]), new=3, message=str(e)))
+                return
 
     # SettingsPlugin
 
@@ -152,10 +185,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         force = request.values.get("force", False)
 
         mod = self.filamentManager.get_profiles_modifications()
-        lm = mod["changed_at"] if mod else 0
+        lm = mod["changed_at"]
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if not force and check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(lm) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         try:
@@ -262,13 +295,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_spools_list(self):
         force = request.values.get("force", False)
 
-        mod_spool = self.filamentManager.get_spools_modifications()
-        mod_profile = self.filamentManager.get_profiles_modifications()
-        lm = max(mod_spool["changed_at"] if mod_spool else 0,
-                 mod_profile["changed_at"] if mod_profile else 0)
+        mod = self.filamentManager.get_spools_modifications()
+        lm = mod["changed_at"]
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if not force and check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(lm) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         try:
