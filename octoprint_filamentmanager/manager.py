@@ -252,9 +252,11 @@ class FilamentManager(object):
             with io.open(filepath, mode="r", encoding="utf-8") as csv_file:
                 csv_reader = csv.reader(csv_file)
                 header = next(csv_reader)
+                equal_column_order = (header == table.columns.keys())
                 with self.lock, self.conn.begin():
                     for row in csv_reader:
-                        self.conn.execute(insert(table).prefix_with("OR IGNORE").values(dict(zip(header, row))))
+                        values = row if equal_column_order else dict(zip(header, row))
+                        self.conn.execute(insert(table).prefix_with("OR IGNORE").values(values))
 
         tables = [self.profiles, self.spools]
         for t in tables:
