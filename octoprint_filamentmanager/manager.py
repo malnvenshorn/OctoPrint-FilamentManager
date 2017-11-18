@@ -17,6 +17,8 @@ from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 import sqlalchemy.sql.functions as func
 
+from .listen import PGNotify
+
 
 class FilamentManager(object):
 
@@ -28,18 +30,20 @@ class FilamentManager(object):
         # from sqlalchemy.orm import sessionmaker, scoped_session
         # Session = scoped_session(sessionmaker(bind=engine))
         self.lock = Lock()
+        self.notify = None
 
         uri_parts = urisplit(uri)
 
         if self.DIALECT_SQLITE == uri_parts.scheme:
             self.engine = create_engine(uri, connect_args={"check_same_thread": False})
             self.conn = self.engine.connect()
-            self.conn.execute("PRAGMA foreign_keys = ON")
+            self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
         elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
             uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.port,
                              path="/{}".format(database), userinfo="{}:{}".format(user, password))
             self.engine = create_engine(uri)
             self.conn = self.engine.connect()
+            self.notify = PGNotify(uri)
         else:
             raise ValueError("Engine '{engine}' not supported".format(engine=uri_parts.scheme))
 
@@ -95,7 +99,8 @@ class FilamentManager(object):
                                        ON CONFLICT (table_name) DO UPDATE
                                        SET action=TG_OP, changed_at=CURRENT_TIMESTAMP
                                        WHERE modifications.table_name=TG_TABLE_NAME;
-                                       RETURN NEW;
+                                       PERFORM pg_notify(TG_TABLE_NAME, TG_OP);
+                                       RETURN NULL;
                                    END;
                                    $func$ LANGUAGE plpgsql;
                                    """)

@@ -58,7 +58,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             config["uri"] = "sqlite:///" + db_path
             migrate_schema_id = os.path.isfile(db_path)
         else:
-            migrate_schema_id = false
+            migrate_schema_id = False
 
         try:
             self.filamentManager = FilamentManager(config["uri"], database=config["name"], user=config["user"],
@@ -90,6 +90,14 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             else:
                 # migrate existing database if neccessary
                 self.migrate_database_scheme(schema_id)
+
+            if self.filamentManager.notify is not None:
+                def notify(pid, channel, payload):
+                    if pid != self.filamentManager.conn.connection.get_backend_pid():
+                        self._send_client_message("data_changed",
+                                                  data=dict(table=channel, action=payload))
+                self.filamentManager.notify.subscribe(notify)
+
         except Exception as e:
             self._logger.error("Failed to initialize database: {message}".format(message=str(e)))
         else:
@@ -591,7 +599,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self._logger.error("Failed to update filament on tool{id}: {message}"
                                    .format(id=str(tool), message=str(e)))
 
-        self._send_client_message("updated_filaments")
+        self._send_client_message("data_changed", data=dict(table="spools"))
         self._update_pause_thresholds()
 
     def _send_client_message(self, message_type, data=None):

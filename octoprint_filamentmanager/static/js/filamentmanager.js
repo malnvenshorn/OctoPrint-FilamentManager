@@ -266,13 +266,13 @@ $(function() {
 
             var messageType = data.type;
             var messageData = data.data;
-
-            if (messageType === "updated_filaments") {
+            // TODO needs improvement
+            if (messageType === "data_changed") {
                 self.requestInProgress(true);
-                $.when(self.requestSpools(), self.requestSelectedSpools())
-                    .done(function(spools, selections) {
+                $.when(self.requestSpools(), self.requestProfiles())
+                    .done(function(spools, profiles) {
+                        self.processProfiles(profiles[0]);
                         self.processSpools(spools[0]);
-                        self.processSelectedSpools(selections[0]);
                     })
                     .always(function() {
                         self.requestInProgress(false);
