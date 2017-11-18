@@ -41,7 +41,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.odometerEnabled = False
         self.lastPrintState = None
         self.pauseEnabled = False
-        self.pauseThreshold = []
+        self.pauseThresholds = dict()
 
     # StartupPlugin
 
@@ -77,8 +77,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         except Exception as e:
             self._logger.error("Failed to create database: {message}".format(message=str(e)))
         else:
-            # self._update_pause_threshold()
-            pass
+            self._update_pause_thresholds()
 
     def migrate_database_scheme(self):
         if 1 == self._settings.getInt(["_db_version"]):
@@ -105,21 +104,17 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
         if 2 == self._settings.getInt(["_db_version"]):
-            sql_before = """ DROP TABLE modifications;
-                             DROP TRIGGER profiles_onINSERT;
-                             DROP TRIGGER profiles_onUPDATE;
-                             DROP TRIGGER profiles_onDELETE;
-                             DROP TRIGGER spools_onINSERT;
-                             DROP TRIGGER spools_onUPDATE;
-                             DROP TRIGGER spools_onDELETE; """
-
-            sql_after = """ INSERT INTO modifications (table_name, action) VALUES ('profiles', 'UPDATE');
-                            INSERT INTO modifications (table_name, action) VALUES ('spools', 'UPDATE'); """
+            sql = """ DROP TABLE modifications;
+                      DROP TRIGGER profiles_onINSERT;
+                      DROP TRIGGER profiles_onUPDATE;
+                      DROP TRIGGER profiles_onDELETE;
+                      DROP TRIGGER spools_onINSERT;
+                      DROP TRIGGER spools_onUPDATE;
+                      DROP TRIGGER spools_onDELETE; """
 
             try:
-                self.filamentManager.execute_script(sql_before)
+                self.filamentManager.execute_script(sql)
                 self.filamentManager.init_database()
-                self.filamentManager.execute_script(sql_after)
                 self._settings.set(["_db_version"], 3)
             except Exception as e:
                 self._logger.error("Database migration failed from version {old} to {new}: {message}"
@@ -155,7 +150,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         new_threshold = self._settings.getInt(["pauseThreshold"])
 
         if old_threshold != new_threshold:
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
 
         self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
@@ -273,7 +268,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
             return jsonify(dict(profile=saved_profile))
         except Exception as e:
             self._logger.error("Failed to update profile with id {id}: {message}"
@@ -387,7 +382,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
             return jsonify(dict(spool=saved_spool))
         except Exception as e:
             self._logger.error("Failed to update spool with id {id}: {message}"
@@ -441,10 +436,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_selection = self.filamentManager.update_selection(identifier, selection)
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
             return jsonify(dict(selection=saved_selection))
         except Exception as e:
-            self._logger.error("Failed to update selected spool for tool {id}: {message}"
+            self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to update selected spool, see the log for more details", 500)
 
@@ -578,7 +573,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                                    .format(id=str(tool), message=str(e)))
 
         self._send_client_message("updated_filaments")
-        self._update_pause_threshold()
+        self._update_pause_thresholds()
 
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
@@ -599,30 +594,33 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             if self.pauseEnabled:
                 extrusion = self.filamentOdometer.get_values()
                 tool = self.filamentOdometer.get_current_tool()
-                try:
-                    if self.pauseThreshold[tool] is not None and extrusion[tool] >= self.pauseThreshold[tool]:
-                        self._logger.info("Filament is running out, pausing print")
-                        self._printer.pause_print()
-                except IndexError:
-                    # Ignoring index out of range errors
-                    # This usually means that the tool has no spool assigned
-                    pass
+                threshold = self.pauseThresholds.get("tool%s" % tool)
+                if threshold is not None and extrusion[tool] >= threshold:
+                    self._logger.info("Filament is running out, pausing print")
+                    self._printer.pause_print()
 
-    def _update_pause_threshold(self):
-        try:
-            selections = self.filamentManager.get_all_selections()
-            tmp = []
-            for sel in selections:
-                if sel["tool"] >= len(tmp):
-                    tmp.extend([None for i in xrange(sel["tool"] - len(tmp) + 1)])
-                diameter = sel["spool"]["profile"]["diameter"]
-                volume = (sel["spool"]["weight"] - sel["spool"]["used"]) / sel["spool"]["profile"]["density"]
-                threshold = self._volume_to_length(diameter, volume * 1000) - self._settings.getInt(["pauseThreshold"])
-                tmp.insert(sel["tool"], threshold)
-            self.pauseThreshold = tmp
-        except Exception as e:
-            self.pauseThreshold = []
-            self._logger.error("Failed to set pause tresholds: {message}".format(message=str(e)))
+    def _update_pause_thresholds(self):
+        def set_threshold(selection):
+            def threshold(spool):
+                diameter = spool["profile"]["diameter"]
+                volume = (spool["weight"] - spool["used"]) / spool["profile"]["density"]
+                return self._volume_to_length(diameter, volume * 1000) - self._settings.getFloat(["pauseThreshold"])
+
+            try:
+                spool = selection["spool"]
+                if spool is not None:
+                    self.pauseThresholds["tool%s" % selection["tool"]] = threshold(spool)
+            except ZeroDivisionError:
+                self._logger.warn("ZeroDivisionError while calculating pause threshold for tool{tool}, "
+                                  "pause feature not available for selected spool".format(tool=tool))
+
+        self.pauseThresholds = dict()
+        selections = self.filamentManager.get_all_selections()
+
+        for s in selections:
+            set_threshold(s)
+
+        self._logger.debug("Updated thresholds: {thresholds}".format(thresholds=str(self.pauseThresholds)))
 
     # Softwareupdate hook
 
