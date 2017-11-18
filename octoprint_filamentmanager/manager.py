@@ -14,13 +14,14 @@ from sqlalchemy import create_engine, event, text
 from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL
 from sqlalchemy.sql import insert, update, delete, select, label
 from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 import sqlalchemy.sql.functions as func
 
 
 class FilamentManager(object):
 
-    ENGINE_SQLITE = "sqlite"
-    ENGINE_POSTGRESQL = "postgresql"
+    DIALECT_SQLITE = "sqlite"
+    DIALECT_POSTGRESQL = "postgresql"
 
     def __init__(self, uri, database, user, password):
         # QUESTION thread local connection vs sharing a serialized connection, pro/cons?
@@ -30,11 +31,11 @@ class FilamentManager(object):
 
         uri_parts = urisplit(uri)
 
-        if uri_parts.scheme == self.ENGINE_SQLITE:
+        if self.DIALECT_SQLITE == uri_parts.scheme:
             self.engine = create_engine(uri, connect_args={"check_same_thread": False})
             self.conn = self.engine.connect()
             self.conn.execute("PRAGMA foreign_keys = ON")
-        elif uri_parts.scheme == self.ENGINE_POSTGRESQL:
+        elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
             uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.port,
                              path="/{}".format(database), userinfo="{}:{}".format(user, password))
             self.engine = create_engine(uri)
@@ -76,14 +77,53 @@ class FilamentManager(object):
                                    Column("changed_at", TIMESTAMP, nullable=False,
                                           server_default=text("CURRENT_TIMESTAMP")))
 
-        for table in ["profiles", "spools"]:
-            for action in ["INSERT", "UPDATE", "DELETE"]:
-                event.listen(metadata, "after_create",
-                             DDL(""" CREATE TRIGGER IF NOT EXISTS {table}_on{action}
-                                     AFTER {action} ON {table} FOR EACH ROW
-                                     BEGIN
-                                         REPLACE INTO modifications (table_name, action) VALUES ('{table}','{action}');
-                                     END; """.format(table=table, action=action)))
+        if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
+            def should_create_function(name):
+                row = self.conn.execute("select proname from pg_proc where proname = '%s'" % name).scalar()
+                return not bool(row)
+
+            def should_create_trigger(name):
+                row = self.conn.execute("select tgname from pg_trigger where tgname = '%s'" % name).scalar()
+                return not bool(row)
+
+            trigger_function = DDL("""
+                                   CREATE FUNCTION update_lastmodified()
+                                   RETURNS TRIGGER AS $func$
+                                   BEGIN
+                                       INSERT INTO modifications (table_name, action, changed_at)
+                                       VALUES(TG_TABLE_NAME, TG_OP, CURRENT_TIMESTAMP)
+                                       ON CONFLICT (table_name) DO UPDATE
+                                       SET action=TG_OP, changed_at=CURRENT_TIMESTAMP
+                                       WHERE modifications.table_name=TG_TABLE_NAME;
+                                       RETURN NEW;
+                                   END;
+                                   $func$ LANGUAGE plpgsql;
+                                   """)
+
+            if should_create_function("update_lastmodified"):
+                event.listen(metadata, "after_create", trigger_function)
+
+            for table in [self.profiles.name, self.spools.name]:
+                for action in ["INSERT", "UPDATE", "DELETE"]:
+                    name = "{table}_on_{action}".format(table=table, action=action.lower())
+                    trigger = DDL("""
+                                  CREATE TRIGGER {name} AFTER {action} on {table}
+                                  FOR EACH ROW EXECUTE PROCEDURE update_lastmodified()
+                                  """.format(name=name, table=table, action=action))
+                    if should_create_trigger(name):
+                        event.listen(metadata, "after_create", trigger)
+
+        elif self.DIALECT_SQLITE == self.engine.dialect.name:
+            for table in [self.profiles.name, self.spools.name]:
+                for action in ["INSERT", "UPDATE", "DELETE"]:
+                    name = "{table}_on_{action}".format(table=table, action=action.lower())
+                    trigger = DDL("""
+                                  CREATE TRIGGER IF NOT EXISTS {name} AFTER {action} on {table}
+                                  FOR EACH ROW BEGIN
+                                      REPLACE INTO modifications (table_name, action) VALUES ('{table}','{action}');
+                                  END
+                                  """.format(name=name, table=table, action=action))
+                    event.listen(metadata, "after_create", trigger)
 
         metadata.create_all(self.conn, checkfirst=True)
 
@@ -228,8 +268,15 @@ class FilamentManager(object):
 
     def update_selection(self, identifier, data):
         with self.lock, self.conn.begin():
-            self.conn.execute(text("REPLACE INTO selections (tool, spool_id) VALUES (:tool, :spool_id)"),
-                              tool=identifier, spool_id=data["spool"]["id"])
+            values = dict()
+            if self.engine.dialect.name == self.DIALECT_SQLITE:
+                stmt = insert(self.selections).prefix_with("OR REPLACE")\
+                    .values(tool=identifier, spool_id=data["spool"]["id"])
+            elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
+                stmt = pg_insert(self.selections).values(tool=identifier, spool_id=data["spool"]["id"])\
+                    .on_conflict_do_update(index_elements=[self.selections.c.tool],
+                                           set_=dict(spool_id=data["spool"]["id"]))
+            self.conn.execute(stmt)
         return self.get_selection(identifier)
 
     def export_data(self, dirpath):
@@ -256,7 +303,12 @@ class FilamentManager(object):
                 with self.lock, self.conn.begin():
                     for row in csv_reader:
                         values = row if equal_column_order else dict(zip(header, row))
-                        self.conn.execute(insert(table).prefix_with("OR IGNORE").values(values))
+                        if self.engine.dialect.name == self.DIALECT_SQLITE:
+                            # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
+                            stmt = insert(table).prefix_with("OR IGNORE").values(values)
+                        elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
+                            stmt = pg_insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id])
+                        self.conn.execute(stmt)
 
         tables = [self.profiles, self.spools]
         for t in tables:
