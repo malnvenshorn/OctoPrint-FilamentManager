@@ -180,7 +180,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         force = request.values.get("force", False)
 
         mod = self.filamentManager.get_profiles_modifications()
-        lm = mod["changed_at"]
+        lm = mod["changed_at"] if mod is not None else datetime.utcnow()
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if not force and check_lastmodified(lm) and check_etag(etag):
@@ -291,7 +291,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         force = request.values.get("force", False)
 
         mod = self.filamentManager.get_spools_modifications()
-        lm = mod["changed_at"]
+        lm = mod["changed_at"] if mod is not None else datetime.utcnow()
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
         if not force and check_lastmodified(lm) and check_etag(etag):
