@@ -325,6 +325,10 @@ class FilamentManager(object):
                         elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
                             stmt = pg_insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id])
                         self.conn.execute(stmt)
+                    if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
+                        # update sequences
+                        self.conn.execute(text("SELECT setval('profiles_id_seq', max(id)) FROM profiles"))
+                        self.conn.execute(text("SELECT setval('spools_id_seq', max(id)) FROM spools"))
 
         tables = [self.profiles, self.spools]
         for t in tables:
