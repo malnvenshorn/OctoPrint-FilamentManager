@@ -49,47 +49,65 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.filamentOdometer = FilamentOdometer()
         self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
-        db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+        # settings.get() returns default values only if no property is set in the path ¯\_(ツ)_/¯
+        # therefore we merge the result with the default dictionary
+        config = dict_merge(self.get_settings_defaults()["database"], self._settings.get(["database"]))
 
-        if os.path.isfile(db_path) and self._settings.get(["_db_version"]) is None:
-            # correct missing _db_version
-            self._settings.set(["_db_version"], 1)
+        if config["useExternal"] not in valid_boolean_trues:
+            db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+            config["uri"] = "sqlite:///" + db_path
+            migrate_schema_id = os.path.isfile(db_path)
+        else:
+            migrate_schema_id = false
 
         try:
-            # settings.get() returns default values only if no property is set in the path ¯\_(ツ)_/¯
-            # therefore we merge the result with the default dictionary
-            config = dict_merge(self.get_settings_defaults()["database"], self._settings.get(["database"]))
-
-            if config["useExternal"] not in valid_boolean_trues:
-                config["uri"] = "sqlite:///" + db_path
-
             self.filamentManager = FilamentManager(config["uri"], database=config["name"], user=config["user"],
                                                    password=config["password"])
             self.filamentManager.init_database()
 
-            if self._settings.get(["_db_version"]) is None:
-                # we assume the database is initialized the first time
-                # therefore we got the latest db scheme
-                self._settings.set(["_db_version"], self.DB_VERSION)
+            schema_id = self.filamentManager.get_schema_version()
+
+            # migrate 'schema_id' to database
+            if migrate_schema_id:
+                # before 0.5.0 only internal (sqlite) database was available
+                if schema_id is None:
+                    if self._settings.get(["_db_version"]) is None:
+                        # no version before 0.3.0 => expecting 'schema_id' 1
+                        schema_id = 1
+                    else:
+                        # before 0.5.0 the version was stored in the config.yaml => migrate to database
+                        schema_id = self._settings.getInt(["_db_version"])
+                        self._settings.set(["_db_version"], None)
+                    self._logger.warn("No schema_id found in database, setting id to %s" % schema_id)
+                    self.filamentManager.set_schema_version(schema_id)
+                else:
+                    # 'schema_id' has already been set in a previous run
+                    pass
+
+            if schema_id is None:
+                # we assume the database is initialized the first time => we got the latest db scheme
+                self.filamentManager.set_schema_version(self.DB_VERSION)
             else:
                 # migrate existing database if neccessary
-                self.migrate_database_scheme()
+                self.migrate_database_scheme(schema_id)
         except Exception as e:
-            self._logger.error("Failed to create database: {message}".format(message=str(e)))
+            self._logger.error("Failed to initialize database: {message}".format(message=str(e)))
         else:
             self._update_pause_thresholds()
 
-    def migrate_database_scheme(self):
-        if 1 == self._settings.getInt(["_db_version"]):
+    def migrate_database_scheme(self, schema_id):
+        if 1 == schema_id:
             # add temperature column
             sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
             try:
                 self.filamentManager.execute_script(sql)
-                self._settings.set(["_db_version"], 2)
             except Exception as e:
                 self._logger.error("Database migration failed from version {old} to {new}: {message}"
-                                   .format(old=self._settings.get(["_db_version"]), new=2, message=str(e)))
+                                   .format(old=schema_id, new=schema_id+1, message=str(e)))
                 return
+            else:
+                schema_id += 1
+                self.filamentManager.set_schema_version(schema_id)
 
             # migrate selected spools from config.yaml to database
             selections = self._settings.get(["selectedSpools"])
@@ -103,7 +121,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                            )
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
-        if 2 == self._settings.getInt(["_db_version"]):
+        if 2 == schema_id:
             sql = """ DROP TABLE modifications;
                       DROP TRIGGER profiles_onINSERT;
                       DROP TRIGGER profiles_onUPDATE;
@@ -115,17 +133,18 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             try:
                 self.filamentManager.execute_script(sql)
                 self.filamentManager.init_database()
-                self._settings.set(["_db_version"], 3)
             except Exception as e:
                 self._logger.error("Database migration failed from version {old} to {new}: {message}"
                                    .format(old=self._settings.get(["_db_version"]), new=3, message=str(e)))
                 return
+            else:
+                schema_id += 1
+                self.filamentManager.set_schema_version(schema_id)
 
     # SettingsPlugin
 
     def get_settings_defaults(self):
         return dict(
-            _db_version=None,
             enableOdometer=True,
             enableWarning=True,
             autoPause=False,

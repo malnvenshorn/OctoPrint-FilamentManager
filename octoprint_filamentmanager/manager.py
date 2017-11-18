@@ -132,6 +132,17 @@ class FilamentManager(object):
             for stmt in script.split(";"):
                 self.conn.execute(text(stmt))
 
+    # versioning
+
+    def get_schema_version(self):
+        with self.lock, self.conn.begin():
+            return self.conn.execute(select([func.max(self.versioning.c.schema_id)])).scalar()
+
+    def set_schema_version(self, version):
+        with self.lock, self.conn.begin():
+            self.conn.execute(insert(self.versioning).values((version,)))
+            self.conn.execute(delete(self.versioning).where(self.versioning.c.schema_id < version))
+
     # profiles
 
     def get_all_profiles(self):
