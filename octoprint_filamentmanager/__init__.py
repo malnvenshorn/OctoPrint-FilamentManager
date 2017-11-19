@@ -155,7 +155,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self.filamentManager.init_database()
             except Exception as e:
                 self._logger.error("Database migration failed from version {old} to {new}: {message}"
-                                   .format(old=self._settings.get(["_db_version"]), new=3, message=str(e)))
+                                   .format(old=schema_id, new=schema_id+1, message=str(e)))
                 return
             else:
                 schema_id += 1
