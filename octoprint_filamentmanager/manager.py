@@ -11,7 +11,7 @@ from multiprocessing import Lock
 from backports import csv
 from uritools import uricompose, urisplit
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL
+from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL, PrimaryKeyConstraint
 from sqlalchemy.sql import insert, update, delete, select, label
 from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -68,8 +68,10 @@ class FilamentManager(object):
                             ForeignKeyConstraint(["profile_id"], ["profiles.id"], ondelete="RESTRICT"))
 
         self.selections = Table("selections", metadata,
-                                Column("tool", INTEGER, primary_key=True, autoincrement=False),
+                                Column("tool", INTEGER,),
+                                Column("client_id", VARCHAR(36)),
                                 Column("spool_id", INTEGER),
+                                PrimaryKeyConstraint("tool", "client_id", name="selections_pkey"),
                                 ForeignKeyConstraint(["spool_id"], ["spools.id"], ondelete="CASCADE"))
 
         self.versioning = Table("versioning", metadata,
@@ -263,37 +265,37 @@ class FilamentManager(object):
         del sel["spool"]["profile_id"]
         return sel
 
-    def get_all_selections(self):
+    def get_all_selections(self, client_id):
         with self.lock, self.conn.begin():
             j1 = self.selections.join(self.spools, self.selections.c.spool_id == self.spools.c.id)
             j2 = j1.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
             stmt = select([self.selections, self.spools, self.profiles]).select_from(j2)\
-                .order_by(self.selections.c.tool)
+                .where(self.selections.c.client_id == client_id).order_by(self.selections.c.tool)
         result = self.conn.execute(stmt)
         return [self._build_selection_dict(row, row.keys()) for row in result.fetchall()]
 
-    def get_selection(self, identifier):
+    def get_selection(self, identifier, client_id):
         with self.lock, self.conn.begin():
             j1 = self.selections.join(self.spools, self.selections.c.spool_id == self.spools.c.id)
             j2 = j1.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
             stmt = select([self.selections, self.spools, self.profiles]).select_from(j2)\
-                .where(self.selections.c.tool == identifier)
+                .where((self.selections.c.tool == identifier) & (self.selections.c.client_id == client_id))
         result = self.conn.execute(stmt)
         row = result.fetchone()
         return self._build_selection_dict(row, row.keys()) if row is not None else dict(tool=identifier, spool=None)
 
-    def update_selection(self, identifier, data):
+    def update_selection(self, identifier, client_id, data):
         with self.lock, self.conn.begin():
             values = dict()
             if self.engine.dialect.name == self.DIALECT_SQLITE:
                 stmt = insert(self.selections).prefix_with("OR REPLACE")\
-                    .values(tool=identifier, spool_id=data["spool"]["id"])
+                    .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])
             elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
-                stmt = pg_insert(self.selections).values(tool=identifier, spool_id=data["spool"]["id"])\
-                    .on_conflict_do_update(index_elements=[self.selections.c.tool],
-                                           set_=dict(spool_id=data["spool"]["id"]))
+                stmt = pg_insert(self.selections)\
+                    .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])\
+                    .on_conflict_do_update(constraint="selections_pkey", set_=dict(spool_id=data["spool"]["id"]))
             self.conn.execute(stmt)
-        return self.get_selection(identifier)
+        return self.get_selection(identifier, client_id)
 
     def export_data(self, dirpath):
         def to_csv(table):

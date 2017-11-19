@@ -46,8 +46,18 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     # StartupPlugin
 
     def on_startup(self, host, port):
+        def generate_client_id():
+            client_id = self._settings.get(["database", "clientID"])
+            if client_id is None:
+                from uuid import uuid1
+                client_id = str(uuid1())
+                self._settings.set(["database", "clientID"], client_id)
+            return client_id
+
         self.filamentOdometer = FilamentOdometer()
         self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
+
+        self.client_id = generate_client_id()
 
         # settings.get() returns default values only if no property is set in the path ¯\_(ツ)_/¯
         # therefore we merge the result with the default dictionary
@@ -94,8 +104,9 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             if self.filamentManager.notify is not None:
                 def notify(pid, channel, payload):
                     if pid != self.filamentManager.conn.connection.get_backend_pid():
-                        self._send_client_message("data_changed",
-                                                  data=dict(table=channel, action=payload))
+                        self._send_client_message("data_changed", data=dict(table=channel, action=payload))
+                        if payload == "UPDATE":
+                            self._update_pause_thresholds()
                 self.filamentManager.notify.subscribe(notify)
 
         except Exception as e:
@@ -131,6 +142,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self._settings.set(["selectedSpools"], None)
         if 2 == schema_id:
             sql = """ DROP TABLE modifications;
+                      DROP TABLE selections;
                       DROP TRIGGER profiles_onINSERT;
                       DROP TRIGGER profiles_onUPDATE;
                       DROP TRIGGER profiles_onDELETE;
@@ -163,6 +175,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 name="",
                 user="",
                 password="",
+                clientID=None,
             ),
             currencySymbol="€",
         )
@@ -430,7 +443,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
     def get_selections_list(self):
         try:
-            all_selections = self.filamentManager.get_all_selections()
+            all_selections = self.filamentManager.get_all_selections(self.client_id)
             response = jsonify(dict(selections=all_selections))
             return response
         except Exception as e:
@@ -462,7 +475,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             return make_response("Trying to change filament while printing", 409)
 
         try:
-            saved_selection = self.filamentManager.update_selection(identifier, selection)
+            saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
             self._update_pause_thresholds()
             return jsonify(dict(selection=saved_selection))
         except Exception as e:
@@ -575,7 +588,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             self._logger.info("Filament used: {length} mm (tool{id})".format(length=str(extrusion[tool]), id=str(tool)))
 
             try:
-                selection = self.filamentManager.get_selection(tool)
+                selection = self.filamentManager.get_selection(tool, self.client_id)
                 spool = selection["spool"]
 
                 if not spool:
@@ -642,7 +655,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                                   "pause feature not available for selected spool".format(tool=tool))
 
         self.pauseThresholds = dict()
-        selections = self.filamentManager.get_all_selections()
+        selections = self.filamentManager.get_all_selections(self.client_id)
 
         for s in selections:
             set_threshold(s)
