@@ -14,11 +14,14 @@ from datetime import datetime
 from flask import jsonify, request, make_response, Response
 from werkzeug.exceptions import BadRequest
 from werkzeug.http import http_date
+
 import octoprint.plugin
+from octoprint.settings import valid_boolean_trues
 from octoprint.events import Events
 from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
 from octoprint.server import admin_permission
 from octoprint.util import dict_merge
+
 from .manager import FilamentManager
 from .odometer import FilamentOdometer
 
@@ -30,7 +33,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                             octoprint.plugin.BlueprintPlugin,
                             octoprint.plugin.EventHandlerPlugin):
 
-    DB_VERSION = 2
+    DB_VERSION = 3
 
     def __init__(self):
         self.filamentManager = None
@@ -38,47 +41,92 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         self.odometerEnabled = False
         self.lastPrintState = None
         self.pauseEnabled = False
-        self.pauseThreshold = []
+        self.pauseThresholds = dict()
 
     # StartupPlugin
 
     def on_startup(self, host, port):
+        def generate_client_id():
+            client_id = self._settings.get(["database", "clientID"])
+            if client_id is None:
+                from uuid import uuid1
+                client_id = str(uuid1())
+                self._settings.set(["database", "clientID"], client_id)
+            return client_id
+
         self.filamentOdometer = FilamentOdometer()
         self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
-        db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+        self.client_id = generate_client_id()
 
-        if os.path.isfile(db_path) and self._settings.get(["_db_version"]) is None:
-            # correct missing _db_version
-            self._settings.set(["_db_version"], 1)
+        # settings.get() returns default values only if no property is set in the path ¯\_(ツ)_/¯
+        # therefore we merge the result with the default dictionary
+        config = dict_merge(self.get_settings_defaults()["database"], self._settings.get(["database"]))
+
+        if config["useExternal"] not in valid_boolean_trues:
+            db_path = os.path.join(self.get_plugin_data_folder(), "filament.db")
+            config["uri"] = "sqlite:///" + db_path
+            migrate_schema_id = os.path.isfile(db_path)
+        else:
+            migrate_schema_id = False
 
         try:
-            self.filamentManager = FilamentManager(db_path)
+            self.filamentManager = FilamentManager(config["uri"], database=config["name"], user=config["user"],
+                                                   password=config["password"])
             self.filamentManager.init_database()
 
-            if self._settings.get(["_db_version"]) is None:
-                # we assume the database is initialized the first time
-                # therefore we got the latest db scheme
-                self._settings.set(["_db_version"], self.DB_VERSION)
+            schema_id = self.filamentManager.get_schema_version()
+
+            # migrate 'schema_id' to database
+            if migrate_schema_id:
+                # before 0.5.0 only internal (sqlite) database was available
+                if schema_id is None:
+                    if self._settings.get(["_db_version"]) is None:
+                        # no version before 0.3.0 => expecting 'schema_id' 1
+                        schema_id = 1
+                    else:
+                        # before 0.5.0 the version was stored in the config.yaml => migrate to database
+                        schema_id = self._settings.getInt(["_db_version"])
+                        self._settings.set(["_db_version"], None)
+                    self._logger.warn("No schema_id found in database, setting id to %s" % schema_id)
+                    self.filamentManager.set_schema_version(schema_id)
+                else:
+                    # 'schema_id' has already been set in a previous run
+                    pass
+
+            if schema_id is None:
+                # we assume the database is initialized the first time => we got the latest db scheme
+                self.filamentManager.set_schema_version(self.DB_VERSION)
             else:
                 # migrate existing database if neccessary
-                self.migrate_db_scheme()
-        except Exception as e:
-            self._logger.error("Failed to create database: {message}".format(message=str(e)))
-        else:
-            self._update_pause_threshold()
+                self.migrate_database_scheme(schema_id)
 
-    def migrate_db_scheme(self):
-        if 1 == self._settings.get(["_db_version"]):
+            if self.filamentManager.notify is not None:
+                def notify(pid, channel, payload):
+                    if pid != self.filamentManager.conn.connection.get_backend_pid():
+                        self._send_client_message("data_changed", data=dict(table=channel, action=payload))
+                        if payload == "UPDATE":
+                            self._update_pause_thresholds()
+                self.filamentManager.notify.subscribe(notify)
+
+        except Exception as e:
+            self._logger.error("Failed to initialize database: {message}".format(message=str(e)))
+        else:
+            self._update_pause_thresholds()
+
+    def migrate_database_scheme(self, schema_id):
+        if 1 == schema_id:
             # add temperature column
             sql = "ALTER TABLE spools ADD COLUMN temp_offset INTEGER NOT NULL DEFAULT 0;"
             try:
                 self.filamentManager.execute_script(sql)
-                self._settings.set(["_db_version"], 2)
             except Exception as e:
                 self._logger.error("Database migration failed from version {old} to {new}: {message}"
-                                   .format(old=self._settings.get(["_db_version"]), new=2, message=str(e)))
+                                   .format(old=schema_id, new=schema_id+1, message=str(e)))
                 return
+            else:
+                schema_id += 1
+                self.filamentManager.set_schema_version(schema_id)
 
             # migrate selected spools from config.yaml to database
             selections = self._settings.get(["selectedSpools"])
@@ -92,17 +140,44 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                            )
                     self.filamentManager.update_selection(key.replace("tool", ""), data)
                 self._settings.set(["selectedSpools"], None)
+        if 2 == schema_id:
+            sql = """ DROP TABLE modifications;
+                      DROP TABLE selections;
+                      DROP TRIGGER profiles_onINSERT;
+                      DROP TRIGGER profiles_onUPDATE;
+                      DROP TRIGGER profiles_onDELETE;
+                      DROP TRIGGER spools_onINSERT;
+                      DROP TRIGGER spools_onUPDATE;
+                      DROP TRIGGER spools_onDELETE; """
+
+            try:
+                self.filamentManager.execute_script(sql)
+                self.filamentManager.init_database()
+            except Exception as e:
+                self._logger.error("Database migration failed from version {old} to {new}: {message}"
+                                   .format(old=schema_id, new=schema_id+1, message=str(e)))
+                return
+            else:
+                schema_id += 1
+                self.filamentManager.set_schema_version(schema_id)
 
     # SettingsPlugin
 
     def get_settings_defaults(self):
         return dict(
-            _db_version=None,
             enableOdometer=True,
             enableWarning=True,
             autoPause=False,
             pauseThreshold=100,
-            currencySymbol="€"
+            database=dict(
+                useExternal=False,
+                uri="postgresql://",
+                name="",
+                user="",
+                password="",
+                clientID=None,
+            ),
+            currencySymbol="€",
         )
 
     def on_settings_save(self, data):
@@ -115,7 +190,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         new_threshold = self._settings.getInt(["pauseThreshold"])
 
         if old_threshold != new_threshold:
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
 
         self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
 
@@ -145,10 +220,10 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         force = request.values.get("force", False)
 
         mod = self.filamentManager.get_profiles_modifications()
-        lm = mod["changed_at"] if mod else 0
+        lm = mod["changed_at"] if mod is not None else datetime.utcnow()
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if not force and check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(lm) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         try:
@@ -233,7 +308,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_profile = self.filamentManager.update_profile(identifier, merged_profile)
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
             return jsonify(dict(profile=saved_profile))
         except Exception as e:
             self._logger.error("Failed to update profile with id {id}: {message}"
@@ -255,13 +330,11 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     def get_spools_list(self):
         force = request.values.get("force", False)
 
-        mod_spool = self.filamentManager.get_spools_modifications()
-        mod_profile = self.filamentManager.get_profiles_modifications()
-        lm = max(mod_spool["changed_at"] if mod_spool else 0,
-                 mod_profile["changed_at"] if mod_profile else 0)
+        mod = self.filamentManager.get_spools_modifications()
+        lm = mod["changed_at"] if mod is not None else datetime.utcnow()
         etag = (hashlib.sha1(str(lm))).hexdigest()
 
-        if not force and check_lastmodified(int(lm)) and check_etag(etag):
+        if not force and check_lastmodified(lm) and check_etag(etag):
             return make_response("Not Modified", 304)
 
         try:
@@ -349,7 +422,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
 
         try:
             saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
-            self._update_pause_threshold()
+            self._update_pause_thresholds()
             return jsonify(dict(spool=saved_spool))
         except Exception as e:
             self._logger.error("Failed to update spool with id {id}: {message}"
@@ -370,7 +443,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
     @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
     def get_selections_list(self):
         try:
-            all_selections = self.filamentManager.get_all_selections()
+            all_selections = self.filamentManager.get_all_selections(self.client_id)
             response = jsonify(dict(selections=all_selections))
             return response
         except Exception as e:
@@ -398,12 +471,15 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
         if "id" not in selection.get("spool", {}):
             return make_response("Selection does not contain mandatory 'id (spool)' field", 400)
 
+        if self._printer.is_printing():
+            return make_response("Trying to change filament while printing", 409)
+
         try:
-            saved_selection = self.filamentManager.update_selection(identifier, selection)
-            self._update_pause_threshold()
+            saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+            self._update_pause_thresholds()
             return jsonify(dict(selection=saved_selection))
         except Exception as e:
-            self._logger.error("Failed to update selected spool for tool {id}: {message}"
+            self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to update selected spool, see the log for more details", 500)
 
@@ -512,7 +588,7 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             self._logger.info("Filament used: {length} mm (tool{id})".format(length=str(extrusion[tool]), id=str(tool)))
 
             try:
-                selection = self.filamentManager.get_selection(tool)
+                selection = self.filamentManager.get_selection(tool, self.client_id)
                 spool = selection["spool"]
 
                 if not spool:
@@ -536,8 +612,8 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
                 self._logger.error("Failed to update filament on tool{id}: {message}"
                                    .format(id=str(tool), message=str(e)))
 
-        self._send_client_message("updated_filaments")
-        self._update_pause_threshold()
+        self._send_client_message("data_changed", data=dict(table="spools"))
+        self._update_pause_thresholds()
 
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
@@ -558,30 +634,33 @@ class FilamentManagerPlugin(octoprint.plugin.StartupPlugin,
             if self.pauseEnabled:
                 extrusion = self.filamentOdometer.get_values()
                 tool = self.filamentOdometer.get_current_tool()
-                try:
-                    if self.pauseThreshold[tool] is not None and extrusion[tool] >= self.pauseThreshold[tool]:
-                        self._logger.info("Filament is running out, pausing print")
-                        self._printer.pause_print()
-                except IndexError:
-                    # Ignoring index out of range errors
-                    # This usually means that the tool has no spool assigned
-                    pass
+                threshold = self.pauseThresholds.get("tool%s" % tool)
+                if threshold is not None and extrusion[tool] >= threshold:
+                    self._logger.info("Filament is running out, pausing print")
+                    self._printer.pause_print()
 
-    def _update_pause_threshold(self):
-        try:
-            selections = self.filamentManager.get_all_selections()
-            tmp = []
-            for sel in selections:
-                if sel["tool"] >= len(tmp):
-                    tmp.extend([None for i in xrange(sel["tool"] - len(tmp) + 1)])
-                diameter = sel["spool"]["profile"]["diameter"]
-                volume = (sel["spool"]["weight"] - sel["spool"]["used"]) / sel["spool"]["profile"]["density"]
-                threshold = self._volume_to_length(diameter, volume * 1000) - self._settings.getInt(["pauseThreshold"])
-                tmp.insert(sel["tool"], threshold)
-            self.pauseThreshold = tmp
-        except Exception as e:
-            self.pauseThreshold = []
-            self._logger.error("Failed to set pause tresholds: {message}".format(message=str(e)))
+    def _update_pause_thresholds(self):
+        def set_threshold(selection):
+            def threshold(spool):
+                diameter = spool["profile"]["diameter"]
+                volume = (spool["weight"] - spool["used"]) / spool["profile"]["density"]
+                return self._volume_to_length(diameter, volume * 1000) - self._settings.getFloat(["pauseThreshold"])
+
+            try:
+                spool = selection["spool"]
+                if spool is not None:
+                    self.pauseThresholds["tool%s" % selection["tool"]] = threshold(spool)
+            except ZeroDivisionError:
+                self._logger.warn("ZeroDivisionError while calculating pause threshold for tool{tool}, "
+                                  "pause feature not available for selected spool".format(tool=tool))
+
+        self.pauseThresholds = dict()
+        selections = self.filamentManager.get_all_selections(self.client_id)
+
+        for s in selections:
+            set_threshold(s)
+
+        self._logger.debug("Updated thresholds: {thresholds}".format(thresholds=str(self.pauseThresholds)))
 
     # Softwareupdate hook
 

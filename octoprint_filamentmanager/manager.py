@@ -4,235 +4,343 @@ __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
 
-import sqlite3
 import io
 import os
-from backports import csv
 from multiprocessing import Lock
+
+from backports import csv
+from uritools import uricompose, urisplit
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL, PrimaryKeyConstraint
+from sqlalchemy.sql import insert, update, delete, select, label
+from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+import sqlalchemy.sql.functions as func
+
+from .listen import PGNotify
 
 
 class FilamentManager(object):
 
-    def __init__(self, database):
-        self._db_lock = Lock()
-        self._db = sqlite3.connect(database, check_same_thread=False)
-        self._db.execute("PRAGMA foreign_keys = ON")
+    DIALECT_SQLITE = "sqlite"
+    DIALECT_POSTGRESQL = "postgresql"
+
+    def __init__(self, uri, database, user, password):
+        # QUESTION thread local connection vs sharing a serialized connection, pro/cons?
+        # from sqlalchemy.orm import sessionmaker, scoped_session
+        # Session = scoped_session(sessionmaker(bind=engine))
+        self.lock = Lock()
+        self.notify = None
+
+        uri_parts = urisplit(uri)
+
+        if self.DIALECT_SQLITE == uri_parts.scheme:
+            self.engine = create_engine(uri, connect_args={"check_same_thread": False})
+            self.conn = self.engine.connect()
+            self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
+        elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
+            uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.port,
+                             path="/{}".format(database), userinfo="{}:{}".format(user, password))
+            self.engine = create_engine(uri)
+            self.conn = self.engine.connect()
+            self.notify = PGNotify(uri)
+        else:
+            raise ValueError("Engine '{engine}' not supported".format(engine=uri_parts.scheme))
 
     def init_database(self):
-        scheme = []
-        scheme.append(
-            """ CREATE TABLE IF NOT EXISTS profiles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    vendor TEXT NOT NULL DEFAULT "",
-                    material TEXT NOT NULL DEFAULT "",
-                    density REAL NOT NULL DEFAULT 0,
-                    diameter REAL NOT NULL DEFAULT 0);
+        metadata = MetaData()
 
-                CREATE TABLE IF NOT EXISTS spools (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    profile_id INTEGER NOT NULL,
-                    name TEXT NOT NULL DEFAULT "",
-                    cost REAL NOT NULL DEFAULT 0,
-                    weight REAL NOT NULL DEFAULT 0,
-                    used REAL NOT NULL DEFAULT 0,
-                    temp_offset INTEGER NOT NULL DEFAULT 0,
-                    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE RESTRICT);
+        self.profiles = Table("profiles", metadata,
+                              Column("id", INTEGER, primary_key=True, autoincrement=True),
+                              Column("vendor", VARCHAR(255), nullable=False, server_default=""),
+                              Column("material", VARCHAR(255), nullable=False, server_default=""),
+                              Column("density", REAL, nullable=False, server_default="0"),
+                              Column("diameter", REAL, nullable=False, server_default="0"))
 
-                CREATE TABLE IF NOT EXISTS selections (
-                    tool INTEGER PRIMARY KEY ON CONFLICT REPLACE,
-                    spool_id INTEGER,
-                    FOREIGN KEY (spool_id) REFERENCES spools(id) ON DELETE CASCADE);
+        self.spools = Table("spools", metadata,
+                            Column("id", INTEGER, primary_key=True, autoincrement=True),
+                            Column("profile_id", INTEGER, nullable=False),
+                            Column("name", VARCHAR(255), nullable=False, server_default=""),
+                            Column("cost", REAL, nullable=False, server_default="0"),
+                            Column("weight", REAL, nullable=False, server_default="0"),
+                            Column("used", REAL, nullable=False, server_default="0"),
+                            Column("temp_offset", INTEGER, nullable=False, server_default="0"),
+                            ForeignKeyConstraint(["profile_id"], ["profiles.id"], ondelete="RESTRICT"))
 
-                CREATE TABLE IF NOT EXISTS modifications (
-                    table_name TEXT NOT NULL PRIMARY KEY ON CONFLICT REPLACE,
-                    action TEXT NOT NULL,
-                    changed_at TIMESTAMP DEFAULT (strftime('%s', 'now'))); """)
+        self.selections = Table("selections", metadata,
+                                Column("tool", INTEGER,),
+                                Column("client_id", VARCHAR(36)),
+                                Column("spool_id", INTEGER),
+                                PrimaryKeyConstraint("tool", "client_id", name="selections_pkey"),
+                                ForeignKeyConstraint(["spool_id"], ["spools.id"], ondelete="CASCADE"))
 
-        for table in ["profiles", "spools"]:
-            for action in ["INSERT", "UPDATE", "DELETE"]:
-                scheme.append(
-                    """ CREATE TRIGGER IF NOT EXISTS {table}_on{action} AFTER {action} ON {table}
-                        BEGIN
-                            INSERT INTO modifications (table_name, action) VALUES ('{table}','{action}');
-                        END; """.format(table=table, action=action))
+        self.versioning = Table("versioning", metadata,
+                                Column("schema_id", INTEGER, primary_key=True, autoincrement=False))
 
-        self.execute_script("".join(scheme))
+        self.modifications = Table("modifications", metadata,
+                                   Column("table_name", VARCHAR(255), nullable=False, primary_key=True),
+                                   Column("action", VARCHAR(255), nullable=False),
+                                   Column("changed_at", TIMESTAMP, nullable=False,
+                                          server_default=text("CURRENT_TIMESTAMP")))
+
+        if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
+            def should_create_function(name):
+                row = self.conn.execute("select proname from pg_proc where proname = '%s'" % name).scalar()
+                return not bool(row)
+
+            def should_create_trigger(name):
+                row = self.conn.execute("select tgname from pg_trigger where tgname = '%s'" % name).scalar()
+                return not bool(row)
+
+            trigger_function = DDL("""
+                                   CREATE FUNCTION update_lastmodified()
+                                   RETURNS TRIGGER AS $func$
+                                   BEGIN
+                                       INSERT INTO modifications (table_name, action, changed_at)
+                                       VALUES(TG_TABLE_NAME, TG_OP, CURRENT_TIMESTAMP)
+                                       ON CONFLICT (table_name) DO UPDATE
+                                       SET action=TG_OP, changed_at=CURRENT_TIMESTAMP
+                                       WHERE modifications.table_name=TG_TABLE_NAME;
+                                       PERFORM pg_notify(TG_TABLE_NAME, TG_OP);
+                                       RETURN NULL;
+                                   END;
+                                   $func$ LANGUAGE plpgsql;
+                                   """)
+
+            if should_create_function("update_lastmodified"):
+                event.listen(metadata, "after_create", trigger_function)
+
+            for table in [self.profiles.name, self.spools.name]:
+                for action in ["INSERT", "UPDATE", "DELETE"]:
+                    name = "{table}_on_{action}".format(table=table, action=action.lower())
+                    trigger = DDL("""
+                                  CREATE TRIGGER {name} AFTER {action} on {table}
+                                  FOR EACH ROW EXECUTE PROCEDURE update_lastmodified()
+                                  """.format(name=name, table=table, action=action))
+                    if should_create_trigger(name):
+                        event.listen(metadata, "after_create", trigger)
+
+        elif self.DIALECT_SQLITE == self.engine.dialect.name:
+            for table in [self.profiles.name, self.spools.name]:
+                for action in ["INSERT", "UPDATE", "DELETE"]:
+                    name = "{table}_on_{action}".format(table=table, action=action.lower())
+                    trigger = DDL("""
+                                  CREATE TRIGGER IF NOT EXISTS {name} AFTER {action} on {table}
+                                  FOR EACH ROW BEGIN
+                                      REPLACE INTO modifications (table_name, action) VALUES ('{table}','{action}');
+                                  END
+                                  """.format(name=name, table=table, action=action))
+                    event.listen(metadata, "after_create", trigger)
+
+        metadata.create_all(self.conn, checkfirst=True)
 
     def execute_script(self, script):
-        with self._db_lock, self._db as db:
-            db.executescript(script)
+        with self.lock, self.conn.begin():
+            for stmt in script.split(";"):
+                self.conn.execute(text(stmt))
+
+    # versioning
+
+    def get_schema_version(self):
+        with self.lock, self.conn.begin():
+            return self.conn.execute(select([func.max(self.versioning.c.schema_id)])).scalar()
+
+    def set_schema_version(self, version):
+        with self.lock, self.conn.begin():
+            self.conn.execute(insert(self.versioning).values((version,)))
+            self.conn.execute(delete(self.versioning).where(self.versioning.c.schema_id < version))
 
     # profiles
 
     def get_all_profiles(self):
-        with self._db_lock, self._db as db:
-            cursor = db.execute(""" SELECT id, vendor, material, density, diameter
-                                    FROM profiles ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """)
-        return self._cursor_to_dict(cursor)
+        with self.lock, self.conn.begin():
+            stmt = select([self.profiles]).order_by(self.profiles.c.material, self.profiles.c.vendor)
+            result = self.conn.execute(stmt)
+        return self._result_to_dict(result)
 
     def get_profiles_modifications(self):
-        with self._db_lock, self._db as db:
-            cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'profiles'")
-        return self._cursor_to_dict(cursor, one=True)
+        with self.lock, self.conn.begin():
+            stmt = select([self.modifications.c.changed_at]).where(self.modifications.c.table_name == "profiles")
+            result = self.conn.execute(stmt)
+        return self._result_to_dict(result, one=True)
 
     def get_profile(self, identifier):
-        with self._db_lock, self._db as db:
-            cursor = db.execute(""" SELECT id, vendor, material, density, diameter FROM profiles WHERE id = ?
-                                    ORDER BY material COLLATE NOCASE, vendor COLLATE NOCASE """, (identifier,))
-        return self._cursor_to_dict(cursor, one=True)
+        with self.lock, self.conn.begin():
+            stmt = select([self.profiles]).where(self.profiles.c.id == identifier)\
+                .order_by(self.profiles.c.material, self.profiles.c.vendor)
+            result = self.conn.execute(stmt)
+        return self._result_to_dict(result, one=True)
 
     def create_profile(self, data):
-        with self._db_lock, self._db as db:
-            cursor = db.execute("INSERT INTO profiles (material, vendor, density, diameter) VALUES (?, ?, ?, ?)",
-                                (data.get("material", ""), data.get("vendor", ""), data.get("density", 0),
-                                 data.get("diameter", 0)))
-            data["id"] = cursor.lastrowid
-            return data
+        with self.lock, self.conn.begin():
+            stmt = insert(self.profiles)\
+                .values(vendor=data["vendor"], material=data["material"], density=data["density"],
+                        diameter=data["diameter"])
+            result = self.conn.execute(stmt)
+        data["id"] = result.lastrowid
+        return data
 
     def update_profile(self, identifier, data):
-        with self._db_lock, self._db as db:
-            db.execute("UPDATE profiles SET material = ?, vendor = ?, density = ?, diameter = ? WHERE id = ?",
-                       (data.get("material"), data.get("vendor"), data.get("density"), data.get("diameter"),
-                        identifier))
-            return data
+        with self.lock, self.conn.begin():
+            stmt = update(self.profiles).where(self.profiles.c.id == identifier)\
+                .values(vendor=data["vendor"], material=data["material"], density=data["density"],
+                        diameter=data["diameter"])
+            self.conn.execute(stmt)
+        return data
 
     def delete_profile(self, identifier):
-        with self._db_lock, self._db as db:
-            db.execute("DELETE FROM profiles WHERE id = ?", (identifier,))
+        with self.lock, self.conn.begin():
+            stmt = delete(self.profiles).where(self.profiles.c.id == identifier)
+            self.conn.execute(stmt)
 
     # spools
 
     def _build_spool_dict(self, row, column_names):
         spool = dict(profile=dict())
         for i, value in enumerate(row):
-            if i < 6:
-                spool[column_names[i][0]] = value
+            if i < len(self.spools.columns):
+                spool[column_names[i]] = value
             else:
-                spool["profile"][column_names[i][0]] = value
+                spool["profile"][column_names[i]] = value
+        del spool["profile_id"]
         return spool
 
     def get_all_spools(self):
-        with self._db_lock, self._db as db:
-            cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                           p.id, p.vendor, p.material, p.density, p.diameter
-                                    FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
-                                    ORDER BY s.name COLLATE NOCASE """)
-        return [self._build_spool_dict(row, cursor.description) for row in cursor.fetchall()]
+        with self.lock, self.conn.begin():
+            j = self.spools.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
+            stmt = select([self.spools, self.profiles]).select_from(j).order_by(self.spools.c.name)
+            result = self.conn.execute(stmt)
+        return [self._build_spool_dict(row, row.keys()) for row in result.fetchall()]
 
     def get_spools_modifications(self):
-        with self._db_lock, self._db as db:
-            cursor = db.execute("SELECT changed_at FROM modifications WHERE table_name = 'spools'")
-            return self._cursor_to_dict(cursor, one=True)
+        with self.lock, self.conn.begin():
+            stmt = select([func.max(self.modifications.c.changed_at).label("changed_at")])\
+                .where(self.modifications.c.table_name.in_(["spools", "profiles"]))
+            result = self.conn.execute(stmt)
+        return self._result_to_dict(result, one=True)
 
     def get_spool(self, identifier):
-            with self._db_lock, self._db as db:
-                cursor = db.execute(""" SELECT s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                               p.id, p.vendor, p.material, p.density, p.diameter
-                                        FROM spools AS s, profiles AS p WHERE s.profile_id = p.id
-                                        AND s.id = ? """, (identifier,))
-            result = cursor.fetchone()
-            return self._build_spool_dict(result, cursor.description) if result is not None else dict()
+        with self.lock, self.conn.begin():
+            j = self.spools.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
+            stmt = select([self.spools, self.profiles]).select_from(j)\
+                .where(self.spools.c.id == identifier).order_by(self.spools.c.name)
+            result = self.conn.execute(stmt)
+        row = result.fetchone()
+        return self._build_spool_dict(row, row.keys()) if row is not None else None
 
     def create_spool(self, data):
-        with self._db_lock, self._db as db:
-            sql = "INSERT INTO spools (name, profile_id, cost, weight, used, temp_offset) VALUES (?, ?, ?, ?, ?, ?)"
-            cursor = db.execute(sql, (data.get("name", ""), data["profile"].get("id", 0), data.get("cost", 0),
-                                data.get("weight", 0), data.get("used", 0), data.get("temp_offset", 0)))
-            data["id"] = cursor.lastrowid
-            return data
+        with self.lock, self.conn.begin():
+            stmt = insert(self.spools)\
+                .values(name=data["name"], cost=data["cost"], weight=data["weight"], used=data["used"],
+                        temp_offset=data["temp_offset"], profile_id=data["profile"]["id"])
+            result = self.conn.execute(stmt)
+        data["id"] = result.lastrowid
+        return data
 
     def update_spool(self, identifier, data):
-        with self._db_lock, self._db as db:
-            db.execute(""" UPDATE spools SET name = ?, profile_id = ?, cost = ?, weight = ?, used = ?,
-                           temp_offset = ? WHERE id = ? """, (data.get("name"), data["profile"].get("id"),
-                       data.get("cost"), data.get("weight"), data.get("used"), data.get("temp_offset"), identifier))
-            return data
+        with self.lock, self.conn.begin():
+            stmt = update(self.spools).where(self.spools.c.id == identifier)\
+                .values(name=data["name"], cost=data["cost"], weight=data["weight"], used=data["used"],
+                        temp_offset=data["temp_offset"], profile_id=data["profile"]["id"])
+            self.conn.execute(stmt)
+        return data
 
     def delete_spool(self, identifier):
-        with self._db_lock, self._db as db:
-            db.execute("DELETE FROM spools WHERE id = ?", (identifier,))
+        with self.lock, self.conn.begin():
+            stmt = delete(self.spools).where(self.spools.c.id == identifier)
+            self.conn.execute(stmt)
 
     # selections
 
     def _build_selection_dict(self, row, column_names):
-        selection = dict(spool=dict(profile=dict()))
+        sel = dict(spool=dict(profile=dict()))
         for i, value in enumerate(row):
-            if i < 1:
-                selection[column_names[i][0]] = value
-            if i < 7:
-                selection["spool"][column_names[i][0]] = value
+            if i < len(self.selections.columns):
+                sel[column_names[i]] = value
+            elif i < len(self.selections.columns)+len(self.spools.columns):
+                sel["spool"][column_names[i]] = value
             else:
-                selection["spool"]["profile"][column_names[i][0]] = value
-        return selection
+                sel["spool"]["profile"][column_names[i]] = value
+        del sel["spool_id"]
+        del sel["spool"]["profile_id"]
+        return sel
 
-    def get_all_selections(self):
-        with self._db_lock, self._db as db:
-            cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                           p.id, p.vendor, p.material, p.density, p.diameter
-                                    FROM selections AS t, spools AS s, profiles AS p
-                                    WHERE t.spool_id = s.id AND s.profile_id = p.id ORDER BY tool """)
-        return [self._build_selection_dict(row, cursor.description) for row in cursor.fetchall()]
+    def get_all_selections(self, client_id):
+        with self.lock, self.conn.begin():
+            j1 = self.selections.join(self.spools, self.selections.c.spool_id == self.spools.c.id)
+            j2 = j1.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
+            stmt = select([self.selections, self.spools, self.profiles]).select_from(j2)\
+                .where(self.selections.c.client_id == client_id).order_by(self.selections.c.tool)
+        result = self.conn.execute(stmt)
+        return [self._build_selection_dict(row, row.keys()) for row in result.fetchall()]
 
-    def get_selection(self, identifier):
-        with self._db_lock, self._db as db:
-            cursor = db.execute(""" SELECT t.tool, s.id, s.name, s.cost, s.weight, s.used, s.temp_offset,
-                                           p.id, p.vendor, p.material, p.density, p.diameter
-                                    FROM selections AS t, spools AS s, profiles AS p
-                                    WHERE t.spool_id = s.id AND s.profile_id = p.id
-                                    AND t.tool = ? """, (identifier,))
-        result = cursor.fetchone()
-        if result is not None:
-            return self._build_selection_dict(result, cursor.description)
-        else:
-            return dict(tool=identifier, spool=None)
+    def get_selection(self, identifier, client_id):
+        with self.lock, self.conn.begin():
+            j1 = self.selections.join(self.spools, self.selections.c.spool_id == self.spools.c.id)
+            j2 = j1.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
+            stmt = select([self.selections, self.spools, self.profiles]).select_from(j2)\
+                .where((self.selections.c.tool == identifier) & (self.selections.c.client_id == client_id))
+        result = self.conn.execute(stmt)
+        row = result.fetchone()
+        return self._build_selection_dict(row, row.keys()) if row is not None else dict(tool=identifier, spool=None)
 
-    def update_selection(self, identifier, data):
-        with self._db_lock, self._db as db:
-                db.execute("INSERT INTO selections (tool, spool_id) VALUES (?, ?)",
-                           (identifier, data["spool"]["id"]))
-        return self.get_selection(identifier)
+    def update_selection(self, identifier, client_id, data):
+        with self.lock, self.conn.begin():
+            values = dict()
+            if self.engine.dialect.name == self.DIALECT_SQLITE:
+                stmt = insert(self.selections).prefix_with("OR REPLACE")\
+                    .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])
+            elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
+                stmt = pg_insert(self.selections)\
+                    .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])\
+                    .on_conflict_do_update(constraint="selections_pkey", set_=dict(spool_id=data["spool"]["id"]))
+            self.conn.execute(stmt)
+        return self.get_selection(identifier, client_id)
 
     def export_data(self, dirpath):
-        tablenames = ["profiles", "spools"]
-        for table in tablenames:
-            self._export_to_csv(dirpath, table)
+        def to_csv(table):
+            with self.lock, self.conn.begin():
+                result = self.conn.execute(select([table]))
+                filepath = os.path.join(dirpath, table.name + ".csv")
+                with io.open(filepath, mode="w", encoding="utf-8") as csv_file:
+                    csv_writer = csv.writer(csv_file)
+                    csv_writer.writerow(table.columns.keys())
+                    csv_writer.writerows(result)
+
+        tables = [self.profiles, self.spools]
+        for t in tables:
+            to_csv(t)
 
     def import_data(self, dirpath):
-        tablenames = ["profiles", "spools"]
-        for table in tablenames:
-            self._import_from_csv(dirpath, table)
+        def from_csv(table):
+            filepath = os.path.join(dirpath, table.name + ".csv")
+            with io.open(filepath, mode="r", encoding="utf-8") as csv_file:
+                csv_reader = csv.reader(csv_file)
+                header = next(csv_reader)
+                equal_column_order = (header == table.columns.keys())
+                with self.lock, self.conn.begin():
+                    for row in csv_reader:
+                        values = row if equal_column_order else dict(zip(header, row))
+                        if self.engine.dialect.name == self.DIALECT_SQLITE:
+                            # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
+                            stmt = insert(table).prefix_with("OR IGNORE").values(values)
+                        elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
+                            stmt = pg_insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id])
+                        self.conn.execute(stmt)
+                    if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
+                        # update sequences
+                        self.conn.execute(text("SELECT setval('profiles_id_seq', max(id)) FROM profiles"))
+                        self.conn.execute(text("SELECT setval('spools_id_seq', max(id)) FROM spools"))
+
+        tables = [self.profiles, self.spools]
+        for t in tables:
+            from_csv(t)
 
     # helper
 
-    def _import_from_csv(self, dirpath, tablename):
-        filepath = os.path.join(dirpath, tablename + ".csv")
-        with io.open(filepath, mode="r", encoding="utf-8") as csv_file:
-            csv_reader = csv.reader(csv_file)
-            header = next(csv_reader)
-            columns = ",".join(header)
-            placeholder = ",".join(["?"] * len(header))
-            with self._db_lock, self._db as db:
-                # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
-                # forcing a data update on client side is neccessary after import
-                db.executemany("INSERT OR IGNORE INTO {table} ({columns}) VALUES ({values});"
-                               .format(table=tablename, columns=columns, values=placeholder), csv_reader)
-
-    def _export_to_csv(self, dirpath, tablename):
-        with self._db_lock, self._db as db:
-            cursor = db.execute("SELECT * FROM " + tablename)
-            filepath = os.path.join(dirpath, tablename + ".csv")
-            with io.open(filepath, mode="w", encoding="utf-8") as csv_file:
-                csv_writer = csv.writer(csv_file)
-                csv_writer.writerow([i[0] for i in cursor.description])
-                csv_writer.writerows(cursor)
-
-    def _cursor_to_dict(self, cursor, one=False):
+    def _result_to_dict(self, result, one=False):
         if one:
-            result = cursor.fetchone()
-            if result is not None:
-                return dict((cursor.description[i][0], value) for i, value in enumerate(result))
-            else:
-                return dict()
+            row = result.fetchone()
+            return dict(row) if row is not None else None
         else:
-            return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
-                    for row in cursor.fetchall()]
+            return [dict(row) for row in result.fetchall()]

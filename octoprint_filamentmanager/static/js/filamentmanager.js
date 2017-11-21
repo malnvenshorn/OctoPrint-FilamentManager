@@ -179,6 +179,11 @@ $(function() {
         self.config_autoPause = ko.observable();
         self.config_pauseThreshold = ko.observable();
         self.config_currencySymbol = ko.observable();
+        self.config_externalDatabase = ko.observable();
+        self.config_dbURI = ko.observable();
+        self.config_dbName = ko.observable();
+        self.config_dbUser = ko.observable();
+        self.config_dbPassword = ko.observable();
 
         self.requestInProgress = ko.observable(false);
 
@@ -261,13 +266,13 @@ $(function() {
 
             var messageType = data.type;
             var messageData = data.data;
-
-            if (messageType === "updated_filaments") {
+            // TODO needs improvement
+            if (messageType === "data_changed") {
                 self.requestInProgress(true);
-                $.when(self.requestSpools(), self.requestSelectedSpools())
-                    .done(function(spools, selections) {
+                $.when(self.requestSpools(), self.requestProfiles())
+                    .done(function(spools, profiles) {
+                        self.processProfiles(profiles[0]);
                         self.processSpools(spools[0]);
-                        self.processSelectedSpools(selections[0]);
                     })
                     .always(function() {
                         self.requestInProgress(false);
@@ -414,7 +419,14 @@ $(function() {
                         enableWarning: self.config_enableWarning(),
                         autoPause: self.config_autoPause(),
                         pauseThreshold: self.config_pauseThreshold(),
-                        currencySymbol: self.config_currencySymbol()
+                        database: {
+                            useExternal: self.config_externalDatabase(),
+                            uri: self.config_dbURI(),
+                            name: self.config_dbName(),
+                            user: self.config_dbUser(),
+                            password: self.config_dbPassword(),
+                        },
+                        currencySymbol: self.config_currencySymbol(),
                     }
                 }
             };
@@ -438,6 +450,11 @@ $(function() {
             self.config_autoPause(pluginSettings.autoPause());
             self.config_pauseThreshold(pluginSettings.pauseThreshold());
             self.config_currencySymbol(pluginSettings.currencySymbol());
+            self.config_externalDatabase(pluginSettings.database.useExternal());
+            self.config_dbURI(pluginSettings.database.uri());
+            self.config_dbName(pluginSettings.database.name());
+            self.config_dbUser(pluginSettings.database.user());
+            self.config_dbPassword(pluginSettings.database.password());
         };
 
         // profiles
