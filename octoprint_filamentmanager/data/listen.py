@@ -16,7 +16,7 @@ class PGNotify(object):
 
         engine = create_engine(uri)
         conn = engine.connect()
-        conn.execute(text("LISTEN profiles; LISTEN spools").execution_options(autocommit=True))
+        conn.execute(text("LISTEN profiles; LISTEN spools;").execution_options(autocommit=True))
 
         notify_thread = Thread(target=self.notify, args=(conn,))
         notify_thread.daemon = True

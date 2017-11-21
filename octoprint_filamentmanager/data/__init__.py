@@ -25,29 +25,37 @@ class FilamentManager(object):
     DIALECT_SQLITE = "sqlite"
     DIALECT_POSTGRESQL = "postgresql"
 
-    def __init__(self, uri, database, user, password):
-        # QUESTION thread local connection vs sharing a serialized connection, pro/cons?
+    def __init__(self, config):
+        if not set(("uri", "name", "user", "password")).issubset(config):
+            raise ValueError("Incomplete config dictionary")
+
+        # QUESTION thread local connection (pool) vs sharing a serialized connection, pro/cons?
         # from sqlalchemy.orm import sessionmaker, scoped_session
         # Session = scoped_session(sessionmaker(bind=engine))
+        # when using a connection pool how do we prevent notifiying ourself on database changes?
         self.lock = Lock()
         self.notify = None
 
-        uri_parts = urisplit(uri)
+        uri_parts = urisplit(config["uri"])
 
         if self.DIALECT_SQLITE == uri_parts.scheme:
-            self.engine = create_engine(uri, connect_args={"check_same_thread": False})
+            self.engine = create_engine(config["uri"], connect_args={"check_same_thread": False})
             self.conn = self.engine.connect()
             self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
         elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
             uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.port,
-                             path="/{}".format(database), userinfo="{}:{}".format(user, password))
+                             path="/{}".format(config["name"]),
+                             userinfo="{}:{}".format(config["user"], config["password"]))
             self.engine = create_engine(uri)
             self.conn = self.engine.connect()
             self.notify = PGNotify(uri)
         else:
             raise ValueError("Engine '{engine}' not supported".format(engine=uri_parts.scheme))
 
-    def init_database(self):
+    def close(self):
+        self.conn.close()
+
+    def initialize(self):
         metadata = MetaData()
 
         self.profiles = Table("profiles", metadata,
@@ -158,11 +166,10 @@ class FilamentManager(object):
             result = self.conn.execute(stmt)
         return self._result_to_dict(result)
 
-    def get_profiles_modifications(self):
+    def get_profiles_lastmodified(self):
         with self.lock, self.conn.begin():
             stmt = select([self.modifications.c.changed_at]).where(self.modifications.c.table_name == "profiles")
-            result = self.conn.execute(stmt)
-        return self._result_to_dict(result, one=True)
+            return self.conn.execute(stmt).scalar()
 
     def get_profile(self, identifier):
         with self.lock, self.conn.begin():
@@ -212,12 +219,11 @@ class FilamentManager(object):
             result = self.conn.execute(stmt)
         return [self._build_spool_dict(row, row.keys()) for row in result.fetchall()]
 
-    def get_spools_modifications(self):
+    def get_spools_lastmodified(self):
         with self.lock, self.conn.begin():
-            stmt = select([func.max(self.modifications.c.changed_at).label("changed_at")])\
+            stmt = select([func.max(self.modifications.c.changed_at)])\
                 .where(self.modifications.c.table_name.in_(["spools", "profiles"]))
-            result = self.conn.execute(stmt)
-        return self._result_to_dict(result, one=True)
+            return self.conn.execute(stmt).scalar()
 
     def get_spool(self, identifier):
         with self.lock, self.conn.begin():

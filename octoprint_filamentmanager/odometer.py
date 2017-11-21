@@ -67,10 +67,10 @@ class FilamentOdometer(object):
                         self.totalExtrusion.append(0.0)
                         self.maxExtrusion.append(0.0)
 
-    def set_g90_extruder(self, flag):
+    def set_g90_extruder(self, flag=True):
         self.g90_extruder = flag
 
-    def get_values(self):
+    def get_extrusion(self):
         return self.maxExtrusion
 
     def get_current_tool(self):
