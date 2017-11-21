@@ -327,12 +327,20 @@ class FilamentManager(object):
                 with self.lock, self.conn.begin():
                     for row in csv_reader:
                         values = row if equal_column_order else dict(zip(header, row))
+
                         if self.engine.dialect.name == self.DIALECT_SQLITE:
-                            # INSERT OR IGNORE doesn't call the insert TRIGGER ¯\_(ツ)_/¯
-                            stmt = insert(table).prefix_with("OR IGNORE").values(values)
+                            identifier = values[table.c.id] if type(values) is dict else values[0]
+                            # try to update entry
+                            stmt = update(table).values(values).where(table.c.id == identifier)
+                            if self.conn.execute(stmt).rowcount == 0:
+                                # identifier doesn't match any => insert new entry
+                                stmt = insert(table).values(values)
+                                self.conn.execute(stmt)
                         elif self.engine.dialect.name == self.DIALECT_POSTGRESQL:
-                            stmt = pg_insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id])
-                        self.conn.execute(stmt)
+                            stmt = pg_insert(table).values(values)\
+                                .on_conflict_do_update(index_elements=[table.c.id])
+                            self.conn.execute(stmt)
+
                     if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
                         # update sequences
                         self.conn.execute(text("SELECT setval('profiles_id_seq', max(id)) FROM profiles"))
