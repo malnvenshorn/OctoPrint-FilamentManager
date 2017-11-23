@@ -1,10 +1,10 @@
 <form class="form-horizontal">
 
     <div class="pull-right">
-        <button class="btn btn-small" title="{{ _('Plugin Configuration') }}" data-bind="click: function() { showSettingsDialog(); }"><span class="icon-wrench"></span></button>
+        <button class="btn btn-small" title="{{ _('Plugin Configuration') }}" data-bind="click: function() { viewModels.config.showDialog(); }"><span class="icon-wrench"></span></button>
     </div>
 
-    <h3>{{ _("Filament Spools") }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
+    <h3>{{ _("Filament Spools") }} <i class="fa fa-spinner" data-bind="visible: viewModels.spools.requestInProgress(), css: {'fa-spin': viewModels.spools.requestInProgress()}"></i></h3>
 
     <div class="settings_plugin_filamentmanager_spools_header">
 
@@ -12,7 +12,7 @@
 
         <span class="input-prepend" title="{{ _('Items per page') }}">
             <span class="add-on" style="height:19px; padding: 0px 4px;"><i class="icon-list" style="vertical-align:initial;font-size:0.95em"></i></span>
-            <input type="number" min="0" max="99" step="1" class="input-mini input-nospin" data-bind="value: pageSize">
+            <input type="number" min="0" max="99" step="1" class="input-mini input-nospin" data-bind="value: viewModels.spools.pageSize">
         </span>
 
         <!-- sorting -->
@@ -20,10 +20,10 @@
         <span class="pull-right">
             <small>
                 {{ _("Sort by") }}:
-                <a href="#" data-bind="click: function() { spools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { spools.changeSorting('material'); }">{{ _("Material (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { spools.changeSorting('vendor'); }">{{ _("Vendor (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { spools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
+                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('material'); }">{{ _("Material (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('vendor'); }">{{ _("Vendor (ascending)") }}</a> |
+                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
             </small>
         </span>
     </div>
@@ -42,7 +42,7 @@
             <th class="settings_plugin_filamentmanager_spools_action">{{ _('Action') }}</th>
         </tr>
     </thead>
-    <tbody data-bind="foreach: spools.paginatedItems">
+    <tbody data-bind="foreach: viewModels.spools.allSpools.paginatedItems">
         <tr>
             <td class="settings_plugin_filamentmanager_spools_name" data-bind="text: name"></td>
             <td class="settings_plugin_filamentmanager_spools_material" data-bind="text: profile.material"></td>
@@ -51,9 +51,9 @@
             <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
             <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: (used * 100 / weight).toFixed(0)"></span>%</td>
             <td class="settings_plugin_filamentmanager_spools_action">
-                <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.showSpoolDialog($data); }"></a> |
-                <a href="#" class="fa fa-clone" title="{{ _('Duplicate Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.duplicateSpool($data); }"></a> |
-                <a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.requestInProgress(), click: function() { $root.removeSpool($data); }"></a>
+                <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"></a> |
+                <a href="#" class="fa fa-clone" title="{{ _('Duplicate Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"></a> |
+                <a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"></a>
             </td>
         </tr>
     </tbody>
@@ -63,21 +63,21 @@
 
     <div class="pagination pagination-mini pagination-centered">
         <ul>
-            <li data-bind="css: {disabled: spools.currentPage() === 0}"><a href="#" data-bind="click: spools.prevPage">«</a></li>
+            <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === 0}"><a href="#" data-bind="click: viewModels.spools.allSpools.prevPage">«</a></li>
         </ul>
-        <ul data-bind="foreach: spools.pages">
-            <li data-bind="css: { active: $data.number === $root.spools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.spools.changePage($data.number); }"></a></li>
+        <ul data-bind="foreach: viewModels.spools.allSpools.pages">
+            <li data-bind="css: { active: $data.number === $root.viewModels.spools.allSpools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.viewModels.spools.allSpools.changePage($data.number); }"></a></li>
         </ul>
         <ul>
-            <li data-bind="css: {disabled: spools.currentPage() === spools.lastPage() || spools.lastPage() === -1}"><a href="#" data-bind="click: spools.nextPage">»</a></li>
+            <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === viewModels.spools.allSpools.lastPage() || viewModels.spools.allSpools.lastPage() === -1}"><a href="#" data-bind="click: viewModels.spools.allSpools.nextPage">»</a></li>
         </ul>
     </div>
 
     <!-- buttons -->
 
     <div class="pull-right">
-        <button class="btn" data-bind="click: function() { showProfilesDialog(); }">{{ _("Manage Profiles") }}</button>
-        <button class="btn" data-bind="enable: profiles().length > 0, click: function() { showSpoolDialog(); }">{{ _("Add Spool") }}</button>
+        <button class="btn" data-bind="click: function() { viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</button>
+        <button class="btn" data-bind="enable: viewModels.profiles.allProfiles().length > 0, click: function() { viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</button>
     </div>
 
 </form>

@@ -2,7 +2,7 @@
 
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Filament Profiles') }} <i class="icon-spinner icon-spin" data-bind="visible: requestInProgress()"></i></h3>
+        <h3>{{ _('Filament Profiles') }} <i class="fa fa-spinner" data-bind="visible: viewModels.profiles.requestInProgress, css: {'fa-spin': viewModels.profiles.requestInProgress}"></i></h3>
     </div>
 
     <div class="modal-body">
@@ -10,10 +10,10 @@
         <!-- profile selection -->
 
         <div class="controls settings_plugin_filamentmanager_profiledialog_select">
-            <select data-bind="options: profileEditor.profiles, optionsText: function(item) { return item.material + ' (' + item.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: profileEditor.selectedProfile"></select>
-            <button class="btn btn-small btn-success" title="{{ _('New') }}" data-bind="click: function() { profileEditor.fromProfileData(); }"><span class="icon-plus"></span></button>
-            <button class="btn btn-small btn-danger" title="{{ _('Delete') }}" data-bind="disable: profileEditor.isNew() || requestInProgress(), click: function() { removeProfile(profileEditor.toProfileData()); }"><span class="icon-minus"></span></button>
-            <button class="btn btn-small btn-primary pull-right" title="{{ _('Save profile') }}" data-bind="disable: requestInProgress() || profileEditor.materialInvalid() || profileEditor.vendorInvalid(), click: function() { saveProfile(profileEditor.toProfileData()); }">{{ _('Save') }}</button>
+            <select data-bind="options: viewModels.profiles.allProfiles, optionsText: function(item) { return item.material + ' (' + item.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: viewModels.profiles.loadedProfile.id"></select>
+            <button class="btn btn-small btn-success" title="{{ _('New') }}" data-bind="click: function() { viewModels.profiles.fromProfileData(); }"><span class="icon-plus"></span></button>
+            <button class="btn btn-small btn-danger" title="{{ _('Delete') }}" data-bind="disable: viewModels.profiles.loadedProfile.isNew() || viewModels.profiles.requestInProgress(), click: function() { viewModels.profiles.removeProfile(viewModels.profiles.toProfileData()); }"><span class="icon-minus"></span></button>
+            <button class="btn btn-small btn-primary pull-right" title="{{ _('Save profile') }}" data-bind="disable: viewModels.profiles.requestInProgress() || viewModels.profiles.materialInvalid() || viewModels.profiles.vendorInvalid(), click: function() { viewModels.profiles.saveProfile(viewModels.profiles.toProfileData()); }">{{ _('Save') }}</button>
         </div>
 
         <legend></legend>
@@ -22,11 +22,11 @@
 
             <!-- vendor -->
 
-            <div class="control-group" data-bind="css: {error: profileEditor.vendorInvalid()}">
+            <div class="control-group" data-bind="css: {error: viewModels.profiles.vendorInvalid()}">
                 <label class="control-label">{{ _('Vendor') }}</label>
                 <div class="controls">
-                    <input type="text" data-bind="value: profileEditor.vendor, valueUpdate: 'afterkeydown'">
-                    <span data-bind="visible: profileEditor.vendorInvalid()">
+                    <input type="text" data-bind="value: viewModels.profiles.loadedProfile.vendor, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: viewModels.profiles.vendorInvalid()">
                         <br><span class="help-inline">{{ _("Vendor must be set") }}</span>
                     </span>
                 </div>
@@ -34,11 +34,11 @@
 
             <!-- material -->
 
-            <div class="control-group" data-bind="css: {error: profileEditor.materialInvalid()}">
+            <div class="control-group" data-bind="css: {error: viewModels.profiles.materialInvalid()}">
                 <label class="control-label">{{ _('Material') }}</label>
                 <div class="controls">
-                    <input type="text" data-bind="value: profileEditor.material, valueUpdate: 'afterkeydown'">
-                    <span data-bind="visible: profileEditor.materialInvalid()">
+                    <input type="text" data-bind="value: viewModels.profiles.loadedProfile.material, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: viewModels.profiles.materialInvalid()">
                         <br><span class="help-inline">{{ _("Material must be set") }}</span>
                     </span>
                 </div>
@@ -50,7 +50,7 @@
                 <label class="control-label">{{ _('Density') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.density">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: viewModels.profiles.loadedProfile.density">
                         <span class="add-on">g/cm<sup>3</sup></span>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
                 <label class="control-label">{{ _('Diameter') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: profileEditor.diameter">
+                        <input type="number" step="0.01" min="0" class="input-mini text-right" data-bind="value: viewModels.profiles.loadedProfile.diameter">
                         <span class="add-on">mm</span>
                     </div>
                 </div>

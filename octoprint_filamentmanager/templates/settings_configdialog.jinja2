@@ -23,7 +23,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: config_enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
+                                    <input type="checkbox" data-bind="checked: viewModels.config.config.enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
                                 </label>
                             </div>
                         </div>
@@ -31,7 +31,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: config_enableOdometer">{{ _("Enable filament odometer") }}
+                                    <input type="checkbox" data-bind="checked: viewModels.config.config.enableOdometer">{{ _("Enable filament odometer") }}
                                 </label>
                             </div>
                         </div>
@@ -39,7 +39,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: config_autoPause, enable: config_enableOdometer">{{ _("Pause print if filament runs out") }}
+                                    <input type="checkbox" data-bind="checked: viewModels.config.config.autoPause, enable: viewModels.config.config.enableOdometer">{{ _("Pause print if filament runs out") }}
                                 </label>
                             </div>
                         </div>
@@ -48,7 +48,7 @@
                             <label class="control-label">{{ _('Pause threshold') }}</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: config_pauseThreshold, enable: config_enableOdometer() && config_autoPause()">
+                                    <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: viewModels.config.config.pauseThreshold, enable: viewModels.config.config.enableOdometer() && viewModels.config.config.autoPause()">
                                     <span class="add-on">mm</span>
                                 </div>
                             </div>
@@ -63,7 +63,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: config_externalDatabase">{{ _("Use external database") }}
+                                    <input type="checkbox" data-bind="checked: viewModels.config.config.database.useExternal">{{ _("Use external database") }}
                                 </label>
                             </div>
                         </div>
@@ -71,28 +71,28 @@
                         <div class="control-group">
                             <label class="control-label">{{ _('URI') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: config_dbURI, enable: config_externalDatabase">
+                                <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.uri, enable: viewModels.config.config.database.useExternal">
                             </div>
                         </div>
                         <!-- database -->
                         <div class="control-group">
                             <label class="control-label">{{ _('Database') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: config_dbName, enable: config_externalDatabase">
+                                <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.name, enable: viewModels.config.config.database.useExternal">
                             </div>
                         </div>
                         <!-- username -->
                         <div class="control-group">
                             <label class="control-label">{{ _('Username') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: config_dbUser, enable: config_externalDatabase">
+                                <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.user, enable: viewModels.config.config.database.useExternal">
                             </div>
                         </div>
                         <!-- password -->
                         <div class="control-group">
                             <label class="control-label">{{ _('Password') }}</label>
                             <div class="controls">
-                                <input type="password" class="input-block-level" data-bind="value: config_dbPassword, enable: config_externalDatabase">
+                                <input type="password" class="input-block-level" data-bind="value: viewModels.config.config.database.password, enable: viewModels.config.config.database.useExternal">
                             </div>
                         </div>
 
@@ -100,20 +100,20 @@
                     </form>
 
                     <!-- import & export -->
-                    <legend>{{ _("Import & Export") }}</legend>
+                    <legend>{{ _("Import & Export") }} <i class="fa fa-spinner" data-bind="visible: viewModels.import.importInProgress, css: {'fa-spin': viewModels.import.importInProgress}"></i></legend>
                     <form class="form-inline">
-                        <div class="control-group" data-bind="css: {error: invalidArchive}">
+                        <div class="control-group" data-bind="css: {error: viewModels.import.invalidArchive}">
                             <div class="input-prepend input-append">
                                 <span class="btn fileinput-button">
                                     <span>{{ _("Browse...") }}</span>
                                     <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
                                 </span>
-                                <input type="text" class="input-large text-center" data-bind="value: importFilename" readonly></span>
-                                <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
+                                <input type="text" class="input-large text-center" data-bind="value: viewModels.import.importFilename" readonly></span>
+                                <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: viewModels.import.enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
                             </div>
-                            <a class="btn pull-right" data-bind="attr: {href: exportUrl()}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
+                            <a class="btn pull-right" data-bind="attr: {href: '{{ url_for('plugin.filamentmanager.export_data', apikey='') }}' + UI_API_KEY}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
                         </div>
-                        <div class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
+                        <div class="help-block" data-bind="visible: viewModels.import.invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
                     </form>
                 </div>
 
@@ -124,7 +124,7 @@
                         <div class="control-group">
                             <label class="control-label">{{ _('Currency symbol') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-mini text-center" data-bind="value: config_currencySymbol">
+                                <input type="text" class="input-mini text-center" data-bind="value: viewModels.config.config.currencySymbol">
                             </div>
                         </div>
                     </form>
@@ -135,7 +135,7 @@
 
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: savePluginSettings">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="click: viewModels.config.saveData">{{ _('Save') }}</button>
     </div>
 
 </div>
