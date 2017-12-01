@@ -1,5 +1,5 @@
 var gulp = require('gulp');
-var concat = require('gulp-concat-util');
+var concat = require('gulp-concat');
 var eslint = require('gulp-eslint');
 var babel = require('gulp-babel');
 
@@ -20,7 +20,5 @@ gulp.task('build', () => {
             plugins: ['transform-remove-strict-mode']
         }))
 		.pipe(concat('filamentmanager.bundled.js'))
-        .pipe(concat.header('(function() {\n\n"use strict";\n\ntry {\n\n'))
-        .pipe(concat.footer('\n} catch (error) {\nconsole.error(error);\n}\n}());\n'))
 		.pipe(gulp.dest('octoprint_filamentmanager/static/js/'));
 });

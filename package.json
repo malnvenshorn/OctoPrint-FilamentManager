@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-plugin-transform-remove-strict-mode": "0.0.2",
+    "babel-plugin-transform-remove-strict-mode": "^0.0.2",
     "babel-preset-env": "^1.6.1",
     "eslint": "^4.11.0",
     "eslint-config-airbnb": "^16.1.0",
@@ -18,9 +18,10 @@
     "eslint-plugin-react": "^7.5.1",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
-    "gulp-concat-util": "^0.5.5",
+    "gulp-concat": "^2.6.1",
     "gulp-eslint": "^4.0.0"
   },
   "dependencies": {
+
   }
 }

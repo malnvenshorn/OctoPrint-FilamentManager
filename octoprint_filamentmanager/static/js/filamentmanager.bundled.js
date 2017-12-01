@@ -1,9 +1,3 @@
-(function() {
-
-"use strict";
-
-try {
-
 /*
  * View model for OctoPrint-FilamentManager
  *
@@ -948,7 +942,3 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
         elements: Plugin.BINDINGS
     });
 })();
-} catch (error) {
-console.error(error);
-}
-}());
