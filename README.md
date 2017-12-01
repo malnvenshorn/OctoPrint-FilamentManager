@@ -18,7 +18,7 @@ If you have questions or encounter issues please take a look at the [Frequently 
 Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
 or manually using this URL:
 
-    https://github.com/BillyBlaze/OctoPrint-TouchUI/archive/master.zip
+    https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/master.zip
 
 ## Screenshots
 
