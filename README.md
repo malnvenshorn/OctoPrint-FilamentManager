@@ -12,6 +12,13 @@ If you have questions or encounter issues please take a look at the [Frequently 
 * Assign temperature offset to spools
 * Automatically pause print if filament runs out
 * Import & export of spool inventory
+* Support for PostgreSQL as database for multiple instances
+
+## Setup
+Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
+or manually using this URL:
+
+    https://github.com/BillyBlaze/OctoPrint-TouchUI/archive/master.zip
 
 ## Screenshots
 
