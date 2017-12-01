@@ -219,8 +219,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
             self.odometerEnabled = self._settings.getBoolean(["enableOdometer"])
             self.pauseEnabled = self._settings.getBoolean(["autoPause"])
             self._logger.debug("Printer State: %s" % payload["state_string"])
-            self._logger.debug("Odometer: %s" % "On" if self.odometerEnabled else "Off")
-            self._logger.debug("AutoPause: %s" % "On" if self.pauseEnabled and self.odometerEnabled else "Off")
+            self._logger.debug("Odometer: %s" % ("On" if self.odometerEnabled else "Off"))
+            self._logger.debug("AutoPause: %s" % ("On" if self.pauseEnabled and self.odometerEnabled else "Off"))
         elif self.lastPrintState == "PRINTING":
             # print state changed from printing => update filament usage
             self._logger.debug("Printer State: %s" % payload["state_string"])
