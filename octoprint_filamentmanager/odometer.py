@@ -1,9 +1,11 @@
 # coding=utf-8
-import re
+from __future__ import absolute_import
 
 __author__ = "Sven Lohrmann <malnvenshorn@gmail.com> based on work by Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
+
+import re
 
 
 class FilamentOdometer(object):
@@ -29,6 +31,9 @@ class FilamentOdometer(object):
         self.totalExtrusion = [0.0] * tools
 
     def parse(self, gcode, cmd):
+        if gcode is None:
+            return
+
         if gcode == "G1" or gcode == "G0":  # move
             e = self._get_float(cmd, self.regexE)
             if e is not None:
