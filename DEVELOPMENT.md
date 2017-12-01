@@ -6,12 +6,12 @@ All files in the `octoprint_filamentmanager/static/js` directory will be build w
 
 
 ## Prerequisites
-0. Install [NodeJS](http://www.nodejs.org/) and [NPM](https://www.npmjs.com/) with your package manager
+1. Install [NodeJS](http://www.nodejs.org/) and [NPM](https://www.npmjs.com/) with your package manager
 
-0. Install development dependencies with `npm install`
+1. Install development dependencies with `npm install`
 
 
 ## Build
-0. Check the source code with `npx gulp lint`
+1. Check the source code with `npx gulp lint`
 
-0. Start the build process with `npx gulp build`
+1. Start the build process with `npx gulp build`
