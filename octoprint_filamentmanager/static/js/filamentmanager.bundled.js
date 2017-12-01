@@ -900,7 +900,7 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
 
                 filament[i].data().weight = requiredFilament;
 
-                if (!warningIsShown && settingsViewModel.settings.settings.filamentmanager.enableWarning()) {
+                if (!warningIsShown && settingsViewModel.settings.plugins.filamentmanager.enableWarning()) {
                     warningIsShown = showWarning(requiredFilament, remainingFilament);
                 }
             }
