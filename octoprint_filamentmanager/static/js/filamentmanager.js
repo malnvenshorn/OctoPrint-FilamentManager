@@ -361,7 +361,10 @@ $(function() {
         self._applyTemperatureOffset = function(data) {
             if (self.loginState.isUser()) {
                 // if logged in apply temperature offset
-                if (data.tool < self.tools().length) {
+                var isSharedNozzle = self.settings.printerProfiles.currentProfileData().extruder.sharedNozzle();
+                if ((!isSharedNozzle && data.tool < self.tools().length)
+                    || (data.tool == 0 && self.tools().length >= 1)
+                ) {
                     var tool = self.temperature.tools()[data.tool];
                     var spool = data.spool;
                     self.temperature.changingOffset.item = tool;
