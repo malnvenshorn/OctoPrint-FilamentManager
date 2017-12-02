@@ -1,4 +1,4 @@
-/* global FilamentManager */
+/* global FilamentManager Utils */
 
 FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
     const self = this;
@@ -15,9 +15,14 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
     };
 
     self.onStartupComplete = function onStartupCompleteCallback() {
-        self.viewModels.profiles.requestProfiles();
-        self.viewModels.spools.requestSpools();
-        self.viewModels.selections.requestSelectedSpools();
+        const requests = [
+            self.viewModels.profiles.requestProfiles,
+            self.viewModels.spools.requestSpools,
+            self.viewModels.selections.requestSelectedSpools,
+        ];
+
+        // We chain them because, e.g. selections depends on spools
+        Utils.runRequestChain(requests);
     };
 
     self.onDataUpdaterPluginMessage = function onDataUpdaterPluginMessageCallback(plugin, data) {

@@ -8,4 +8,20 @@ class Utils { // eslint-disable-line no-unused-vars
         const v = Number.parseFloat(value);
         return Number.isNaN(v) ? def : v;
     }
+
+    static runRequestChain(requests) {
+        let index = 0;
+
+        const next = function callNextRequest() {
+            if (index < requests.length) {
+                // Do the next, increment the call index
+                requests[index]().done(() => {
+                    index += 1;
+                    next();
+                });
+            }
+        };
+
+        next(); // Start chain
+    }
 }

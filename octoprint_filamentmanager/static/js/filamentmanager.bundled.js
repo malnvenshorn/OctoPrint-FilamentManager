@@ -38,6 +38,23 @@ var Utils = function () {
             var v = Number.parseFloat(value);
             return Number.isNaN(v) ? def : v;
         }
+    }, {
+        key: "runRequestChain",
+        value: function runRequestChain(requests) {
+            var index = 0;
+
+            var next = function callNextRequest() {
+                if (index < requests.length) {
+                    // Do the next, increment the call index
+                    requests[index]().done(function () {
+                        index += 1;
+                        next();
+                    });
+                }
+            };
+
+            next(); // Start chain
+        }
     }]);
 
     return Utils;
@@ -79,7 +96,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
     return self.core.bridge;
 };
-/* global FilamentManager */
+/* global FilamentManager Utils */
 
 FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
     var self = this;
@@ -96,9 +113,10 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
     };
 
     self.onStartupComplete = function onStartupCompleteCallback() {
-        self.viewModels.profiles.requestProfiles();
-        self.viewModels.spools.requestSpools();
-        self.viewModels.selections.requestSelectedSpools();
+        var requests = [self.viewModels.profiles.requestProfiles, self.viewModels.spools.requestSpools, self.viewModels.selections.requestSelectedSpools];
+
+        // We chain them because, e.g. selections depends on spools
+        Utils.runRequestChain(requests);
     };
 
     self.onDataUpdaterPluginMessage = function onDataUpdaterPluginMessageCallback(plugin, data) {
