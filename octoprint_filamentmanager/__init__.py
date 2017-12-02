@@ -256,9 +256,9 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
                 # update spool
                 weight = calculate_weight(extrusion[tool], spool["profile"])
-                new_value = spool["weight"] - weight
                 old_value = spool["weight"] - spool["used"]
                 spool["used"] += weight
+                new_value = spool["weight"] - spool["used"]
 
                 self.filamentManager.update_spool(spool["id"], spool)
 
