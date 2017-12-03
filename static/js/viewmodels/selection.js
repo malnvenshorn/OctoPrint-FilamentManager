@@ -3,7 +3,7 @@
 FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewModel() {
     const self = this.viewModels.selections;
     const api = this.core.client;
-    const { settingsViewModel, temperatureViewModel, loginStateViewModel } = this.core.bridge.allViewModels;
+    const { settingsViewModel } = this.core.bridge.allViewModels;
 
     self.selectedSpools = ko.observableArray([]);
 
@@ -47,7 +47,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
         self.enableSpoolUpdate = false;
         data.selections.forEach((selection) => {
             self.updateSelectedSpoolData(selection);
-            self.applyTemperatureOffset(selection);
         });
         self.enableSpoolUpdate = true;
     };
@@ -68,7 +67,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
         api.selection.update(tool, data)
             .done((response) => {
                 self.updateSelectedSpoolData(response.selection);
-                self.applyTemperatureOffset(response.selection);
             })
             .fail(() => {
                 new PNotify({ // eslint-disable-line no-new
@@ -89,39 +87,5 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
             self.selectedSpools()[data.tool] = (data.spool !== null ? data.spool : undefined);
             self.selectedSpools.valueHasMutated(); // notifies observers
         }
-    };
-
-    self.reapplySubscription = undefined;
-
-    self.applyTemperatureOffset = function applyTemperatureOffsetToExtruder(data) {
-        if (loginStateViewModel.isUser()) {
-            // if logged in apply temperature offset
-            const { tool, spool } = data;
-            if (tool < self.tools().length) {
-                const toolObj = temperatureViewModel.tools()[tool];
-                temperatureViewModel.changingOffset.item = toolObj;
-                temperatureViewModel.changingOffset.name(toolObj.name());
-                temperatureViewModel.changingOffset.offset(toolObj.offset());
-                temperatureViewModel.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
-                temperatureViewModel.confirmChangeOffset();
-            }
-        } else if (self.reapplySubscription === undefined) {
-            // if not logged in set a subscription to automatically apply the temperature offset after login
-            self.reapplySubscription = loginStateViewModel.isUser.subscribe(self.reapplyTemperatureOffset);
-        }
-    };
-
-    self.reapplyTemperatureOffset = function reapplyTemperatureOffsetIfUserLoggedIn() {
-        if (!loginStateViewModel.isUser()) return;
-
-        // apply temperature offset
-        self.selectedSpools().forEach((spool, tool) => {
-            const selection = { spool, tool };
-            self.applyTemperatureOffset(selection);
-        });
-
-        // remove subscription
-        self.reapplySubscription.dispose();
-        self.reapplySubscription = undefined;
     };
 };

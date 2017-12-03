@@ -293,6 +293,10 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to update selected spool, see the log for more details", 500)
         else:
+            try:
+                self.set_temp_offsets([saved_selection])
+            except Exception as e:
+                self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
             self.on_data_modified("selections", "update")
             return jsonify(dict(selection=saved_selection))
 

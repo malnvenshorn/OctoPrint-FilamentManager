@@ -130,6 +130,13 @@ class FilamentManagerPlugin(FilamentManagerApi,
         # initialize the pause thresholds
         self.update_pause_thresholds()
 
+        # set temperature offsets for saved selections
+        try:
+            all_selections = self.filamentManager.get_all_selections(self.client_id)
+            self.set_temp_offsets(all_selections)
+        except Exception as e:
+            self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
+
     def on_shutdown(self):
         if self.filamentManager is not None:
             self.filamentManager.close()
@@ -142,6 +149,12 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
     def send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
+
+    def set_temp_offsets(self, selections):
+        offset_dict = dict()
+        for tool in selections:
+            offset_dict["tool%s" % tool["tool"]] = tool["spool"]["temp_offset"]
+        self._printer.set_temperature_offset(offset_dict)
 
     # SettingsPlugin
 

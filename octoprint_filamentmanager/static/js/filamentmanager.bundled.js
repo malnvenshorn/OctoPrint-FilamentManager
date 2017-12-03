@@ -497,10 +497,7 @@ FilamentManager.prototype.viewModels.profiles = function profilesViewModel() {
 FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewModel() {
     var self = this.viewModels.selections;
     var api = this.core.client;
-    var _core$bridge$allViewM = this.core.bridge.allViewModels,
-        settingsViewModel = _core$bridge$allViewM.settingsViewModel,
-        temperatureViewModel = _core$bridge$allViewM.temperatureViewModel,
-        loginStateViewModel = _core$bridge$allViewM.loginStateViewModel;
+    var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
 
     self.selectedSpools = ko.observableArray([]);
@@ -545,7 +542,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
         self.enableSpoolUpdate = false;
         data.selections.forEach(function (selection) {
             self.updateSelectedSpoolData(selection);
-            self.applyTemperatureOffset(selection);
         });
         self.enableSpoolUpdate = true;
     };
@@ -569,7 +565,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
         self.requestInProgress(true);
         api.selection.update(tool, data).done(function (response) {
             self.updateSelectedSpoolData(response.selection);
-            self.applyTemperatureOffset(response.selection);
         }).fail(function () {
             new PNotify({ // eslint-disable-line no-new
                 title: gettext('Could not select spool'),
@@ -588,42 +583,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
             self.selectedSpools()[data.tool] = data.spool !== null ? data.spool : undefined;
             self.selectedSpools.valueHasMutated(); // notifies observers
         }
-    };
-
-    self.reapplySubscription = undefined;
-
-    self.applyTemperatureOffset = function applyTemperatureOffsetToExtruder(data) {
-        if (loginStateViewModel.isUser()) {
-            // if logged in apply temperature offset
-            var tool = data.tool,
-                spool = data.spool;
-
-            if (tool < self.tools().length) {
-                var toolObj = temperatureViewModel.tools()[tool];
-                temperatureViewModel.changingOffset.item = toolObj;
-                temperatureViewModel.changingOffset.name(toolObj.name());
-                temperatureViewModel.changingOffset.offset(toolObj.offset());
-                temperatureViewModel.changingOffset.newOffset(spool !== null ? spool.temp_offset : 0);
-                temperatureViewModel.confirmChangeOffset();
-            }
-        } else if (self.reapplySubscription === undefined) {
-            // if not logged in set a subscription to automatically apply the temperature offset after login
-            self.reapplySubscription = loginStateViewModel.isUser.subscribe(self.reapplyTemperatureOffset);
-        }
-    };
-
-    self.reapplyTemperatureOffset = function reapplyTemperatureOffsetIfUserLoggedIn() {
-        if (!loginStateViewModel.isUser()) return;
-
-        // apply temperature offset
-        self.selectedSpools().forEach(function (spool, tool) {
-            var selection = { spool: spool, tool: tool };
-            self.applyTemperatureOffset(selection);
-        });
-
-        // remove subscription
-        self.reapplySubscription.dispose();
-        self.reapplySubscription = undefined;
     };
 };
 /* global FilamentManager ItemListHelper ko Utils $ PNotify gettext showConfirmationDialog */
