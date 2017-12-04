@@ -200,8 +200,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
     def get_assets(self):
         return dict(
-            css=["css/style.css", "css/font.css"],
-            js=["js/filamentmanager.bundled.js"]
+            css=["css/filamentmanager.min.css"],
+            js=["js/filamentmanager.bundled.js"],
         )
 
     # TemplatePlugin
