@@ -1,8 +1,9 @@
-# Development envoirment
-All files in the `octoprint_filamentmanager/static/js` directory will be build with [Gulp](https://gulpjs.com/), from the source in `static/js`, and not modified directly. The build process includes:
-- static code analysis with [ESLint](https://eslint.org/)
-- transcompiling to ES5 with [Babel](https://babeljs.io/)
-- concatinating all files into one file `filamentmanager.bundled.js`
+# Development environment
+All files in the `octoprint_filamentmanager/static/{css,js}` directory will be build with [Gulp](https://gulpjs.com/), from the source in `static/{css,js}`, and not modified directly. The build process includes:
+- Static code analysis with [ESLint](https://eslint.org/)
+- Transcompiling to ES5 with [Babel](https://babeljs.io/)
+- Concatinating all JS files into one file `filamentmanager.bundled.js`
+- Cancatinating and minifying all CSS file into one file `filamentmanager.min.css`
 
 
 ## Prerequisites
