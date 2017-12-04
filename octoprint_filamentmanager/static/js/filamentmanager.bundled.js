@@ -835,6 +835,8 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
     var filename = void 0;
     var waitForFilamentData = false;
 
+    var warning = null;
+
     var updateFilament = function updateFilamentWeightAndCheckRemainingFilament() {
         var calculateWeight = function calculateFilamentWeight(length, diameter, density) {
             var radius = diameter / 2;
@@ -845,7 +847,13 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
         var showWarning = function showWarningIfRequiredFilamentExceedsRemaining(required, remaining) {
             if (required < remaining) return false;
 
-            new PNotify({ // eslint-disable-line no-new
+            if (warning) {
+                // fade out notification if one is still shown
+                warning.options.delay = 1000;
+                warning.queueRemove();
+            }
+
+            warning = new PNotify({
                 title: gettext('Insufficient filament'),
                 text: gettext("The current print job needs more material than what's left on the selected spool."),
                 type: 'warning',
@@ -861,7 +869,7 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
         var warningIsShown = false; // used to prevent a separate warning message for each tool
 
         for (var i = 0; i < filament.length && i < spoolData.length; i += 1) {
-            if (!spoolData[i]) {
+            if (!filament[i] || !spoolData[i]) {
                 filament[i].data().weight = 0;
             } else {
                 var _filament$i$data = filament[i].data(),
