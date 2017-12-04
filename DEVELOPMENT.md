@@ -3,7 +3,7 @@ All files in the `octoprint_filamentmanager/static/{css,js}` directory will be b
 - Static code analysis with [ESLint](https://eslint.org/)
 - Transcompiling to ES5 with [Babel](https://babeljs.io/)
 - Concatinating all JS files into one file `filamentmanager.bundled.js`
-- Cancatinating and minifying all CSS file into one file `filamentmanager.min.css`
+- Concatinating and minifying all CSS file into one file `filamentmanager.min.css`
 
 
 ## Prerequisites
