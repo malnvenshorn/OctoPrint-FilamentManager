@@ -43,7 +43,7 @@ class FilamentManager(object):
             self.conn = self.engine.connect()
             self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
         elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
-            uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.port,
+            uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.getport(default=5432),
                              path="/{}".format(config["name"]),
                              userinfo="{}:{}".format(config["user"], config["password"]))
             self.engine = create_engine(uri)
@@ -328,7 +328,7 @@ class FilamentManager(object):
                         values = dict(zip(header, row))
 
                         if self.engine.dialect.name == self.DIALECT_SQLITE:
-                            identifier = values[table.c.id] if type(values) is dict else values[0]
+                            identifier = values[table.c.id]
                             # try to update entry
                             stmt = update(table).values(values).where(table.c.id == identifier)
                             if self.conn.execute(stmt).rowcount == 0:
