@@ -153,7 +153,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
     def set_temp_offsets(self, selections):
         offset_dict = dict()
         for tool in selections:
-            offset_dict["tool%s" % tool["tool"]] = tool["spool"]["temp_offset"]
+            offset_dict["tool%s" % tool["tool"]] = tool["spool"]["temp_offset"] if tool["spool"] is not None else 0
         self._printer.set_temperature_offset(offset_dict)
 
     # SettingsPlugin
