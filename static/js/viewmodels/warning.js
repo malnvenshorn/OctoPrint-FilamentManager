@@ -69,15 +69,18 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
 
         let warningIsShown = false; // used to prevent a separate warning message for each tool
 
-        for (let i = 0; i < filament.length && i < spoolData.length; i += 1) {
-            if (!filament[i] || !spoolData[i]) {
+        for (let i = 0; i < filament.length; i += 1) {
+            const result = /(\d+)/.exec(filament[i].name()); // extract tool id from name
+            const toolID = result === null ? 0 : result[1];
+
+            if (!spoolData[toolID]) {
                 filament[i].data().weight = 0;
             } else {
                 const { length } = filament[i].data();
-                const { diameter, density } = spoolData[i].profile;
+                const { diameter, density } = spoolData[toolID].profile;
 
                 const requiredFilament = calculateWeight(length, diameter, density);
-                const remainingFilament = spoolData[i].weight - spoolData[i].used;
+                const remainingFilament = spoolData[toolID].weight - spoolData[toolID].used;
 
                 filament[i].data().weight = requiredFilament;
 
