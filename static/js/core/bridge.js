@@ -19,6 +19,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             '#settings_plugin_filamentmanager_spooldialog',
             '#settings_plugin_filamentmanager_configurationdialog',
             '#sidebar_plugin_filamentmanager_wrapper',
+            '#plugin_filamentmanager_confirmationdialog',
         ],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
@@ -30,6 +31,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.viewModels.selections.call(self);
             self.viewModels.config.call(self);
             self.viewModels.import.call(self);
+            self.viewModels.confirmation.call(self);
 
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.selections.requestSelectedSpools);

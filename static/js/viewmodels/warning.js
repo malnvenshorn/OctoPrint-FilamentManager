@@ -1,4 +1,4 @@
-/* global FilamentManager ko Node $ gettext PNotify */
+/* global FilamentManager ko Node $ gettext PNotify Utils */
 
 FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarningViewModel() {
     const self = this.viewModels.warning;
@@ -70,8 +70,7 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
         let warningIsShown = false; // used to prevent a separate warning message for each tool
 
         for (let i = 0; i < filament.length; i += 1) {
-            const result = /(\d+)/.exec(filament[i].name()); // extract tool id from name
-            const toolID = result === null ? 0 : result[1];
+            const toolID = Utils.extractToolIDFromName(filament[i].name());
 
             if (!spoolData[toolID]) {
                 filament[i].data().weight = 0;

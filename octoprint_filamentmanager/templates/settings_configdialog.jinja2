@@ -19,6 +19,14 @@
                 <div class="tab-pane active" id="settings_plugin_filamentmanager_configurationdialog_features">
                     <!-- features -->
                     <form class="form-horizontal">
+                        <!-- enable confirm spool selection -->
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: viewModels.config.config.confirmSpoolSelection">{{ _("Show dialog to confirm selected spools before starting/resuming the print job") }}
+                                </label>
+                            </div>
+                        </div>
                         <!-- enable warning -->
                         <div class="control-group">
                             <div class="controls">

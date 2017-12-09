@@ -176,6 +176,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
                 clientID=None,
             ),
             currencySymbol="€",
+            confirmSpoolSelection=False,
         )
 
     def on_settings_migrate(self, target, current=None):
@@ -212,7 +213,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
             dict(type="generic", template="settings_profiledialog.jinja2"),
             dict(type="generic", template="settings_spooldialog.jinja2"),
             dict(type="generic", template="settings_configdialog.jinja2"),
-            dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2")
+            dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2"),
+            dict(type="generic", template="spool_confirmation.jinja2"),
         ]
 
     # EventHandlerPlugin

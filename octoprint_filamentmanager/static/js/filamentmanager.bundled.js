@@ -55,6 +55,12 @@ var Utils = function () {
 
             next(); // Start chain
         }
+    }, {
+        key: "extractToolIDFromName",
+        value: function extractToolIDFromName(name) {
+            var result = /(\d+)/.exec(name);
+            return result === null ? 0 : result[1];
+        }
     }]);
 
     return Utils;
@@ -69,7 +75,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -80,6 +86,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.viewModels.selections.call(self);
             self.viewModels.config.call(self);
             self.viewModels.import.call(self);
+            self.viewModels.confirmation.call(self);
 
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.selections.requestSelectedSpools);
@@ -103,6 +110,8 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
 
     self.onStartup = function onStartupCallback() {
         self.viewModels.warning.replaceFilamentView();
+        self.viewModels.confirmation.replacePrintStart();
+        self.viewModels.confirmation.replacePrintResume();
     };
 
     self.onBeforeBinding = function onBeforeBindingCallback() {
@@ -257,6 +266,84 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     self.loadData = function mapPluginConfigurationToObservables() {
         var pluginSettings = settingsViewModel.settings.plugins.filamentmanager;
         ko.mapping.fromJS(ko.toJS(pluginSettings), self.config);
+    };
+};
+/* global FilamentManager gettext $ ko Utils */
+
+FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfirmationViewModel() {
+    var self = this.viewModels.confirmation;
+    var _core$bridge$allViewM = this.core.bridge.allViewModels,
+        printerStateViewModel = _core$bridge$allViewM.printerStateViewModel,
+        settingsViewModel = _core$bridge$allViewM.settingsViewModel;
+    var selections = this.viewModels.selections;
+
+
+    var dialog = $('#plugin_filamentmanager_confirmationdialog');
+    var button = $('#plugin_filamentmanager_confirmationdialog_print');
+
+    self.selections = ko.observableArray([]);
+
+    self.print = function startResumePrintDummy() {};
+
+    self.checkSelection = function checkIfSpoolSelectionsMatchesSelectedSpoolsInSidebar() {
+        var match = true;
+        self.selections().forEach(function (value) {
+            if (selections.tools()[value.tool]() !== value.spool) match = false;
+        });
+        button.attr('disabled', !match);
+    };
+
+    var showDialog = function showSpoolConfirmationDialog() {
+        var s = [];
+        printerStateViewModel.filament().forEach(function (value) {
+            var toolID = Utils.extractToolIDFromName(value.name());
+            s.push({ spool: undefined, tool: toolID });
+        });
+        self.selections(s);
+        button.attr('disabled', true);
+        dialog.modal('show');
+    };
+
+    printerStateViewModel.fmPrint = function confirmSpoolSelectionBeforeStartPrint() {
+        if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
+            showDialog();
+            button.html(gettext('Start Print'));
+            self.print = function startPrint() {
+                dialog.modal('hide');
+                printerStateViewModel.print();
+            };
+        } else {
+            printerStateViewModel.print();
+        }
+    };
+
+    printerStateViewModel.fmResume = function confirmSpoolSelectionBeforeResumePrint() {
+        if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
+            showDialog();
+            button.html(gettext('Resume Print'));
+            self.print = function resumePrint() {
+                dialog.modal('hide');
+                printerStateViewModel.onlyResume();
+            };
+        } else {
+            printerStateViewModel.onlyResume();
+        }
+    };
+
+    self.replacePrintStart = function replacePrintStartButtonBehavior() {
+        // Modifying print button action to invoke 'fmPrint'
+        var element = $('#job_print');
+        var dataBind = element.attr('data-bind');
+        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: fmPrint');
+        element.attr('data-bind', dataBind);
+    };
+
+    self.replacePrintResume = function replacePrintResumeButtonBehavior() {
+        // Modifying resume button action to invoke 'fmResume'
+        var element = $('#job_pause');
+        var dataBind = element.attr('data-bind');
+        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: function() { isPaused() ? fmResume() : onlyPause(); }');
+        element.attr('data-bind', dataBind);
     };
 };
 /* global FilamentManager ko $ PNotify gettext */
@@ -794,7 +881,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         self.addSpool(newData);
     };
 };
-/* global FilamentManager ko Node $ gettext PNotify */
+/* global FilamentManager ko Node $ gettext PNotify Utils */
 
 FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarningViewModel() {
     var self = this.viewModels.warning;
@@ -868,20 +955,22 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
 
         var warningIsShown = false; // used to prevent a separate warning message for each tool
 
-        for (var i = 0; i < filament.length && i < spoolData.length; i += 1) {
-            if (!filament[i] || !spoolData[i]) {
+        for (var i = 0; i < filament.length; i += 1) {
+            var toolID = Utils.extractToolIDFromName(filament[i].name());
+
+            if (!spoolData[toolID]) {
                 filament[i].data().weight = 0;
             } else {
                 var _filament$i$data = filament[i].data(),
                     length = _filament$i$data.length;
 
-                var _spoolData$i$profile = spoolData[i].profile,
-                    diameter = _spoolData$i$profile.diameter,
-                    density = _spoolData$i$profile.density;
+                var _spoolData$toolID$pro = spoolData[toolID].profile,
+                    diameter = _spoolData$toolID$pro.diameter,
+                    density = _spoolData$toolID$pro.density;
 
 
                 var requiredFilament = calculateWeight(length, diameter, density);
-                var remainingFilament = spoolData[i].weight - spoolData[i].used;
+                var remainingFilament = spoolData[toolID].weight - spoolData[toolID].used;
 
                 filament[i].data().weight = requiredFilament;
 
