@@ -4,7 +4,7 @@ This OctoPrint plugin helps to manage your filament spools. The project is still
 
 If you have questions or encounter issues please take a look at the [Frequently Asked Questions](https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq) first. There might be already an answer. In case you haven't found what you are looking for, feel free to open a [ticket](https://github.com/malnvenshorn/OctoPrint-FilamentManager/issues/new) and I'll try to help.
 
-## Additional features
+## Features
 
 * Replacing filament volume with weight in sidebar
 * Software odometer to measure used filament
