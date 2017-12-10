@@ -9,3 +9,4 @@ dist
 *.zip
 .atom
 node_modules
+package-lock.json
