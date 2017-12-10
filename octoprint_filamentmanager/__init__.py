@@ -358,7 +358,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
 __plugin_name__ = "Filament Manager"
 
-__required_octoprint_version__ = ">=1.3.5"
+__required_octoprint_version__ = ">=1.3.6"
 
 
 def __plugin_load__():
