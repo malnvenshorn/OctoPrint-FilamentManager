@@ -7,7 +7,7 @@ If you have questions or encounter issues please take a look at the [Frequently 
 ## Additional features
 
 * Replacing filament volume with weight in sidebar
-* Filament odometer to keep track of remaining filament on spool
+* Software odometer to measure used filament
 * Warn if print exceeds remaining filament on spool
 * Assign temperature offset to spools
 * Automatically pause print if filament runs out
