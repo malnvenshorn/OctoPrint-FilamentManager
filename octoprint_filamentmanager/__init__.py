@@ -11,6 +11,7 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.events import Events
 from octoprint.util import dict_merge
+from octoprint.util.version import is_octoprint_compatible
 
 from .api import FilamentManagerApi
 from .data import FilamentManager
@@ -357,8 +358,17 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
 __plugin_name__ = "Filament Manager"
 
+__required_octoprint_version__ = ">=1.3.5"
+
 
 def __plugin_load__():
+    if not is_octoprint_compatible(__required_octoprint_version__):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("OctoPrint version is not compatible ({version} required)"
+                     .format(version=__required_octorpint_version__))
+        return
+
     global __plugin_implementation__
     __plugin_implementation__ = FilamentManagerPlugin()
 
