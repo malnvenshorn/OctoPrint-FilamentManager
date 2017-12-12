@@ -18,9 +18,9 @@ If you have questions or encounter issues please take a look at the [Frequently 
 
 1. Install dependencies with:
 
-    `pacman -Sy python2-psycopg2` on Arch Linux
-
-    `apt-get install python-psycopg2` on Debian/Raspbian
+    `pacman -Sy postgresql-libs` on Arch Linux
+    
+    `apt-get install libpq-dev` on Debian/Raspbian
 
 1. Install this plugin via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
 or manually using this URL:
