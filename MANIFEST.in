@@ -1,3 +1,4 @@
+include LICENSE
 include README.md
 recursive-include octoprint_filamentmanager/templates *
 recursive-include octoprint_filamentmanager/translations *

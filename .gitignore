@@ -8,4 +8,5 @@ dist
 .DS_Store
 *.zip
 .atom
-.docker
+node_modules
+package-lock.json
