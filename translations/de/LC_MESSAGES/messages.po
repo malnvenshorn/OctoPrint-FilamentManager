@@ -8,153 +8,153 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint-FilamentManager 0.1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-11-14 20:39+0100\n"
-"PO-Revision-Date: 2017-11-14 20:44+0100\n"
+"POT-Creation-Date: 2017-12-12 13:46+0100\n"
+"PO-Revision-Date: 2017-12-12 13:41+0100\n"
 "Last-Translator: Sven Lohrmann <malnvenshorn@gmail.com>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.4.0\n"
-"X-Generator: Poedit 2.0.4\n"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:330
-msgid ""
-"There was an unexpected error while selecting the spool, please consult the logs."
-msgstr "Unerwarteter Fehler beim auswählen der Spule, bitte konsultiere das Log."
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:310
+msgid "Start Print"
+msgstr "Druck starten"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:331
-msgid "Could not select spool"
-msgstr "Konnte Spule nicht auswählen"
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:323
+msgid "Resume Print"
+msgstr "Druck fortsetzen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:480
-msgid ""
-"There was an unexpected error while saving the filament profile, please consult "
-"the logs."
-msgstr ""
-"Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere das "
-"Log."
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:395
+msgid "Data import failed"
+msgstr "Daten-Import fehlgeschlagen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:482
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:396
+msgid "Something went wrong, please consult the logs."
+msgstr "Etwas ist schief gelaufen, bitte konsultiere das Log."
+
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:528
 msgid "Could not add profile"
 msgstr "Konnte Profil nicht hinzufügen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:506
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:529
 msgid ""
-"There was an unexpected error while updating the filament profile, please "
+"There was an unexpected error while saving the filament profile, please "
 "consult the logs."
 msgstr ""
-"Unerwarteter Fehler beim Aktualisieren des Filamentprofils, bitte konsultiere "
-"das Log."
+"Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere"
+" das Log."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:508
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:550
 msgid "Could not update profile"
 msgstr "Konnte Profil nicht aktualisieren"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:526
-msgid "Cannot delete profiles with associated spools."
-msgstr "Es können keine Profile mit verknüpften Spulen gelöscht werden."
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:528
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:551
 msgid ""
-"There was an unexpected error while removing the filament profile, please "
-"consult the logs."
+"There was an unexpected error while updating the filament profile, please"
+" consult the logs."
 msgstr ""
-"Unerwarteter Fehler beim Löschen des Filamentprofils, bitte konsultiere das Log."
+"Unerwarteter Fehler beim Aktualisieren des Filamentprofils, bitte "
+"konsultiere das Log."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:531
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:565
 msgid "Could not delete profile"
 msgstr "Konnte Profil nicht löschen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:538
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:566
+msgid ""
+"There was an unexpected error while removing the filament profile, please"
+" consult the logs."
+msgstr ""
+"Unerwarteter Fehler beim Löschen des Filamentprofils, bitte konsultiere "
+"das Log."
+
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:575
 msgid "Delete profile?"
 msgstr "Profil löschen?"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:539
-#, python-format
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:576
 msgid ""
-"You are about to delete the filament profile <strong>%s (%s)</strong>. Please "
-"note that it is not possible to delete profiles with associated spools."
+"You are about to delete the filament profile <strong> ()</strong>. Please"
+" note that it is not possible to delete profiles with associated spools."
 msgstr ""
-"Du bist im Begriff das Filament-Profil <strong>%s (%s)</strong> zu löschen. "
+"Du bist im Begriff das Filament-Profil <strong> ()</strong> zu löschen. "
 "Bitte beachte, dass es nicht möglich ist Profile zu löschen die Spulen "
 "zugewiesen wurden."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:542
-#: octoprint_filamentmanager/static/js/filamentmanager.js:645
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:577
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:873
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:15
 msgid "Delete"
 msgstr "Löschen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:590
-msgid ""
-"There was an unexpected error while saving the filament spool, please consult "
-"the logs."
-msgstr ""
-"Unerwarteter Fehler beim speichern der Filamentspule, bitte konsultiere das Log."
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:657
+msgid "Could not select spool"
+msgstr "Konnte Spule nicht auswählen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:592
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:658
+msgid ""
+"There was an unexpected error while selecting the spool, please consult "
+"the logs."
+msgstr "Unerwarteter Fehler beim auswählen der Spule, bitte konsultiere das Log."
+
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:822
 msgid "Could not add spool"
 msgstr "Konnte Spule nicht hinzufügen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:615
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:823
 msgid ""
-"There was an unexpected error while updating the filament spool, please consult "
-"the logs."
+"There was an unexpected error while saving the filament spool, please "
+"consult the logs."
 msgstr ""
-"Unerwarteter Fehler beim Aktualisieren der Filamentspule, bitte konsultiere das "
-"Log."
+"Unerwarteter Fehler beim speichern der Filamentspule, bitte konsultiere "
+"das Log."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:617
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:845
 msgid "Could not update spool"
 msgstr "Konnte Spule nicht aktualisieren"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:634
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:846
 msgid ""
-"There was an unexpected error while removing the filament spool, please consult "
-"the logs."
+"There was an unexpected error while updating the filament spool, please "
+"consult the logs."
 msgstr ""
-"Unerwarteter Fehler beim Löschen der Filamentspule, bitte konsultiere das Log."
+"Unerwarteter Fehler beim Aktualisieren der Filamentspule, bitte "
+"konsultiere das Log."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:636
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:861
 msgid "Could not delete spool"
 msgstr "Konnte Spule nicht löschen"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:642
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:862
+msgid ""
+"There was an unexpected error while removing the filament spool, please "
+"consult the logs."
+msgstr ""
+"Unerwarteter Fehler beim Löschen der Filamentspule, bitte konsultiere das"
+" Log."
+
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:871
 msgid "Delete spool?"
 msgstr "Spule löschen?"
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:643
-#, python-format
-msgid "You are about to delete the filament spool <strong>%s - %s (%s)</strong>."
-msgstr ""
-"Du bist im Begriff die Filament-Spule <strong>%s - %s (%s)</strong> zu löschen."
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:872
+msgid "You are about to delete the filament spool <strong> -  ()</strong>."
+msgstr "Du bist im Begriff die Filament-Spule <strong> -  ()</strong> zu löschen."
 
-#: octoprint_filamentmanager/static/js/filamentmanager.js:691
-msgid "Data import successfull"
-msgstr "Daten-Import erfolgreich"
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:711
-msgid "Data import failed"
-msgstr "Daten-Import fehlgeschlagen"
-
-#: octoprint_filamentmanager/static/js/filamentmanager.js:712
-msgid "Something went wrong, please consult the logs."
-msgstr "Etwas ist schief gelaufen, bitte konsultiere das Log."
-
-#: octoprint_filamentmanager/static/js/warning.js:103
-msgid ""
-"The current print job needs more material than what's remaining on the selected "
-"spool."
-msgstr ""
-"Der aktuelle Druckauftrag benötigt mehr Material als auf der ausgewählten Spule "
-"vorhanden ist."
-
-#: octoprint_filamentmanager/static/js/warning.js:104
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:944
 msgid "Insufficient filament"
 msgstr "Filament nicht ausreichend"
+
+#: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:945
+msgid ""
+"The current print job needs more material than what's left on the "
+"selected spool."
+msgstr ""
+"Der aktuelle Druckauftrag benötigt mehr Material als auf der ausgewählten"
+" Spule vorhanden ist."
 
 #: octoprint_filamentmanager/templates/settings.jinja2:4
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:5
@@ -242,55 +242,102 @@ msgstr "Profile verwalten"
 msgid "Add Spool"
 msgstr "Spule hinzufügen"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:17
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:12
+msgid "Features"
+msgstr "Funktionen"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:13
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:87
+msgid "Database"
+msgstr "Datenbank"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:14
+msgid "Appearance"
+msgstr "Aussehen"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:26
+msgid ""
+"Show dialog to confirm selected spools before starting/resuming the print"
+" job"
+msgstr ""
+"Vor dem starten/fortsetzen eines Druckauftrags einen Dialog zur "
+"Bestätigung der ausgewählten Spulen anzeigen"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:34
 msgid "Warn if print job exceeds remaining filament"
 msgstr "Warne, wenn der Druckauftrag die verbleibende Menge an Filament übersteigt"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:27
-msgid "Enable filament odometer"
-msgstr "Filament-Hodometer aktivieren"
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:42
+msgid "Enable software odometer to measure used filament"
+msgstr "Software-Hodometer aktivieren, um den Filamentverbrauch zu messen"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:37
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:50
 msgid "Pause print if filament runs out"
 msgstr "Druck pausieren, wenn Filament zur zeige geht"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:45
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:56
 msgid "Pause threshold"
 msgstr "Schwellwert für Pause"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:57
-msgid "Currency symbol"
-msgstr "Währungssymbol"
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:74
+msgid "Use external database"
+msgstr "Verwende externe Datenbank"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:65
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:80
+msgid "URI"
+msgstr "URI"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:94
+msgid "Username"
+msgstr "Benutzername"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:101
+msgid "Password"
+msgstr "Passwort"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:107
+msgid ""
+"Note: If you change these settings you must restart your OctoPrint "
+"instance for the changes to take affect."
+msgstr ""
+"Beachte: Wenn du diese Einstellungen änderst musst du OctoPrint neu "
+"starten, damit diese wirksam werden."
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:111
 msgid "Import & Export"
 msgstr "Import & Export"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:71
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:116
 msgid "Browse..."
 msgstr "Durchsuchen..."
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:75
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:120
 msgid "Import"
 msgstr "Import"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:77
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:122
 msgid "Export"
 msgstr "Export"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:79
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:124
 msgid ""
-"This does not look like a valid import archive. Only zip files are supported."
+"This does not look like a valid import archive. Only zip files are "
+"supported."
 msgstr ""
-"Dies sieht nicht wie ein gültiges Archiv zum importieren aus. Es werden nur Zip-"
-"Dateien unterstützt."
+"Dies sieht nicht wie ein gültiges Archiv zum importieren aus. Es werden "
+"nur Zip-Dateien unterstützt."
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:84
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:133
+msgid "Currency symbol"
+msgstr "Währungssymbol"
+
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:145
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:87
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:21
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:85
+#: octoprint_filamentmanager/templates/settings_configdialog.jinja2:146
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:16
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:88
 msgid "Save"
@@ -353,12 +400,28 @@ msgid "Temperature offset"
 msgstr "Temperaturoffset"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:4
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:13
 msgid "Tool"
 msgstr "Tool"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:5
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:14
 msgid "--- Select Spool ---"
 msgstr "--- Spule auswählen ---"
+
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:5
+msgid "Confirm your selected spools"
+msgstr "Bestätige deine Spulauswahl"
+
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:9
+msgid ""
+"Please confirm your selected spools for all active tools. This dialog is "
+"meant to protect you from accidentically selecting wrong spools for the "
+"print."
+msgstr ""
+"Bitte bestätige deine Spulauswahl für alle aktiven Extruder. Dieser "
+"Dialog soll verhindern, dass du aus Versehen falsche Spulen für deinen "
+"Druck auswählst."
 
 #~ msgid "Profile (ascending)"
 #~ msgstr "Profil (aufsteigend)"
@@ -376,23 +439,37 @@ msgstr "--- Spule auswählen ---"
 #~ msgstr "Abfrage der Spulen fehlgeschlagen"
 
 #~ msgid ""
-#~ "There was an unexpected database error while saving the filament profile, "
+#~ "There was an unexpected database error"
+#~ " while saving the filament profile, "
 #~ "please consult the logs."
 #~ msgstr ""
-#~ "Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere das "
-#~ "Log."
+#~ "Unerwarteter Fehler beim Speichern des "
+#~ "Filamentprofils, bitte konsultiere das Log."
 
 #~ msgid ""
-#~ "There was an unexpected database error while updating the filament profile, "
+#~ "There was an unexpected database error"
+#~ " while updating the filament profile, "
 #~ "please consult the logs."
 #~ msgstr ""
-#~ "Ein unerwarteter Datenbankfehler ist aufgetreten, bitte konsultiere die Logs."
+#~ "Ein unerwarteter Datenbankfehler ist "
+#~ "aufgetreten, bitte konsultiere die Logs."
 
 #~ msgid ""
 #~ "There was an unexpected error while removing the filament spool,\n"
 #~ "                                            please consult the logs."
 #~ msgstr ""
-#~ "Ein unerwarteter Datenbankfehler ist aufgetreten, bitte konsultiere die Logs."
+#~ "Ein unerwarteter Datenbankfehler ist "
+#~ "aufgetreten, bitte konsultiere die Logs."
 
 #~ msgid "Spool selection failed"
 #~ msgstr "Konnte Spule nicht auswählen"
+
+#~ msgid "Cannot delete profiles with associated spools."
+#~ msgstr "Es können keine Profile mit verknüpften Spulen gelöscht werden."
+
+#~ msgid "Data import successfull"
+#~ msgstr "Daten-Import erfolgreich"
+
+#~ msgid "Enable filament odometer"
+#~ msgstr "Filament-Hodometer aktivieren"
+
