@@ -24,4 +24,9 @@ class Utils { // eslint-disable-line no-unused-vars
 
         next(); // Start chain
     }
+
+    static extractToolIDFromName(name) {
+        const result = /(\d+)/.exec(name);
+        return result === null ? 0 : result[1];
+    }
 }
