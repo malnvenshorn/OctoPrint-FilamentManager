@@ -23,7 +23,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             },
             vendor(a, b) {
                 // sorts ascending
-                if (a.profile.vendor.toLocaleLowerCase() < b.rofile.vendor.toLocaleLowerCase()) return -1;
+                if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
                 if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
                 return 0;
             },
