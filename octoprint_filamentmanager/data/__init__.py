@@ -345,9 +345,9 @@ class FilamentManager(object):
                             self.conn.execute(stmt)
 
                     if self.DIALECT_POSTGRESQL == self.engine.dialect.name:
-                        # update sequences
-                        self.conn.execute(text("SELECT setval('profiles_id_seq', max(id)) FROM profiles"))
-                        self.conn.execute(text("SELECT setval('spools_id_seq', max(id)) FROM spools"))
+                        # update sequence
+                        sql = "SELECT setval('{table}_id_seq', max(id)) FROM {table}".format(table=table.name)
+                        self.conn.execute(text(sql))
 
         tables = [self.profiles, self.spools]
         for t in tables:
