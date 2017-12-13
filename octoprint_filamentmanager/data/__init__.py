@@ -9,7 +9,8 @@ import os
 from multiprocessing import Lock
 
 from backports import csv
-from uritools import uricompose, urisplit
+from uritools import urisplit
+from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL, PrimaryKeyConstraint
 from sqlalchemy.sql import insert, update, delete, select, label
@@ -43,9 +44,12 @@ class FilamentManager(object):
             self.conn = self.engine.connect()
             self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
         elif self.DIALECT_POSTGRESQL == uri_parts.scheme:
-            uri = uricompose(scheme=uri_parts.scheme, host=uri_parts.host, port=uri_parts.getport(default=5432),
-                             path="/{}".format(config["name"]),
-                             userinfo="{}:{}".format(config["user"], config["password"]))
+            uri = URL(drivername=uri_parts.scheme,
+                      host=uri_parts.host,
+                      port=uri_parts.getport(default=5432),
+                      database=config["name"],
+                      username=config["user"],
+                      password=config["password"])
             self.engine = create_engine(uri)
             self.conn = self.engine.connect()
             self.notify = PGNotify(uri)
