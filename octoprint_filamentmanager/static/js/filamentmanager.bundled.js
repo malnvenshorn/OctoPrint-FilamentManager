@@ -81,12 +81,9 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
             self.core.callbacks.call(self);
 
-            self.viewModels.profiles.call(self);
-            self.viewModels.spools.call(self);
-            self.viewModels.selections.call(self);
-            self.viewModels.config.call(self);
-            self.viewModels.import.call(self);
-            self.viewModels.confirmation.call(self);
+            Object.values(self.viewModels).forEach(function (viewModel) {
+                return viewModel.call(self);
+            });
 
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.selections.requestSelectedSpools);
@@ -95,7 +92,6 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.viewModels.import.afterImportCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.import.afterImportCallbacks.push(self.viewModels.selections.requestSelectedSpools);
 
-            self.viewModels.warning.call(self);
             self.selectedSpools = self.viewModels.selections.selectedSpools; // for backwards compatibility
             return self;
         }
