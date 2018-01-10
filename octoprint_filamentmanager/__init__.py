@@ -120,7 +120,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
     def on_after_startup(self):
         # subscribe to the notify channel so that we get notified if another client has altered the data
         # notify is not available if we are connected to the internal sqlite database
-        if self.filamentManager.notify is not None:
+        if self.filamentManager is not None and self.filamentManager.notify is not None:
             def notify(pid, channel, payload):
                 # ignore notifications triggered by our own connection
                 if pid != self.filamentManager.conn.connection.get_backend_pid():
