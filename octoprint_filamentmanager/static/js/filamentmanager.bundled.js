@@ -216,11 +216,20 @@ FilamentManager.prototype.core.client = function apiClient() {
             return OctoPrint.patchJson(selectionUrl(id), data, opts);
         }
     };
+
+    self.database = {
+        test: function test(config, opts) {
+            var url = pluginUrl + '/database/test';
+            var data = { config: config };
+            return OctoPrint.postJson(url, data, opts);
+        }
+    };
 };
 /* global FilamentManager ko $ */
 
 FilamentManager.prototype.viewModels.config = function configurationViewModel() {
     var self = this.viewModels.config;
+    var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
 
@@ -262,6 +271,24 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     self.loadData = function mapPluginConfigurationToObservables() {
         var pluginSettings = settingsViewModel.settings.plugins.filamentmanager;
         ko.mapping.fromJS(ko.toJS(pluginSettings), self.config);
+    };
+
+    self.connectionTest = function runExternalDatabaseConnectionTest(viewModel, event) {
+        var target = $(event.target);
+        target.removeClass('btn-success btn-danger');
+        target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+        target.prop('disabled', true);
+
+        var data = ko.mapping.toJS(self.config.database);
+
+        api.database.test(data).done(function () {
+            target.addClass('btn-success');
+        }).fail(function () {
+            target.addClass('btn-danger');
+        }).always(function () {
+            $('i.fa-spinner', target).remove();
+            target.prop('disabled', false);
+        });
     };
 };
 /* global FilamentManager gettext $ ko Utils */
