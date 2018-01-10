@@ -2,7 +2,7 @@
 
 FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfirmationViewModel() {
     const self = this.viewModels.confirmation;
-    const { printerStateViewModel, settingsViewModel } = this.core.bridge.allViewModels;
+    const { printerStateViewModel, settingsViewModel, filesViewModel } = this.core.bridge.allViewModels;
     const { selections } = this.viewModels;
 
     const dialog = $('#plugin_filamentmanager_confirmationdialog');
@@ -31,45 +31,48 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
         dialog.modal('show');
     };
 
-    printerStateViewModel.fmPrint = function confirmSpoolSelectionBeforeStartPrint() {
+    const startPrint = printerStateViewModel.print;
+
+    printerStateViewModel.print = function confirmSpoolSelectionBeforeStartPrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Start Print'));
-            self.print = function startPrint() {
+            self.print = function continueToStartPrint() {
                 dialog.modal('hide');
-                printerStateViewModel.print();
+                startPrint();
             };
         } else {
-            printerStateViewModel.print();
+            startPrint();
         }
     };
 
-    printerStateViewModel.fmResume = function confirmSpoolSelectionBeforeResumePrint() {
+    const resumePrint = printerStateViewModel.resume;
+
+    printerStateViewModel.resume = function confirmSpoolSelectionBeforeResumePrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Resume Print'));
-            self.print = function resumePrint() {
+            self.print = function continueToResumePrint() {
                 dialog.modal('hide');
-                printerStateViewModel.onlyResume();
+                resumePrint();
             };
         } else {
-            printerStateViewModel.onlyResume();
+            resumePrint();
         }
     };
 
-    self.replacePrintStart = function replacePrintStartButtonBehavior() {
-        // Modifying print button action to invoke 'fmPrint'
-        const element = $('#job_print');
-        let dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: fmPrint');
-        element.attr('data-bind', dataBind);
-    };
+    const { loadFile } = filesViewModel;
 
-    self.replacePrintResume = function replacePrintResumeButtonBehavior() {
-        // Modifying resume button action to invoke 'fmResume'
-        const element = $('#job_pause');
-        let dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: function() { isPaused() ? fmResume() : onlyPause(); }');
-        element.attr('data-bind', dataBind);
+    filesViewModel.loadFile = function confirmSpoolSelectionOnLoadAndPrint(data, printAfterLoad) {
+        if (printAfterLoad && settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
+            showDialog();
+            button.html(gettext('Load and Print'));
+            self.print = function continueToLoadAndPrint() {
+                dialog.modal('hide');
+                loadFile(data, printAfterLoad);
+            };
+        } else {
+            loadFile(data, printAfterLoad);
+        }
     };
 };

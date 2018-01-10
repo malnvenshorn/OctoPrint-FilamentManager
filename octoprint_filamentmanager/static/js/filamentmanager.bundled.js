@@ -73,7 +73,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
     self.core.bridge = {
         allViewModels: {},
 
-        REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel'],
+        REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
         BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog'],
 
@@ -106,8 +106,6 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
 
     self.onStartup = function onStartupCallback() {
         self.viewModels.warning.replaceFilamentView();
-        self.viewModels.confirmation.replacePrintStart();
-        self.viewModels.confirmation.replacePrintResume();
     };
 
     self.onBeforeBinding = function onBeforeBindingCallback() {
@@ -297,7 +295,8 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     var self = this.viewModels.confirmation;
     var _core$bridge$allViewM = this.core.bridge.allViewModels,
         printerStateViewModel = _core$bridge$allViewM.printerStateViewModel,
-        settingsViewModel = _core$bridge$allViewM.settingsViewModel;
+        settingsViewModel = _core$bridge$allViewM.settingsViewModel,
+        filesViewModel = _core$bridge$allViewM.filesViewModel;
     var selections = this.viewModels.selections;
 
 
@@ -327,46 +326,50 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
         dialog.modal('show');
     };
 
-    printerStateViewModel.fmPrint = function confirmSpoolSelectionBeforeStartPrint() {
+    var startPrint = printerStateViewModel.print;
+
+    printerStateViewModel.print = function confirmSpoolSelectionBeforeStartPrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Start Print'));
-            self.print = function startPrint() {
+            self.print = function continueToStartPrint() {
                 dialog.modal('hide');
-                printerStateViewModel.print();
+                startPrint();
             };
         } else {
-            printerStateViewModel.print();
+            startPrint();
         }
     };
 
-    printerStateViewModel.fmResume = function confirmSpoolSelectionBeforeResumePrint() {
+    var resumePrint = printerStateViewModel.resume;
+
+    printerStateViewModel.resume = function confirmSpoolSelectionBeforeResumePrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Resume Print'));
-            self.print = function resumePrint() {
+            self.print = function continueToResumePrint() {
                 dialog.modal('hide');
-                printerStateViewModel.onlyResume();
+                resumePrint();
             };
         } else {
-            printerStateViewModel.onlyResume();
+            resumePrint();
         }
     };
 
-    self.replacePrintStart = function replacePrintStartButtonBehavior() {
-        // Modifying print button action to invoke 'fmPrint'
-        var element = $('#job_print');
-        var dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: fmPrint');
-        element.attr('data-bind', dataBind);
-    };
+    var loadFile = filesViewModel.loadFile;
 
-    self.replacePrintResume = function replacePrintResumeButtonBehavior() {
-        // Modifying resume button action to invoke 'fmResume'
-        var element = $('#job_pause');
-        var dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: function() { isPaused() ? fmResume() : onlyPause(); }');
-        element.attr('data-bind', dataBind);
+
+    filesViewModel.loadFile = function confirmSpoolSelectionOnLoadAndPrint(data, printAfterLoad) {
+        if (printAfterLoad && settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
+            showDialog();
+            button.html(gettext('Load and Print'));
+            self.print = function continueToLoadAndPrint() {
+                dialog.modal('hide');
+                loadFile(data, printAfterLoad);
+            };
+        } else {
+            loadFile(data, printAfterLoad);
+        }
     };
 };
 /* global FilamentManager ko $ PNotify gettext */

@@ -11,6 +11,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             'printerStateViewModel',
             'loginStateViewModel',
             'temperatureViewModel',
+            'filesViewModel',
         ],
 
         BINDINGS: [

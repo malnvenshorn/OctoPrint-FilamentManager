@@ -5,8 +5,6 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
 
     self.onStartup = function onStartupCallback() {
         self.viewModels.warning.replaceFilamentView();
-        self.viewModels.confirmation.replacePrintStart();
-        self.viewModels.confirmation.replacePrintResume();
     };
 
     self.onBeforeBinding = function onBeforeBindingCallback() {
