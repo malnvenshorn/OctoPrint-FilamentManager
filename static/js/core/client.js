@@ -80,4 +80,12 @@ FilamentManager.prototype.core.client = function apiClient() {
             return OctoPrint.patchJson(selectionUrl(id), data, opts);
         },
     };
+
+    self.database = {
+        test(config, opts) {
+            const url = `${pluginUrl}/database/test`;
+            const data = { config };
+            return OctoPrint.postJson(url, data, opts);
+        },
+    };
 };

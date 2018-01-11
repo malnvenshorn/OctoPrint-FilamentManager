@@ -73,7 +73,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
     self.core.bridge = {
         allViewModels: {},
 
-        REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel'],
+        REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
         BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog'],
 
@@ -81,12 +81,9 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
             self.core.callbacks.call(self);
 
-            self.viewModels.profiles.call(self);
-            self.viewModels.spools.call(self);
-            self.viewModels.selections.call(self);
-            self.viewModels.config.call(self);
-            self.viewModels.import.call(self);
-            self.viewModels.confirmation.call(self);
+            Object.values(self.viewModels).forEach(function (viewModel) {
+                return viewModel.call(self);
+            });
 
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.profiles.updateCallbacks.push(self.viewModels.selections.requestSelectedSpools);
@@ -95,7 +92,6 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             self.viewModels.import.afterImportCallbacks.push(self.viewModels.spools.requestSpools);
             self.viewModels.import.afterImportCallbacks.push(self.viewModels.selections.requestSelectedSpools);
 
-            self.viewModels.warning.call(self);
             self.selectedSpools = self.viewModels.selections.selectedSpools; // for backwards compatibility
             return self;
         }
@@ -110,8 +106,6 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
 
     self.onStartup = function onStartupCallback() {
         self.viewModels.warning.replaceFilamentView();
-        self.viewModels.confirmation.replacePrintStart();
-        self.viewModels.confirmation.replacePrintResume();
     };
 
     self.onBeforeBinding = function onBeforeBindingCallback() {
@@ -220,11 +214,20 @@ FilamentManager.prototype.core.client = function apiClient() {
             return OctoPrint.patchJson(selectionUrl(id), data, opts);
         }
     };
+
+    self.database = {
+        test: function test(config, opts) {
+            var url = pluginUrl + '/database/test';
+            var data = { config: config };
+            return OctoPrint.postJson(url, data, opts);
+        }
+    };
 };
 /* global FilamentManager ko $ */
 
 FilamentManager.prototype.viewModels.config = function configurationViewModel() {
     var self = this.viewModels.config;
+    var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
 
@@ -267,14 +270,33 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
         var pluginSettings = settingsViewModel.settings.plugins.filamentmanager;
         ko.mapping.fromJS(ko.toJS(pluginSettings), self.config);
     };
+
+    self.connectionTest = function runExternalDatabaseConnectionTest(viewModel, event) {
+        var target = $(event.target);
+        target.removeClass('btn-success btn-danger');
+        target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+        target.prop('disabled', true);
+
+        var data = ko.mapping.toJS(self.config.database);
+
+        api.database.test(data).done(function () {
+            target.addClass('btn-success');
+        }).fail(function () {
+            target.addClass('btn-danger');
+        }).always(function () {
+            $('i.fa-spinner', target).remove();
+            target.prop('disabled', false);
+        });
+    };
 };
-/* global FilamentManager gettext $ ko Utils */
+/* global FilamentManager gettext $ ko Utils OctoPrint */
 
 FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfirmationViewModel() {
     var self = this.viewModels.confirmation;
     var _core$bridge$allViewM = this.core.bridge.allViewModels,
         printerStateViewModel = _core$bridge$allViewM.printerStateViewModel,
-        settingsViewModel = _core$bridge$allViewM.settingsViewModel;
+        settingsViewModel = _core$bridge$allViewM.settingsViewModel,
+        filesViewModel = _core$bridge$allViewM.filesViewModel;
     var selections = this.viewModels.selections;
 
 
@@ -304,46 +326,53 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
         dialog.modal('show');
     };
 
-    printerStateViewModel.fmPrint = function confirmSpoolSelectionBeforeStartPrint() {
+    var startPrint = printerStateViewModel.print;
+
+    printerStateViewModel.print = function confirmSpoolSelectionBeforeStartPrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Start Print'));
-            self.print = function startPrint() {
+            self.print = function continueToStartPrint() {
                 dialog.modal('hide');
-                printerStateViewModel.print();
+                startPrint();
             };
         } else {
-            printerStateViewModel.print();
+            startPrint();
         }
     };
 
-    printerStateViewModel.fmResume = function confirmSpoolSelectionBeforeResumePrint() {
+    var resumePrint = printerStateViewModel.resume;
+
+    printerStateViewModel.resume = function confirmSpoolSelectionBeforeResumePrint() {
         if (settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
             showDialog();
             button.html(gettext('Resume Print'));
-            self.print = function resumePrint() {
+            self.print = function continueToResumePrint() {
                 dialog.modal('hide');
-                printerStateViewModel.onlyResume();
+                resumePrint();
             };
         } else {
-            printerStateViewModel.onlyResume();
+            resumePrint();
         }
     };
 
-    self.replacePrintStart = function replacePrintStartButtonBehavior() {
-        // Modifying print button action to invoke 'fmPrint'
-        var element = $('#job_print');
-        var dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: fmPrint');
-        element.attr('data-bind', dataBind);
-    };
+    filesViewModel.loadFile = function confirmSpoolSelectionOnLoadAndPrint(data, printAfterLoad) {
+        if (!data) {
+            return;
+        }
 
-    self.replacePrintResume = function replacePrintResumeButtonBehavior() {
-        // Modifying resume button action to invoke 'fmResume'
-        var element = $('#job_pause');
-        var dataBind = element.attr('data-bind');
-        dataBind = dataBind.replace(/click:(.*?)(?=,|$)/, 'click: function() { isPaused() ? fmResume() : onlyPause(); }');
-        element.attr('data-bind', dataBind);
+        if (printAfterLoad && filesViewModel.listHelper.isSelected(data) && filesViewModel.enablePrint(data)) {
+            // file was already selected, just start the print job
+            printerStateViewModel.print();
+        } else {
+            // select file, start print job (if requested and within dimensions)
+            var withinPrintDimensions = filesViewModel.evaluatePrintDimensions(data, true);
+            var print = printAfterLoad && withinPrintDimensions;
+
+            OctoPrint.files.select(data.origin, data.path, false).done(function () {
+                if (print) printerStateViewModel.print();
+            });
+        }
     };
 };
 /* global FilamentManager ko $ PNotify gettext */

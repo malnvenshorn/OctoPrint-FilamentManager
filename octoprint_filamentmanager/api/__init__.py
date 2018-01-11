@@ -373,3 +373,34 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                                   .format(path=tempdir, message=str(e)))
 
         return make_response("", 204)
+
+    @octoprint.plugin.BlueprintPlugin.route("/database/test", methods=["POST"])
+    @restricted_access
+    def test_database_connection(self):
+        if "application/json" not in request.headers["Content-Type"]:
+            return make_response("Expected content-type JSON", 400)
+
+        try:
+            json_data = request.json
+        except BadRequest:
+            return make_response("Malformed JSON body in request", 400)
+
+        if "config" not in json_data:
+            return make_response("No database configuration included in request", 400)
+
+        config = json_data["config"]
+
+        for key in ["uri", "name", "user", "password"]:
+            if key not in config:
+                return make_response("Configuration does not contain mandatory '{}' field".format(key), 400)
+
+        try:
+            connection = self.filamentManager.connect(config["uri"],
+                                                      database=config["name"],
+                                                      username=config["user"],
+                                                      password=config["password"])
+        except Exception as e:
+            return make_response("Failed to connect to the database with the given configuration", 400)
+        else:
+            connection.close()
+            return make_response("", 204)
