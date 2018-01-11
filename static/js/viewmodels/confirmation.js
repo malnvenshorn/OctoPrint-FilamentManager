@@ -1,4 +1,4 @@
-/* global FilamentManager gettext $ ko Utils */
+/* global FilamentManager gettext $ ko Utils OctoPrint */
 
 FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfirmationViewModel() {
     const self = this.viewModels.confirmation;
@@ -61,18 +61,23 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
         }
     };
 
-    const { loadFile } = filesViewModel;
-
     filesViewModel.loadFile = function confirmSpoolSelectionOnLoadAndPrint(data, printAfterLoad) {
-        if (printAfterLoad && settingsViewModel.settings.plugins.filamentmanager.confirmSpoolSelection()) {
-            showDialog();
-            button.html(gettext('Load and Print'));
-            self.print = function continueToLoadAndPrint() {
-                dialog.modal('hide');
-                loadFile(data, printAfterLoad);
-            };
+        if (!data) {
+            return;
+        }
+
+        if (printAfterLoad && filesViewModel.listHelper.isSelected(data) && filesViewModel.enablePrint(data)) {
+            // file was already selected, just start the print job
+            printerStateViewModel.print();
         } else {
-            loadFile(data, printAfterLoad);
+            // select file, start print job (if requested and within dimensions)
+            const withinPrintDimensions = filesViewModel.evaluatePrintDimensions(data, true);
+            const print = printAfterLoad && withinPrintDimensions;
+
+            OctoPrint.files.select(data.origin, data.path, false)
+                .done(() => {
+                    if (print) printerStateViewModel.print();
+                });
         }
     };
 };
