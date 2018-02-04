@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint-FilamentManager 0.1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2018-01-11 13:47+0100\n"
-"PO-Revision-Date: 2018-01-11 13:48+0100\n"
+"POT-Creation-Date: 2018-02-04 15:21+0100\n"
+"PO-Revision-Date: 2018-02-04 15:24+0100\n"
 "Last-Translator: Sven Lohrmann <malnvenshorn@gmail.com>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.4.0\n"
-"X-Generator: Poedit 2.0.5\n"
+"X-Generator: Poedit 2.0.6\n"
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:334
 msgid "Start Print"
@@ -331,7 +331,7 @@ msgstr "Währungssymbol"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:149
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:87
-#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:21
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:27
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -398,12 +398,12 @@ msgid "Temperature offset"
 msgstr "Temperaturoffset"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:4
-#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:13
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:18
 msgid "Tool"
 msgstr "Tool"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:5
-#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:14
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:19
 msgid "--- Select Spool ---"
 msgstr "--- Spule auswählen ---"
 
@@ -411,12 +411,21 @@ msgstr "--- Spule auswählen ---"
 msgid "Confirm your selected spools"
 msgstr "Bestätige deine Spulauswahl"
 
-#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:9
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:10
+msgid ""
+"There are no information available about the active tools for the print job. "
+"Make sure the analysing process of the file has finished and that it's loaded "
+"correctly."
+msgstr ""
+"Es sind keine Informationen über die aktiven Tools für den Druckauftrag "
+"vorhanden. Überprüfe ob die Datei bereits analysiert und korrekt geladen wurde."
+
+#: octoprint_filamentmanager/templates/spool_confirmation.jinja2:14
 msgid ""
 "Please confirm your selected spools for all active tools. This dialog is meant "
 "to protect you from accidentically selecting wrong spools for the print."
 msgstr ""
-"Bitte bestätige deine Spulauswahl für alle aktiven Extruder. Dieser Dialog soll "
+"Bitte bestätige deine Spulenauswahl für alle aktiven Tools. Dieser Dialog soll "
 "verhindern, dass du aus Versehen falsche Spulen für deinen Druck auswählst."
 
 #~ msgid "Profile (ascending)"

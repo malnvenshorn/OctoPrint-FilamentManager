@@ -343,7 +343,7 @@ class FilamentManager(object):
                         values = dict(zip(header, row))
 
                         if self.engine_dialect_is(self.DIALECT_SQLITE):
-                            identifier = values[table.c.id]
+                            identifier = values[table.c.id.name]
                             # try to update entry
                             stmt = update(table).values(values).where(table.c.id == identifier)
                             if self.conn.execute(stmt).rowcount == 0:
