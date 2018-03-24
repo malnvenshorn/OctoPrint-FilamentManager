@@ -268,7 +268,7 @@ msgstr "Software-Hodometer aktivieren, um den Filamentverbrauch zu messen"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:50
 msgid "Pause print if filament runs out"
-msgstr "Druck pausieren, wenn Filament zur zeige geht"
+msgstr "Druck pausieren, wenn Filament zur Neige geht"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:56
 msgid "Pause threshold"
