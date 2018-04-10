@@ -12,7 +12,7 @@ If you have questions or encounter issues please take a look at the [Frequently 
 * Assign temperature offset to spools
 * Automatically pause print if filament runs out
 * Import & export of spool inventory
-* Support for PostgreSQL as database for multiple instances
+* Support for PostgreSQL (>=9.5) as common database for multiple OctoPrint instances
 
 ## Setup
 
