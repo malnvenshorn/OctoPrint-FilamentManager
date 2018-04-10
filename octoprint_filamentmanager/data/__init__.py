@@ -13,7 +13,7 @@ from uritools import urisplit
 from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL, PrimaryKeyConstraint
-from sqlalchemy.sql import insert, update, delete, select, label
+from sqlalchemy.sql import insert, update, delete, select
 from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 import sqlalchemy.sql.functions as func
