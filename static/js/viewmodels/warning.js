@@ -89,7 +89,6 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
             }
         }
 
-        filename = printerStateViewModel.filename();
         printerStateViewModel.filamentWithWeight(filament);
     };
 
@@ -100,13 +99,12 @@ FilamentManager.prototype.viewModels.warning = function insufficientFilamentWarn
             // OctoPrint constantly updates the filament observable, to prevent invocing the warning message
             // on every update we only call the updateFilament() method if the selected file has changed
             if (filename !== printerStateViewModel.filename()) {
-                if (printerStateViewModel.filename() !== undefined && printerStateViewModel.filament().length < 1) {
-                    // file selected, but no filament data found, probably because it's still in analysis queue
-                    waitForFilamentData = true;
-                } else {
-                    waitForFilamentData = false;
-                    updateFilament();
-                }
+                // if new file selected but no filament data found (probably because it's still in analysis queue)
+                // we set the wait flag to update the view again, when the data arives
+                waitForFilamentData = printerStateViewModel.filename() != null
+                    && printerStateViewModel.filament().length < 1;
+                filename = printerStateViewModel.filename();
+                updateFilament();
             } else if (waitForFilamentData && printerStateViewModel.filament().length > 0) {
                 waitForFilamentData = false;
                 updateFilament();
