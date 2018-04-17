@@ -320,7 +320,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
                     self.pauseThresholds["tool%s" % selection["tool"]] = threshold(spool)
             except ZeroDivisionError:
                 self._logger.warn("ZeroDivisionError while calculating pause threshold for tool{tool}, "
-                                  "pause feature not available for selected spool".format(tool=tool))
+                                  "pause feature not available for selected spool".format(tool=selection["tool"]))
 
         self.pauseThresholds = dict()
 
