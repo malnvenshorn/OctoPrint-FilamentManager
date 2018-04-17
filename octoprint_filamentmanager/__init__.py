@@ -10,7 +10,6 @@ from math import pi as PI
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.events import Events
-from octoprint.util import dict_merge
 from octoprint.util.version import is_octoprint_compatible
 
 from .api import FilamentManagerApi
