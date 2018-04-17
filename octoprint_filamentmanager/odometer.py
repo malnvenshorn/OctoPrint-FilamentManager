@@ -13,8 +13,8 @@ class FilamentOdometer(object):
     regexE = re.compile(r'.*E(-?\d+(\.\d+)?)')
     regexT = re.compile(r'^T(\d+)')
 
-    def __init__(self):
-        self.g90_extruder = True
+    def __init__(self, g90_extruder):
+        self.g90_extruder = g90_extruder
         self.reset()
 
     def reset(self):
@@ -72,7 +72,7 @@ class FilamentOdometer(object):
                         self.totalExtrusion.append(0.0)
                         self.maxExtrusion.append(0.0)
 
-    def set_g90_extruder(self, flag=True):
+    def set_g90_extruder(self, flag):
         self.g90_extruder = flag
 
     def get_extrusion(self):

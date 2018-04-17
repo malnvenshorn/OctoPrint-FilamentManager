@@ -48,8 +48,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
         self.client_id = get_client_id()
 
-        self.filamentOdometer = FilamentOdometer()
-        self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
+        g90_extruder = self._settings.getBoolean(["feature", "g90InfluencesExtruder"])
+        self.filamentOdometer = FilamentOdometer(g90_extruder=g90_extruder)
 
         db_config = self._settings.get(["database"], merged=True)
         migrate_schema_version = False
