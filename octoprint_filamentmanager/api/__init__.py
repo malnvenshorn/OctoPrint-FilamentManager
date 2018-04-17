@@ -19,7 +19,7 @@ from octoprint.server import admin_permission
 from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
 from octoprint.util import dict_merge
 
-from .util import *
+from .util import entity_tag, add_revalidation_header_with_no_max_age
 
 
 class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
