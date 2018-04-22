@@ -365,7 +365,7 @@ def __plugin_load__():
         import logging
         logger = logging.getLogger(__name__)
         logger.error("OctoPrint version is not compatible ({version} required)"
-                     .format(version=__required_octorpint_version__))
+                     .format(version=__required_octoprint_version__))
         return
 
     global __plugin_implementation__
