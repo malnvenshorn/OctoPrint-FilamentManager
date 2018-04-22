@@ -35,6 +35,10 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
             self.viewModels.profiles.requestProfiles();
             self.viewModels.spools.requestSpools();
             self.viewModels.selections.requestSelectedSpools();
+        } else if (messageType === 'm600_command_started') {
+            self.viewModels.selections.m600_command_running(true);
+        } else if (messageType === 'm600_command_finished') {
+            self.viewModels.selections.m600_command_running(false);
         }
     };
 };

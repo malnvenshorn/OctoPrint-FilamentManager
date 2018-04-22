@@ -37,6 +37,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
         self.pauseEnabled = False
         self.pauseThresholds = dict()
 
+        self.m600_command_running = False
+
     def initialize(self):
         def get_client_id():
             client_id = self._settings.get(["database", "clientID"])
@@ -241,14 +243,13 @@ class FilamentManagerPlugin(FilamentManagerApi,
             self._logger.debug("Printer State: %s" % payload["state_string"])
             if self.odometerEnabled:
                 self.odometerEnabled = False  # disabled because we don't want to track manual extrusion
-                self.update_filament_usage()
+                self.update_filament_usage(self.filamentOdometer.get_extrusion())
 
         # update last print state
         self.lastPrintState = payload['state_id']
 
-    def update_filament_usage(self):
+    def update_filament_usage(self, extrusion):
         printer_profile = self._printer_profile_manager.get_current_or_default()
-        extrusion = self.filamentOdometer.get_extrusion()
         numTools = min(printer_profile['extruder']['count'], len(extrusion))
 
         def calculate_weight(length, profile):
@@ -295,10 +296,31 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
     def filament_odometer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         if self.odometerEnabled:
-            self.filamentOdometer.parse(gcode, cmd)
-            if self.pauseEnabled and self.check_threshold():
-                self._logger.info("Filament is running out, pausing print")
-                self._printer.pause_print()
+            if self.m600_command_running and not self._printer._comm._long_running_command:
+                self.m600_command_finished()
+
+            if self.filamentOdometer.parse(gcode, cmd):
+                # gcode parsed by odometer
+                if self.pauseEnabled and self.check_threshold():
+                    self._logger.info("Filament is running out, pausing print")
+                    self._printer.pause_print()
+            elif gcode == "M600":
+                self.m600_command_started()
+
+    def m600_command_started(self):
+        # the first thing to do is to get and reset the extruded filament counter, because
+        # octoprint might keep sending commands which should count for the new selected spool
+        extrudedFilament = self.filamentOdometer.get_extrusion()
+        self.filamentOdometer.reset_extruded_length()
+        self.m600_command_running = True
+        self._logger.debug("M600 command started")
+        self.send_client_message("m600_command_started")
+        self.update_filament_usage(extrudedFilament)
+
+    def m600_command_finished(self):
+        self.m600_command_running = False
+        self._logger.debug("M600 command finished")
+        self.send_client_message("m600_command_finished")
 
     def check_threshold(self):
         extrusion = self.filamentOdometer.get_extrusion()

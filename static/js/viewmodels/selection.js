@@ -7,6 +7,8 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
 
     self.selectedSpools = ko.observableArray([]);
 
+    self.m600_command_running = ko.observable(false);
+
     // selected spool id for each tool
     self.tools = ko.observableArray([]);
     // set to false if querying selections to prevent triggering the change event again when setting selected spools
