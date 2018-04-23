@@ -1,17 +1,16 @@
 # OctoPrint-FilamentManager
 
-This OctoPrint plugin helps to manage your filament spools. The project is still under heavy development. So don't rely on it and use it at your own risk. I'm grateful for all reports that help me to track down bugs.
+This OctoPrint plugin makes it easy to manage your inventory of filament spools. You can add all your spools and assign them to print jobs. The Filament Manager will automatically track the amount of extruded filament so you can always see how much is left on your spools.
 
-If you have questions or encounter issues please take a look at the [Frequently Asked Questions](https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq) first. There might be already an answer. In case you haven't found what you are looking for, feel free to open a [ticket](https://github.com/malnvenshorn/OctoPrint-FilamentManager/issues/new) and I'll try to help.
+If you have questions or encounter issues please take a look at the [Frequently Asked Questions](https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq) first. There might be already an answer. In case you haven't found what you are looking for, feel free to open a [ticket](https://github.com/malnvenshorn/OctoPrint-FilamentManager/issues/new) and I'll try to help. Since OctoPrint provides an own [community forum](https://discourse.octoprint.org/) questions and requests for help should be placed there.
 
 ## Features
 
-* Replacing filament volume with weight in sidebar
-* Software odometer to measure used filament
-* Warn if print exceeds remaining filament on spool
-* Assign temperature offset to spools
+* Software odometer to track amount of extruded filament
+* Warns you if the selected spool has not enugh filament left for the print job
 * Automatically pause print if filament runs out
-* Import & export of spool inventory
+* Apply temperature offsets assigned to spools
+* Import & export of your spool inventory
 * Support for PostgreSQL (>=9.5) as common database for multiple OctoPrint instances
 
 ## Setup
