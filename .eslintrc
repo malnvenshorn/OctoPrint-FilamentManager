@@ -10,3 +10,5 @@
       ignoreStrings: true,
       ignoreTemplateLiterals: true,
     }]
+"globals":
+    "$": false

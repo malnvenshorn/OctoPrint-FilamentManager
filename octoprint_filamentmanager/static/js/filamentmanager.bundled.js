@@ -75,7 +75,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog', '#plugin_filamentmanager_m600dialog'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -133,9 +133,9 @@ FilamentManager.prototype.core.callbacks = function octoprintCallbacks() {
             self.viewModels.spools.requestSpools();
             self.viewModels.selections.requestSelectedSpools();
         } else if (messageType === 'm600_command_started') {
-            self.viewModels.selections.m600_command_running(true);
+            self.viewModels.selections.showM600Dialog();
         } else if (messageType === 'm600_command_finished') {
-            self.viewModels.selections.m600_command_running(false);
+            self.viewModels.selections.hideM600Dialog();
         }
     };
 };
@@ -622,8 +622,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
 
     self.selectedSpools = ko.observableArray([]);
 
-    self.m600_command_running = ko.observable(false);
-
     // selected spool id for each tool
     self.tools = ko.observableArray([]);
     // set to false if querying selections to prevent triggering the change event again when setting selected spools
@@ -705,6 +703,16 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
             self.selectedSpools()[data.tool] = data.spool !== null ? data.spool : undefined;
             self.selectedSpools.valueHasMutated(); // notifies observers
         }
+    };
+
+    var m600Dialog = $('#plugin_filamentmanager_m600dialog');
+
+    self.showM600Dialog = function () {
+        m600Dialog.modal('show');
+    };
+
+    self.hideM600Dialog = function () {
+        m600Dialog.modal('hide');
     };
 };
 /* global FilamentManager ItemListHelper ko Utils $ PNotify gettext showConfirmationDialog */

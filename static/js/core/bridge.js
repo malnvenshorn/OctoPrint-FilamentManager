@@ -21,6 +21,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             '#settings_plugin_filamentmanager_configurationdialog',
             '#sidebar_plugin_filamentmanager_wrapper',
             '#plugin_filamentmanager_confirmationdialog',
+            '#plugin_filamentmanager_m600dialog',
         ],
 
         viewModel: function FilamentManagerViewModel(viewModels) {

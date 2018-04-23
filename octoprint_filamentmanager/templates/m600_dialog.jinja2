@@ -1,0 +1,21 @@
+<div id="plugin_filamentmanager_m600dialog" class="modal hide fade" aria-hidden="true">
+
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal">&times;</a>
+        <h3>{{ _('Gcode triggered filament change') }}</h3>
+    </div>
+
+    <div class="modal-body">
+            <p>{{ _("Select the new filament then resume the print with the controls of your printer.") }}</p>
+
+            <!-- ko foreach: viewModels.selections.tools -->
+            <div class="control-group">
+               <div class="controls form-inline">
+                   <label class="control-label">{{ _('Tool') }} <span data-bind="text: $index"></span></label>&nbsp;
+                   <select data-bind="enable:  $root.core.bridge.allViewModels.loginStateViewModel.isUser(), options: $root.viewModels.spools.allSpools.items, optionsText: function(item) { return item.name + ' ' + (item.weight - item.used).toFixed(0) + 'g - ' + item.profile.material + ' (' + item.profile.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.viewModels.selections.tools()[$index()], event: { change: function() { $root.viewModels.selections.updateSelectedSpool($index(), $root.viewModels.selections.tools()[$index()]()); } }"></select>
+               </div>
+            </div>
+            <!-- /ko -->
+    </div>
+
+</div>

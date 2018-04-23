@@ -7,8 +7,6 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
 
     self.selectedSpools = ko.observableArray([]);
 
-    self.m600_command_running = ko.observable(false);
-
     // selected spool id for each tool
     self.tools = ko.observableArray([]);
     // set to false if querying selections to prevent triggering the change event again when setting selected spools
@@ -89,5 +87,15 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
             self.selectedSpools()[data.tool] = (data.spool !== null ? data.spool : undefined);
             self.selectedSpools.valueHasMutated(); // notifies observers
         }
+    };
+
+    const m600Dialog = $('#plugin_filamentmanager_m600dialog');
+
+    self.showM600Dialog = () => {
+        m600Dialog.modal('show');
+    };
+
+    self.hideM600Dialog = () => {
+        m600Dialog.modal('hide');
     };
 };

@@ -217,6 +217,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             dict(type="generic", template="settings_configdialog.jinja2"),
             dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2"),
             dict(type="generic", template="spool_confirmation.jinja2"),
+            dict(type="generic", template="m600_dialog.jinja2"),
         ]
 
     # EventHandlerPlugin
@@ -224,6 +225,9 @@ class FilamentManagerPlugin(FilamentManagerApi,
     def on_event(self, event, payload):
         if event == Events.PRINTER_STATE_CHANGED:
             self.on_printer_state_changed(payload)
+        elif event == Events.CLIENT_OPENED:
+            if self.m600_command_running:
+                self.send_client_message("m600_command_started")
 
     def on_printer_state_changed(self, payload):
         if payload['state_id'] == "PRINTING":
