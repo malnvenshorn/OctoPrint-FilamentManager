@@ -1,0 +1,82 @@
+
+<div class="table-toolbar">
+
+    <span class="input-prepend">
+        <div class="btn-group">
+          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Name <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Name</a></li>
+            <li><a href="#">Material</a></li>
+            <li><a href="#">Vendor</a></li>
+          </ul>
+        </div>
+
+         <input type="text" class="input-medium" placeholder="Filter by name">
+    </span>
+
+    <span class="btn-group pull-right">
+        <button class="btn btn-default" title="Refresh"><span class="fa fa-refresh"></span></button>
+        <div class="btn-group">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}">10 <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="#">10</a></li>
+                <li><a href="#">25</a></li>
+                <li><a href="#">50</a></li>
+                <li><a href="#">{{ _("All") }}</a></li>
+            </ul>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="Data"><span class="fa fa-database"></span> <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+              <li><a href="#" data-bind="click: function() { viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
+              <li><a href="#" data-bind="enable: viewModels.profiles.allProfiles().length > 0, click: function() { viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
+            </ul>
+        </div>
+    </span>
+</div>
+
+<!-- inventory table -->
+
+<table class="table table-striped table-hover" data-toolbar="#inventory-toolbar">
+    <thead>
+        <tr>
+            <th class="tab_plugin_filamentmanager_spools_name">{{ _('Name') }} <span class="fa fa-angle-up"></span></th>
+            <th class="tab_plugin_filamentmanager_spools_material">{{ _('Material') }}</th>
+            <th class="tab_plugin_filamentmanager_spools_vendor">{{ _('Vendor') }}</th>
+            <th class="tab_plugin_filamentmanager_spools_remaining">{{ _('Remaining') }}</th>
+            <th class="tab_plugin_filamentmanager_spools_action">{{ _('') }}</th>
+        </tr>
+    </thead>
+    <tbody data-bind="foreach: viewModels.spools.allSpools.paginatedItems">
+        <tr>
+            <td class="tab_plugin_filamentmanager_spools_name" data-bind="text: name"></td>
+            <td class="tab_plugin_filamentmanager_spools_material" data-bind="text: profile.material"></td>
+            <td class="tab_plugin_filamentmanager_spools_vendor" data-bind="text: profile.vendor"></td>
+            <td class="tab_plugin_filamentmanager_spools_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
+            <td class="tab_plugin_filamentmanager_spools_action">
+                <div class="dropdown">
+                    <a href="#" class="fa fa-caret-down" title="{{ _('Action Menu') }}" data-toggle="dropdown"></a>
+                    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
+                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
+                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- pagination -->
+
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === 0}"><a href="#" data-bind="click: viewModels.spools.allSpools.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: viewModels.spools.allSpools.pages">
+        <li data-bind="css: { active: $data.number === $root.viewModels.spools.allSpools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.viewModels.spools.allSpools.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === viewModels.spools.allSpools.lastPage() || viewModels.spools.allSpools.lastPage() === -1}"><a href="#" data-bind="click: viewModels.spools.allSpools.nextPage">»</a></li>
+    </ul>
+</div>

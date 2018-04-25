@@ -72,3 +72,80 @@ table td.settings_plugin_filamentmanager_spools_action a {
 #sidebar_plugin_filamentmanager .accordion-inner {
     padding-bottom: 0px;
 }
+
+table td.tab_plugin_filamentmanager_spools_name,
+table th.tab_plugin_filamentmanager_spools_name {
+    width: 55%;
+    text-align: left;
+}
+
+table td.tab_plugin_filamentmanager_spools_material,
+table th.tab_plugin_filamentmanager_spools_material {
+    width: 80px;
+    text-align: left;
+}
+
+table td.tab_plugin_filamentmanager_spools_vendor,
+table th.tab_plugin_filamentmanager_spools_vendor {
+    width: 45%;
+    text-align: left;
+}
+
+table td.tab_plugin_filamentmanager_spools_remaining,
+table th.tab_plugin_filamentmanager_spools_remaining {
+    width: 100px;
+    text-align: right;
+}
+
+table td.tab_plugin_filamentmanager_spools_action,
+table th.tab_plugin_filamentmanager_spools_action {
+    width: 20px;
+    text-align: center;
+}
+
+table td.tab_plugin_filamentmanager_spools_action .dropdown {
+    width: 20px;
+    position: absolute;
+}
+
+table td.tab_plugin_filamentmanager_spools_action a {
+    color: #000;
+    text-decoration: none;
+}
+
+.table-responsive {
+  overflow-y: visible !important;
+}
+
+.table-toolbar {
+    margin-bottom: 10px;
+}
+
+.dropdown-menu {
+    text-align: left;
+}
+
+/* align fontawesome icons in dropdown menus */
+
+.dropdown-menu .fa {
+    width: 12px;
+    margin-right: 8px;
+}
+
+/* fix nestend button groups */
+
+.btn-group .btn + .btn,
+.btn-group .btn + .btn-group,
+.btn-group .btn-group + .btn,
+.btn-group .btn-group + .btn-group {
+  margin-left: -1px;
+}
+
+.btn-group > .btn-group:not(:first-child):not(:last-child) > .btn {
+  border-radius: 0;
+}
+
+.btn-group > .btn-group:last-child > .btn:first-child {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}

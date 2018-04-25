@@ -215,6 +215,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             dict(type="generic", template="settings_configdialog.jinja2"),
             dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2"),
             dict(type="generic", template="spool_confirmation.jinja2"),
+            dict(type="tab", template="tab_inventory.jinja2"),
         ]
 
     # EventHandlerPlugin
