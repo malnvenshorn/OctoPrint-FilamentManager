@@ -1,83 +1,137 @@
 <form class="form-horizontal">
+    <ul class="nav nav-pills">
+        <li class="active"><a href="#fm_settings_features" data-toggle="tab">{{ _("Features") }}</a></li>
+        <li><a href="#fm_settings_database" data-toggle="tab">{{ _("Database") }}</a></li>
+        <li><a href="#fm_settings_appearance" data-toggle="tab">{{ _("Appearance") }}</a></li>
+    </ul>
 
-    <div class="pull-right">
-        <button class="btn btn-small" title="{{ _('Plugin Configuration') }}" data-bind="click: function() { viewModels.config.showDialog(); }"><span class="icon-wrench"></span></button>
+    <div class="tab-content">
+        <div id="fm_settings_features" class="tab-pane active">
+            <fieldset>
+                <legend>{{ _('Select plugin features') }}</legend>
+                <!-- enable confirm spool selection -->
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: viewModels.config.config.confirmSpoolSelection">{{ _("Show dialog to confirm selected spools before starting/resuming the print job") }}
+                        </label>
+                    </div>
+                </div>
+                <!-- enable warning -->
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: viewModels.config.config.enableWarning">{{ _("Warn if print job exceeds remaining filament") }}
+                        </label>
+                    </div>
+                </div>
+                <!-- enable odometer -->
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: viewModels.config.config.enableOdometer">{{ _("Enable software odometer to measure used filament") }}
+                        </label>
+                    </div>
+                </div>
+                <!-- enable auto pause -->
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: viewModels.config.config.autoPause, enable: viewModels.config.config.enableOdometer">{{ _("Pause print if filament runs out") }}
+                        </label>
+                    </div>
+                </div>
+                <!-- pause threshold -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Pause threshold') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="1" min="0" class="input-mini text-right" data-bind="value: viewModels.config.config.pauseThreshold, enable: viewModels.config.config.enableOdometer() && viewModels.config.config.autoPause()">
+                            <span class="add-on">mm</span>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <div id="fm_settings_database" class="tab-pane">
+            <fieldset>
+                <legend>{{ _("Configure database") }}</legend>
+                <!-- use external database -->
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: viewModels.config.config.database.useExternal">{{ _("Use external database") }}
+                        </label>
+                    </div>
+                </div>
+                <!-- uri -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('URI') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.uri, enable: viewModels.config.config.database.useExternal">
+                    </div>
+                </div>
+                <!-- database -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Database') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.name, enable: viewModels.config.config.database.useExternal">
+                    </div>
+                </div>
+                <!-- username -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Username') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: viewModels.config.config.database.user, enable: viewModels.config.config.database.useExternal">
+                    </div>
+                </div>
+                <!-- password -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Password') }}</label>
+                    <div class="controls">
+                        <input type="password" class="input-block-level" data-bind="value: viewModels.config.config.database.password, enable: viewModels.config.config.database.useExternal">
+                    </div>
+                </div>
+                <!-- connection test -->
+                <div class="control-group">
+                    <button class="btn pull-right" data-bind="click: viewModels.config.connectionTest">{{ _("Test connection") }}</button>
+                </div>
+
+                <span>{{ _("Note: If you change these settings you must restart your OctoPrint instance for the changes to take affect.") }}</span>
+            </fieldset>
+
+            <fieldset>
+                <!-- import & export -->
+                <legend>{{ _("Import & Export") }} <i class="fa fa-spinner" data-bind="visible: viewModels.import.importInProgress, css: {'fa-spin': viewModels.import.importInProgress}"></i></legend>
+                <form class="form-inline">
+                    <div class="control-group" data-bind="css: {error: viewModels.import.invalidArchive}">
+                        <div class="input-prepend input-append">
+                            <span class="btn fileinput-button">
+                                <span>{{ _("Browse...") }}</span>
+                                <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
+                            </span>
+                            <input type="text" class="input-large text-center" data-bind="value: viewModels.import.importFilename" readonly></span>
+                            <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: viewModels.import.enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
+                        </div>
+                        <a class="btn pull-right" data-bind="attr: {href: '{{ url_for('plugin.filamentmanager.export_data', apikey='') }}' + UI_API_KEY}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
+                    </div>
+                    <div class="help-block" data-bind="visible: viewModels.import.invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
+                </form>
+            </fieldset>
+        </div>
+
+        <div id="fm_settings_appearance" class="tab-pane">
+            <fieldset>
+                <legend>{{ _("Customize appearance") }}</legend>
+                <!-- currency symbol -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Currency symbol') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-mini text-center" data-bind="value: viewModels.config.config.currencySymbol">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
     </div>
-
-    <h3>{{ _("Filament Spools") }} <i class="fa fa-spinner" data-bind="visible: viewModels.spools.requestInProgress(), css: {'fa-spin': viewModels.spools.requestInProgress()}"></i></h3>
-
-    <div class="settings_plugin_filamentmanager_spools_header">
-
-        <!-- items per page -->
-
-        <span class="input-prepend" title="{{ _('Items per page') }}">
-            <span class="add-on" style="height:19px; padding: 0px 4px;"><i class="icon-list" style="vertical-align:initial;font-size:0.95em"></i></span>
-            <input type="number" min="0" max="99" step="1" class="input-mini input-nospin" data-bind="value: viewModels.spools.pageSize">
-        </span>
-
-        <!-- sorting -->
-
-        <span class="pull-right">
-            <small>
-                {{ _("Sort by") }}:
-                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('name'); }">{{ _("Name (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('material'); }">{{ _("Material (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('vendor'); }">{{ _("Vendor (ascending)") }}</a> |
-                <a href="#" data-bind="click: function() { viewModels.spools.allSpools.changeSorting('remaining'); }">{{ _("Remaining (descending)") }}</a>
-            </small>
-        </span>
-    </div>
-
-    <!-- table -->
-
-    <table class="table table-striped table-hover table-condensed table-hover">
-    <thead>
-        <tr>
-            <th class="settings_plugin_filamentmanager_spools_name">{{ _('Name') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_material">{{ _('Material') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_vendor">{{ _('Vendor') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_weight">{{ _('Weight') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_remaining">{{ _('Remaining') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_used">{{ _('Used') }}</th>
-            <th class="settings_plugin_filamentmanager_spools_action">{{ _('Action') }}</th>
-        </tr>
-    </thead>
-    <tbody data-bind="foreach: viewModels.spools.allSpools.paginatedItems">
-        <tr>
-            <td class="settings_plugin_filamentmanager_spools_name" data-bind="text: name"></td>
-            <td class="settings_plugin_filamentmanager_spools_material" data-bind="text: profile.material"></td>
-            <td class="settings_plugin_filamentmanager_spools_vendor" data-bind="text: profile.vendor"></td>
-            <td class="settings_plugin_filamentmanager_spools_weight"><span data-bind="text: weight"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
-            <td class="settings_plugin_filamentmanager_spools_used"><span data-bind="text: (used * 100 / weight).toFixed(0)"></span>%</td>
-            <td class="settings_plugin_filamentmanager_spools_action">
-                <a href="#" class="icon-pencil" title="{{ _('Edit Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"></a> |
-                <a href="#" class="fa fa-clone" title="{{ _('Duplicate Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"></a> |
-                <a href="#" class="icon-trash" title="{{ _('Delete Spool') }}" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"></a>
-            </td>
-        </tr>
-    </tbody>
-    </table>
-
-    <!-- pagination -->
-
-    <div class="pagination pagination-mini pagination-centered">
-        <ul>
-            <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === 0}"><a href="#" data-bind="click: viewModels.spools.allSpools.prevPage">«</a></li>
-        </ul>
-        <ul data-bind="foreach: viewModels.spools.allSpools.pages">
-            <li data-bind="css: { active: $data.number === $root.viewModels.spools.allSpools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.viewModels.spools.allSpools.changePage($data.number); }"></a></li>
-        </ul>
-        <ul>
-            <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === viewModels.spools.allSpools.lastPage() || viewModels.spools.allSpools.lastPage() === -1}"><a href="#" data-bind="click: viewModels.spools.allSpools.nextPage">»</a></li>
-        </ul>
-    </div>
-
-    <!-- buttons -->
-
-    <div class="pull-right">
-        <button class="btn" data-bind="click: function() { viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</button>
-        <button class="btn" data-bind="enable: viewModels.profiles.allProfiles().length > 0, click: function() { viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</button>
-    </div>
-
 </form>

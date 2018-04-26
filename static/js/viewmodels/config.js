@@ -5,17 +5,6 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     const api = this.core.client;
     const { settingsViewModel } = this.core.bridge.allViewModels;
 
-    const dialog = $('#settings_plugin_filamentmanager_configurationdialog');
-
-    self.showDialog = function showConfigurationDialog() {
-        self.loadData();
-        dialog.modal('show');
-    };
-
-    self.hideDialog = function hideConfigurationDialog() {
-        dialog.modal('hide');
-    };
-
     self.config = ko.mapping.fromJS({});
 
     self.saveData = function savePluginConfiguration(viewModel, event) {

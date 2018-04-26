@@ -75,7 +75,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog', '#tab_plugin_filamentmanager'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog', '#tab_plugin_filamentmanager'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -230,17 +230,6 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
-
-    var dialog = $('#settings_plugin_filamentmanager_configurationdialog');
-
-    self.showDialog = function showConfigurationDialog() {
-        self.loadData();
-        dialog.modal('show');
-    };
-
-    self.hideDialog = function hideConfigurationDialog() {
-        dialog.modal('hide');
-    };
 
     self.config = ko.mapping.fromJS({});
 
