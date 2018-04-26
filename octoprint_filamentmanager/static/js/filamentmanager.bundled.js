@@ -780,7 +780,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         $('#tab_plugin_filamentmanager table th span').each(function (index, element) {
             $(element).removeClass('fa-angle-up fa-angle-down');
         });
-        $('#tab_plugin_filamentmanager table th.tab_plugin_filamentmanager_spools_' + column + ' span').addClass(icon);
+        $('#tab_plugin_filamentmanager table th.fm_inventory_table_column_' + column + ' span').addClass(icon);
     };
 
     self.pageSizePresents = [{ name: '10', value: 10 }, { name: '25', value: 25 }, { name: '50', value: 50 }, { name: gettext('All'), value: 0 }];

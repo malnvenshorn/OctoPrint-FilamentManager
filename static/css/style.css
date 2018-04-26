@@ -73,46 +73,46 @@ table td.settings_plugin_filamentmanager_spools_action a {
     padding-bottom: 0px;
 }
 
-#tab_plugin_filamentmanager table th:not(.tab_plugin_filamentmanager_spools_action) {
+#tab_plugin_filamentmanager table th:not(.fm_inventory_table_column_action) {
     cursor: pointer;
 }
 
-table td.tab_plugin_filamentmanager_spools_name,
-table th.tab_plugin_filamentmanager_spools_name {
+table td.fm_inventory_table_column_name,
+table th.fm_inventory_table_column_name {
     width: 55%;
     text-align: left;
 }
 
-table td.tab_plugin_filamentmanager_spools_material,
-table th.tab_plugin_filamentmanager_spools_material {
+table td.fm_inventory_table_column_material,
+table th.fm_inventory_table_column_material {
     width: 80px;
     text-align: left;
 }
 
-table td.tab_plugin_filamentmanager_spools_vendor,
-table th.tab_plugin_filamentmanager_spools_vendor {
+table td.fm_inventory_table_column_vendor,
+table th.fm_inventory_table_column_vendor {
     width: 45%;
     text-align: left;
 }
 
-table td.tab_plugin_filamentmanager_spools_remaining,
-table th.tab_plugin_filamentmanager_spools_remaining {
+table td.fm_inventory_table_column_remaining,
+table th.fm_inventory_table_column_remaining {
     width: 100px;
     text-align: right;
 }
 
-table td.tab_plugin_filamentmanager_spools_action,
-table th.tab_plugin_filamentmanager_spools_action {
+table td.fm_inventory_table_column_action,
+table th.fm_inventory_table_column_action {
     width: 20px;
     text-align: center;
 }
 
-table td.tab_plugin_filamentmanager_spools_action .dropdown {
+table td.fm_inventory_table_column_action .dropdown {
     width: 20px;
     position: absolute;
 }
 
-table td.tab_plugin_filamentmanager_spools_action a {
+table td.fm_inventory_table_column_action a {
     color: #000;
     text-decoration: none;
 }
