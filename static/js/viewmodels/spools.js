@@ -4,8 +4,6 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     const self = this.viewModels.spools;
     const api = this.core.client;
 
-    const profilesViewModel = this.viewModels.profiles;
-
     self.allSpools = new ItemListHelper(
         'filamentSpools',
         {
@@ -105,7 +103,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             used: 0,
             temp_offset: 0,
             profile: {
-                id: profilesViewModel.allProfiles().length > 0 ? profilesViewModel.allProfiles()[0].id : undefined,
+                id: undefined,
             },
         };
     };

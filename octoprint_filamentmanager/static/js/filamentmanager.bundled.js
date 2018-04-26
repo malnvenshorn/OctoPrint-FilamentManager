@@ -696,8 +696,6 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
-    var profilesViewModel = this.viewModels.profiles;
-
     self.allSpools = new ItemListHelper('filamentSpools', {
         nameAsc: function nameAsc(a, b) {
             // sorts ascending
@@ -788,7 +786,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             used: 0,
             temp_offset: 0,
             profile: {
-                id: profilesViewModel.allProfiles().length > 0 ? profilesViewModel.allProfiles()[0].id : undefined
+                id: undefined
             }
         };
     };
