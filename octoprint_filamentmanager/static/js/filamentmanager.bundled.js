@@ -738,14 +738,12 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         }
     }, {}, 'name', [], [], 10);
 
-    self.pageSize = ko.pureComputed({
-        read: function read() {
-            return self.allSpools.pageSize();
-        },
-        write: function write(value) {
-            self.allSpools.pageSize(Utils.validInt(value, self.allSpools.pageSize()));
-        }
-    });
+    self.pageSizePresents = [{ name: '10', value: 10 }, { name: '25', value: 25 }, { name: '50', value: 50 }, { name: gettext('All'), value: 0 }];
+
+    self.setPageSize = function (pageSizePresent) {
+        self.allSpools.pageSize(pageSizePresent.value);
+        $('#fm_inventory_page_size').text(pageSizePresent.name);
+    };
 
     self.cleanSpool = function getDefaultValuesForNewSpool() {
         return {

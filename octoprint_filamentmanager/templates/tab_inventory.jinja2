@@ -17,12 +17,9 @@
     <span class="btn-group pull-right">
         <button class="btn btn-default" title="Refresh"><span class="fa fa-refresh"></span></button>
         <div class="btn-group">
-            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}">10 <span class="caret"></span></button>
-            <ul class="dropdown-menu">
-                <li><a href="#">10</a></li>
-                <li><a href="#">25</a></li>
-                <li><a href="#">50</a></li>
-                <li><a href="#">{{ _("All") }}</a></li>
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span id="fm_inventory_page_size">10</span> <span class="caret"></span></button>
+            <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.pageSizePresents">
+                <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.setPageSize($data); }"></a></li>
             </ul>
         </div>
         <div class="btn-group">
