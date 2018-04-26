@@ -75,7 +75,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog', '#tab_plugin_filamentmanager'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#tab_plugin_filamentmanager', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -289,8 +289,8 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     var selections = this.viewModels.selections;
 
 
-    var dialog = $('#plugin_filamentmanager_confirmationdialog');
-    var button = $('#plugin_filamentmanager_confirmationdialog_print');
+    var dialog = $('#fm_dialog_confirmation');
+    var button = $('#fm_dialog_confirmation_print');
 
     self.selections = ko.observableArray([]);
 
@@ -501,7 +501,7 @@ FilamentManager.prototype.viewModels.profiles = function profilesViewModel() {
         };
     };
 
-    var dialog = $('#settings_plugin_filamentmanager_profiledialog');
+    var dialog = $('#fm_dialog_profile');
 
     self.showProfileDialog = function showProfileDialog() {
         self.fromProfileData();
@@ -839,7 +839,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         };
     };
 
-    var dialog = $('#settings_plugin_filamentmanager_spooldialog');
+    var dialog = $('#fm_dialog_spool');
 
     self.showSpoolDialog = function showSpoolDialog(data) {
         self.fromSpoolData(data);

@@ -1,4 +1,4 @@
-<div id="settings_plugin_filamentmanager_profiledialog" class="modal hide fade">
+<div id="fm_dialog_profile" class="modal hide fade">
 
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
@@ -9,7 +9,7 @@
 
         <!-- profile selection -->
 
-        <div class="controls settings_plugin_filamentmanager_profiledialog_select">
+        <div class="controls fm_dialog_profile_select">
             <select data-bind="options: viewModels.profiles.allProfiles, optionsText: function(item) { return item.material + ' (' + item.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- New Profile ---') }}', value: viewModels.profiles.loadedProfile.id"></select>
             <button class="btn btn-small btn-success" title="{{ _('New') }}" data-bind="click: function() { viewModels.profiles.fromProfileData(); }"><span class="icon-plus"></span></button>
             <button class="btn btn-small btn-danger" title="{{ _('Delete') }}" data-bind="disable: viewModels.profiles.loadedProfile.isNew() || viewModels.profiles.requestInProgress(), click: function() { viewModels.profiles.removeProfile(viewModels.profiles.toProfileData()); }"><span class="icon-minus"></span></button>

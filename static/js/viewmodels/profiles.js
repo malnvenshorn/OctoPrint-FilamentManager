@@ -68,7 +68,7 @@ FilamentManager.prototype.viewModels.profiles = function profilesViewModel() {
         };
     };
 
-    const dialog = $('#settings_plugin_filamentmanager_profiledialog');
+    const dialog = $('#fm_dialog_profile');
 
     self.showProfileDialog = function showProfileDialog() {
         self.fromProfileData();

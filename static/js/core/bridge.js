@@ -16,11 +16,11 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         BINDINGS: [
             '#settings_plugin_filamentmanager',
-            '#settings_plugin_filamentmanager_profiledialog',
-            '#settings_plugin_filamentmanager_spooldialog',
             '#sidebar_plugin_filamentmanager_wrapper',
-            '#plugin_filamentmanager_confirmationdialog',
             '#tab_plugin_filamentmanager',
+            '#fm_dialog_profile',
+            '#fm_dialog_spool',
+            '#fm_dialog_confirmation',
         ],
 
         viewModel: function FilamentManagerViewModel(viewModels) {

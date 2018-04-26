@@ -210,10 +210,10 @@ class FilamentManagerPlugin(FilamentManagerApi,
     def get_template_configs(self):
         return [
             dict(type="settings", template="settings.jinja2"),
-            dict(type="generic", template="settings_profiledialog.jinja2"),
-            dict(type="generic", template="settings_spooldialog.jinja2"),
+            dict(type="generic", template="dialog_profile.jinja2"),
+            dict(type="generic", template="dialog_spool.jinja2"),
             dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2"),
-            dict(type="generic", template="spool_confirmation.jinja2"),
+            dict(type="generic", template="dialog_confirmation.jinja2"),
             dict(type="tab", template="tab_inventory.jinja2"),
         ]
 

@@ -152,7 +152,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         };
     };
 
-    const dialog = $('#settings_plugin_filamentmanager_spooldialog');
+    const dialog = $('#fm_dialog_spool');
 
     self.showSpoolDialog = function showSpoolDialog(data) {
         self.fromSpoolData(data);

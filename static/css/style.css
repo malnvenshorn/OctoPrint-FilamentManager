@@ -1,66 +1,8 @@
-.settings_plugin_filamentmanager_spools_header {
-    margin-bottom: 10px;
-}
-
-.settings_plugin_filamentmanager_spools_header input[type=number] {
-    width: 14px;
-    height: 11px;
-    font-size: 12px;
-    text-align: center;
-}
-
-table td.settings_plugin_filamentmanager_spools_name,
-table th.settings_plugin_filamentmanager_spools_name {
-    width: 20%;
-    text-align: left;
-}
-
-table td.settings_plugin_filamentmanager_spools_material,
-table th.settings_plugin_filamentmanager_spools_material {
-    width: 15%;
-    text-align: left;
-}
-
-table td.settings_plugin_filamentmanager_spools_vendor,
-table th.settings_plugin_filamentmanager_spools_vendor {
-    width: 20%;
-    text-align: left;
-}
-
-table td.settings_plugin_filamentmanager_spools_weight,
-table th.settings_plugin_filamentmanager_spools_weight {
-    width: 15%;
-    text-align: right;
-}
-
-table td.settings_plugin_filamentmanager_spools_remaining,
-table th.settings_plugin_filamentmanager_spools_remaining {
-    width: 15%;
-    text-align: right;
-}
-
-table td.settings_plugin_filamentmanager_spools_used,
-table th.settings_plugin_filamentmanager_spools_used {
-    width: 15%;
-    text-align: right;
-}
-
-table td.settings_plugin_filamentmanager_spools_action,
-table th.settings_plugin_filamentmanager_spools_action {
-    width: 70px;
-    text-align: center;
-}
-
-table td.settings_plugin_filamentmanager_spools_action a {
-    color: #000;
-    text-decoration: none;
-}
-
-.settings_plugin_filamentmanager_profiledialog_select {
+.fm_dialog_profile_select {
     margin-bottom: 6px;
 }
 
-.settings_plugin_filamentmanager_profiledialog_select button.btn-small {
+.fm_dialog_profile_select button.btn-small {
     margin-bottom: 10px;
 }
 
