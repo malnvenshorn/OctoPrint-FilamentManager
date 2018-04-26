@@ -73,6 +73,10 @@ table td.settings_plugin_filamentmanager_spools_action a {
     padding-bottom: 0px;
 }
 
+#tab_plugin_filamentmanager table th:not(.tab_plugin_filamentmanager_spools_action) {
+    cursor: pointer;
+}
+
 table td.tab_plugin_filamentmanager_spools_name,
 table th.tab_plugin_filamentmanager_spools_name {
     width: 55%;
