@@ -7,43 +7,43 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     self.allSpools = new ItemListHelper(
         'filamentSpools',
         {
-            nameAsc(a, b) {
+            name_asc(a, b) {
                 // sorts ascending
                 if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
                 if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            nameDesc(a, b) {
+            name_desc(a, b) {
                 // sorts descending
                 if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return -1;
                 if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            materialAsc(a, b) {
+            material_asc(a, b) {
                 // sorts ascending
                 if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
                 if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            materialDesc(a, b) {
+            material_desc(a, b) {
                 // sorts descending
                 if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return -1;
                 if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            vendorAsc(a, b) {
+            vendor_asc(a, b) {
                 // sorts ascending
                 if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
                 if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            vendorDesc(a, b) {
+            vendor_desc(a, b) {
                 // sorts descending
                 if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return -1;
                 if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return 1;
                 return 0;
             },
-            remainingAsc(a, b) {
+            remaining_asc(a, b) {
                 // sorts ascending
                 const ra = parseFloat(a.weight) - parseFloat(a.used);
                 const rb = parseFloat(b.weight) - parseFloat(b.used);
@@ -51,7 +51,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
                 if (ra > rb) return 1;
                 return 0;
             },
-            remainingDesc(a, b) {
+            remaining_desc(a, b) {
                 // sorts descending
                 const ra = parseFloat(a.weight) - parseFloat(a.used);
                 const rb = parseFloat(b.weight) - parseFloat(b.used);
@@ -60,27 +60,32 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
                 return 0;
             },
         },
-        {}, 'nameAsc', [], [], 10,
+        {}, 'name_asc', [], [], 10,
     );
 
     self.toggleSortForColumn = function toggleSortForColumn(column) {
-        if (self.allSpools.currentSorting() === `${column}Asc`) {
-            // current sorting for column is ascending => change to descending
-            self.allSpools.changeSorting(`${column}Desc`);
-            self.setSortIndicatorForColumn(column, 'fa-angle-down');
+        if (self.allSpools.currentSorting() === `${column}_asc`) {
+            self.allSpools.changeSorting(`${column}_desc`);
         } else {
-            // otherwise set ascending sorting for column
-            self.allSpools.changeSorting(`${column}Asc`);
-            self.setSortIndicatorForColumn(column, 'fa-angle-up');
+            self.allSpools.changeSorting(`${column}_asc`);
         }
     };
 
-    self.setSortIndicatorForColumn = function setSortIndicatorForColumn(column, icon) {
+    self.setSortIndicatorForColumn = function setSortIndicatorForColumn(column, order) {
+        const icons = ['fa-angle-up', 'fa-angle-down'];
+
         $('#tab_plugin_filamentmanager table th span').each((index, element) => {
-            $(element).removeClass('fa-angle-up fa-angle-down');
+            $(element).removeClass(icons.join(' '));
         });
-        $(`#tab_plugin_filamentmanager table th.fm_inventory_table_column_${column} span`).addClass(icon);
+
+        $(`#tab_plugin_filamentmanager table th.fm_inventory_table_column_${column} span`)
+            .addClass(order === 'asc' ? icons[0] : icons[1]);
     };
+
+    Utils.subscribeAndCall(self.allSpools.currentSorting, (sorting) => {
+        const [column, order] = sorting.split('_', 2);
+        self.setSortIndicatorForColumn(column, order);
+    });
 
     self.pageSizePresents = [
         { name: '10', value: 10 },
