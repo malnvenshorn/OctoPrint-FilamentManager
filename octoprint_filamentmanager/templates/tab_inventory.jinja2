@@ -15,7 +15,7 @@
     </span>
 
     <span class="btn-group pull-right">
-        <button class="btn btn-default" title="Refresh"><span class="fa fa-refresh"></span></button>
+        <button class="btn btn-default" title="Refresh" data-bind="click: function() { $root.viewModels.spools.requestSpools() }"><span class="fa fa-refresh" data-bind="css: { 'fa-spin': $root.viewModels.spools.requestInProgress() }"></span></button>
         <div class="btn-group">
             <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span id="fm_inventory_page_size">10</span> <span class="caret"></span></button>
             <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.pageSizePresents">
