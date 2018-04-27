@@ -711,6 +711,47 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
+    self.availableFilters = [{
+        name: gettext('Name'),
+        text: gettext('Filter by name'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.name === value;
+            };
+        }
+    }, {
+        name: gettext('Material'),
+        text: gettext('Filter by material'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.profile.material === value;
+            };
+        }
+    }, {
+        name: gettext('Vendor'),
+        text: gettext('Filter by vendor'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.profile.vendor === value;
+            };
+        }
+    }];
+
+    self.currentFilter = ko.observable(0);
+
+    self.applyFilter = function (data, event) {
+        if (event.key !== 'Enter') return;
+
+        var value = $(event.target).val();
+
+        if (value) {
+            var filter = self.availableFilters[self.currentFilter()].filter(value);
+            self.allSpools.changeSearchFunction(filter);
+        } else {
+            self.allSpools.resetSearch();
+        }
+    };
+
     self.allSpools = new ItemListHelper('filamentSpools', {
         name_asc: function name_asc(a, b) {
             // sorts ascending

@@ -4,6 +4,39 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     const self = this.viewModels.spools;
     const api = this.core.client;
 
+    self.availableFilters = [
+        {
+            name: gettext('Name'),
+            text: gettext('Filter by name'),
+            filter: value => item => item.name === value,
+        },
+        {
+            name: gettext('Material'),
+            text: gettext('Filter by material'),
+            filter: value => item => item.profile.material === value,
+        },
+        {
+            name: gettext('Vendor'),
+            text: gettext('Filter by vendor'),
+            filter: value => item => item.profile.vendor === value,
+        },
+    ];
+
+    self.currentFilter = ko.observable(0);
+
+    self.applyFilter = (data, event) => {
+        if (event.key !== 'Enter') return;
+
+        const value = $(event.target).val();
+
+        if (value) {
+            const filter = self.availableFilters[self.currentFilter()].filter(value);
+            self.allSpools.changeSearchFunction(filter);
+        } else {
+            self.allSpools.resetSearch();
+        }
+    };
+
     self.allSpools = new ItemListHelper(
         'filamentSpools',
         {

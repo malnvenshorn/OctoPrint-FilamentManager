@@ -3,15 +3,13 @@
 
     <span class="input-prepend">
         <div class="btn-group">
-          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Name <span class="caret"></span></a>
-          <ul class="dropdown-menu">
-            <li><a href="#">Name</a></li>
-            <li><a href="#">Material</a></li>
-            <li><a href="#">Vendor</a></li>
+          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span data-bind="text: $root.viewModels.spools.availableFilters[$root.viewModels.spools.currentFilter()].name"></span> <span class="caret"></span></a>
+          <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.availableFilters">
+            <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.currentFilter($index()); }"></a></li>
           </ul>
         </div>
 
-         <input type="text" class="input-medium" placeholder="Filter by name">
+         <input type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.availableFilters[$root.viewModels.spools.currentFilter()].text }">
     </span>
 
     <span class="btn-group pull-right">
