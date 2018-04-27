@@ -17,7 +17,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
         BINDINGS: [
             '#settings_plugin_filamentmanager',
             '#sidebar_plugin_filamentmanager_wrapper',
-            '#tab_plugin_filamentmanager',
+            '#fm_inventory_tab',
             '#fm_dialog_profile',
             '#fm_dialog_spool',
             '#fm_dialog_confirmation',

@@ -15,7 +15,7 @@
     padding-bottom: 0px;
 }
 
-#tab_plugin_filamentmanager table th:not(.fm_inventory_table_column_action) {
+#fm_inventory_tab table th:not(.fm_inventory_table_column_action) {
     cursor: pointer;
 }
 
@@ -78,7 +78,7 @@ table td.fm_inventory_table_column_action a {
     margin-right: 8px;
 }
 
-/* fix nestend button groups */
+/* fix nested button groups */
 
 .btn-group .btn + .btn,
 .btn-group .btn + .btn-group,

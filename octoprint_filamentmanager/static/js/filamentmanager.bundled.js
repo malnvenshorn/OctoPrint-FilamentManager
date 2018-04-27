@@ -16,6 +16,29 @@ FilamentManager.prototype = {
     viewModels: {},
     selectedSpools: undefined
 };
+ko.subscribable.fn.subscribeAndCall = function koExtensionSubscribeAndCall(callback, context, event) {
+    var subscribableValue = this();
+
+    this.subscribe(callback, context, event);
+
+    if (subscribableValue !== undefined) {
+        callback.call(context, subscribableValue);
+    }
+};
+
+// Helper function to create a new notification
+PNotify.notice = function (options) {
+    return new PNotify(Object.assign(options, { type: 'notice' }));
+};
+PNotify.info = function (options) {
+    return new PNotify(Object.assign(options, { type: 'info' }));
+};
+PNotify.success = function (options) {
+    return new PNotify(Object.assign(options, { type: 'success' }));
+};
+PNotify.error = function (options) {
+    return new PNotify(Object.assign(options, { type: 'error' }));
+};
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -61,19 +84,6 @@ var Utils = function () {
             var result = /(\d+)/.exec(name);
             return result === null ? 0 : result[1];
         }
-    }, {
-        key: "subscribeAndCall",
-        value: function subscribeAndCall(subscribable, callback, context, event) {
-            var value = subscribable();
-
-            var subscription = subscribable.subscribe(callback, context, event);
-
-            if (value !== undefined) {
-                callback(value);
-            }
-
-            return subscription;
-        }
     }]);
 
     return Utils;
@@ -88,7 +98,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#tab_plugin_filamentmanager', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#fm_inventory_tab', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -705,13 +715,13 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
 };
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-/* global FilamentManager ItemListHelper ko Utils $ PNotify gettext showConfirmationDialog */
-
 FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
-    self.availableFilters = [{
+    self.supportedPageSizes = [{ name: '10', size: 10 }, { name: '25', size: 25 }, { name: '50', size: 50 }, { name: gettext('All'), size: 0 }];
+
+    self.supportedFilters = [{
         name: gettext('Name'),
         text: gettext('Filter by name'),
         filter: function filter(value) {
@@ -737,22 +747,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         }
     }];
 
-    self.currentFilter = ko.observable(0);
-
-    self.applyFilter = function (data, event) {
-        if (event.key !== 'Enter') return;
-
-        var value = $(event.target).val();
-
-        if (value) {
-            var filter = self.availableFilters[self.currentFilter()].filter(value);
-            self.allSpools.changeSearchFunction(filter);
-        } else {
-            self.allSpools.resetSearch();
-        }
-    };
-
-    self.allSpools = new ItemListHelper('filamentSpools', {
+    self.supportedSorting = {
         name_asc: function name_asc(a, b) {
             // sorts ascending
             if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
@@ -805,43 +800,94 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             if (ra < rb) return 1;
             return 0;
         }
-    }, {}, 'name_asc', [], [], 10);
+    };
 
-    self.toggleSortForColumn = function toggleSortForColumn(column) {
-        if (self.allSpools.currentSorting() === column + '_asc') {
-            self.allSpools.changeSorting(column + '_desc');
+    self.currentPageSize = ko.observable(0);
+    self.currentFilter = ko.observable(0);
+
+    self.inventory = new ItemListHelper('fm_inventory_table', self.supportedSorting, {}, 'name_asc', [], [], self.supportedPageSizes[self.currentPageSize()].size);
+
+    /**
+     * This function will be invoked whenever a key was pressed inside the text field for the
+     * filter value. If the pressed key is recognized as 'Enter' the currently selected filter
+     * gets applied to the inventory with the value from the input field. If the input field is
+     * empty the filter will be reset (showing all entries again).
+     */
+    self.applyFilter = function (data, event) {
+        if (event.key !== 'Enter') return;
+
+        var value = $(event.target).val();
+
+        if (value) {
+            var filter = self.supportedFilters[self.currentFilter()].filter(value);
+            self.inventory.changeSearchFunction(filter);
         } else {
-            self.allSpools.changeSorting(column + '_asc');
+            self.inventory.resetSearch();
         }
     };
 
-    self.setSortIndicatorForColumn = function setSortIndicatorForColumn(column, order) {
+    /**
+     * Sort by the given column in ascending order. If the inventory is already sorted by that
+     * column the order gets toggled (ascending => descending, descending => ascending).
+     */
+    self.setSorting = function (column) {
+        if (self.inventory.currentSorting() === column + '_asc') {
+            self.inventory.changeSorting(column + '_desc');
+        } else {
+            self.inventory.changeSorting(column + '_asc');
+        }
+    };
+
+    /**
+     * Set the appropreate icon to the column header depending on the given sort order.
+     */
+    self.setSortIcon = function (column, order) {
         var icons = ['fa-angle-up', 'fa-angle-down'];
 
-        $('#tab_plugin_filamentmanager table th span').each(function (index, element) {
+        $('#fm_inventory_tab table th span.sort-icon').each(function (index, element) {
             $(element).removeClass(icons.join(' '));
         });
 
-        $('#tab_plugin_filamentmanager table th.fm_inventory_table_column_' + column + ' span').addClass(order === 'asc' ? icons[0] : icons[1]);
+        $('#fm_inventory_tab table th.fm_inventory_table_column_' + column + ' span.sort-icon').addClass(order === 'asc' ? icons[0] : icons[1]);
     };
 
-    Utils.subscribeAndCall(self.allSpools.currentSorting, function (sorting) {
+    /**
+     * React to each change of the sorting order to set the currect icon. subscribeAndCall() is
+     * used, because the ItemListHelper restors the last sorting when loading the website.
+     * Therefore the observable might be already set when we get here and we would miss that
+     * update otherwise.
+     */
+    self.inventory.currentSorting.subscribeAndCall(function (sorting) {
         var _sorting$split = sorting.split('_', 2),
             _sorting$split2 = _slicedToArray(_sorting$split, 2),
             column = _sorting$split2[0],
             order = _sorting$split2[1];
 
-        self.setSortIndicatorForColumn(column, order);
+        self.setSortIcon(column, order);
     });
 
-    self.pageSizePresents = [{ name: '10', value: 10 }, { name: '25', value: 25 }, { name: '50', value: 50 }, { name: gettext('All'), value: 0 }];
+    /**
+     * React to each change of the page size and applies to new size to the inventory.
+     */
+    self.currentPageSize.subscribe(function (pageSize) {
+        return self.inventory.pageSize(self.supportedPageSizes[pageSize].size);
+    });
 
-    self.setPageSize = function setPageSizeOfInventoryTable(pageSizePresent) {
-        self.allSpools.pageSize(pageSizePresent.value);
-        $('#fm_inventory_page_size').text(pageSizePresent.name);
+    // --------------------------------------------------------------------------------------------
+
+    self.showSpoolDialog = function (data) {
+        self.fromSpoolData(data);
+        $('#fm_dialog_spool').modal('show');
     };
 
-    self.cleanSpool = function getDefaultValuesForNewSpool() {
+    self.hideSpoolDialog = function () {
+        $('#fm_dialog_spool').modal('hide');
+    };
+
+    /**
+     * Get a new spool object with default values.
+     */
+    self.cleanSpool = function () {
         return {
             id: undefined,
             name: '',
@@ -855,6 +901,10 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         };
     };
 
+    /**
+     * Holds the data for the spool dialog. Every change in the form will be reflected by this
+     * object.
+     */
     self.loadedSpool = {
         id: ko.observable(),
         name: ko.observable(),
@@ -870,7 +920,11 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         return !self.loadedSpool.name();
     });
 
-    self.fromSpoolData = function setLoadedSpoolsFromJSObject() {
+    /**
+     * Updates the 'loadedSpool' object with the data from the given spool. If no spool object is
+     * passed as parameter it uses the default data provided by the 'cleanSpool()' function.
+     */
+    self.fromSpoolData = function () {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.cleanSpool();
 
         self.loadedSpool.isNew(data.id === undefined);
@@ -883,7 +937,11 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         self.loadedSpool.temp_offset(data.temp_offset);
     };
 
-    self.toSpoolData = function getLoadedProfileAsJSObject() {
+    /**
+     * Returns a spool object containing the data from the dialog provided by the 'cleanSpool()'
+     * function.
+     */
+    self.toSpoolData = function () {
         var defaultSpool = self.cleanSpool();
         var totalWeight = Utils.validFloat(self.loadedSpool.totalWeight(), defaultSpool.weight);
         var remaining = Math.min(Utils.validFloat(self.loadedSpool.remaining(), defaultSpool.weight), totalWeight);
@@ -901,38 +959,53 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         };
     };
 
-    var dialog = $('#fm_dialog_spool');
+    // --------------------------------------------------------------------------------------------
 
-    self.showSpoolDialog = function showSpoolDialog(data) {
-        self.fromSpoolData(data);
-        dialog.modal('show');
-    };
+    /**
+     * Initialized with 'true' to signalize that there was no data fetched yet. This is usefull to
+     * show the spinning icon while the page is loading, because the first data request will be
+     * send only after the page is fully loaded.
+     */
+    self.requestInProgress = ko.observable(true);
 
-    self.hideSpoolDialog = function hideSpoolDialog() {
-        dialog.modal('hide');
-    };
+    /**
+     * List of callbacks to be applied after a spool has been updated.
+     */
+    self.updateCallbacks = [];
 
-    self.requestInProgress = ko.observable(false);
+    /**
+     * Request all spools from the backend and update the inventory.
+     */
+    self.requestSpools = function () {
+        var force = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-    self.processSpools = function processRequestedSpools(data) {
-        self.allSpools.updateItems(data.spools);
-    };
-
-    self.requestSpools = function requestAllSpoolsFromBackend(force) {
         self.requestInProgress(true);
         return api.spool.list(force).done(function (response) {
-            self.processSpools(response);
+            self.inventory.updateItems(response.spools);
+        }).fail(function () {
+            PNotify.error({
+                title: gettext('Could not fetch infentory'),
+                text: gettext('There was an unexpected error while fetching the spool inventory, please consult the logs.'),
+                hide: false
+            });
+            self.inventory.updateItems([]);
         }).always(function () {
             self.requestInProgress(false);
         });
     };
 
+    /**
+     * Saves the passed spool to the database either by an add or update request.
+     */
     self.saveSpool = function saveSpoolToBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
         return self.loadedSpool.isNew() ? self.addSpool(data) : self.updateSpool(data);
     };
 
+    /**
+     * Add the passed spool to the database.
+     */
     self.addSpool = function addSpoolToBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
@@ -941,18 +1014,18 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             self.hideSpoolDialog();
             self.requestSpools();
         }).fail(function () {
-            new PNotify({ // eslint-disable-line no-new
+            PNotify.error({
                 title: gettext('Could not add spool'),
                 text: gettext('There was an unexpected error while saving the filament spool, please consult the logs.'),
-                type: 'error',
                 hide: false
             });
             self.requestInProgress(false);
         });
     };
 
-    self.updateCallbacks = [];
-
+    /**
+     * Updates the passed spool in the database.
+     */
     self.updateSpool = function updateSpoolInBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
@@ -964,26 +1037,28 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
                 callback();
             });
         }).fail(function () {
-            new PNotify({ // eslint-disable-line no-new
+            PNotify.error({
                 title: gettext('Could not update spool'),
                 text: gettext('There was an unexpected error while updating the filament spool, please consult the logs.'),
-                type: 'error',
                 hide: false
             });
             self.requestInProgress(false);
         });
     };
 
+    /**
+     * Removes the passed spool from the database. Opens a dialog where the action has to be
+     * confirmed.
+     */
     self.removeSpool = function removeSpoolFromBackend(data) {
         var perform = function performSpoolRemoval() {
             self.requestInProgress(true);
             api.spool.delete(data.id).done(function () {
                 self.requestSpools();
             }).fail(function () {
-                new PNotify({ // eslint-disable-line no-new
+                PNotify.error({
                     title: gettext('Could not delete spool'),
                     text: gettext('There was an unexpected error while removing the filament spool, please consult the logs.'),
-                    type: 'error',
                     hide: false
                 });
                 self.requestInProgress(false);
@@ -998,6 +1073,10 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         });
     };
 
+    /**
+     * Duplicates the passed spool in the database. The filament counter of this new spool will be
+     * reset.
+     */
     self.duplicateSpool = function duplicateAndAddSpoolToBackend(data) {
         var newData = data;
         newData.used = 0;

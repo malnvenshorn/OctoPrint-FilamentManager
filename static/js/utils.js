@@ -29,16 +29,4 @@ class Utils { // eslint-disable-line no-unused-vars
         const result = /(\d+)/.exec(name);
         return result === null ? 0 : result[1];
     }
-
-    static subscribeAndCall(subscribable, callback, context, event) {
-        const value = subscribable();
-
-        const subscription = subscribable.subscribe(callback, context, event);
-
-        if (value !== undefined) {
-            callback(value);
-        }
-
-        return subscription;
-    }
 }

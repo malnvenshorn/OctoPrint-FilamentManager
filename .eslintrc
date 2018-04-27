@@ -10,3 +10,14 @@
       ignoreStrings: true,
       ignoreTemplateLiterals: true,
     }]
+"globals":
+    "_": false
+    "$": false
+    "ko": false
+    "gettext": false
+    "showConfirmationDialog": false
+    "ItemListHelper": false
+    "PNotify": false
+    "Utils": false
+    "FilamentManager": false
+    "OCTOPRINT_VIEWMODELS": false

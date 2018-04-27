@@ -1,77 +1,89 @@
-
+<!-- table toolbar -->
 <div class="table-toolbar">
 
-    <span class="input-prepend">
-        <div class="btn-group">
-          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span data-bind="text: $root.viewModels.spools.availableFilters[$root.viewModels.spools.currentFilter()].name"></span> <span class="caret"></span></a>
-          <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.availableFilters">
-            <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.currentFilter($index()); }"></a></li>
-          </ul>
-        </div>
+  <!-- filter -->
+  <span class="input-prepend">
+    <div class="btn-group">
+      <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span data-bind="text: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].name"></span> <span class="caret"></span></a>
+      <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.supportedFilters">
+        <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.currentFilter($index()); }"></a></li>
+      </ul>
+    </div>
 
-         <input type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.availableFilters[$root.viewModels.spools.currentFilter()].text }">
-    </span>
+    <input type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].text }">
+  </span>
 
-    <span class="btn-group pull-right">
-        <button class="btn btn-default" title="Refresh" data-bind="click: function() { $root.viewModels.spools.requestSpools() }"><span class="fa fa-refresh" data-bind="css: { 'fa-spin': $root.viewModels.spools.requestInProgress() }"></span></button>
-        <div class="btn-group">
-            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span id="fm_inventory_page_size">10</span> <span class="caret"></span></button>
-            <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.pageSizePresents">
-                <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.setPageSize($data); }"></a></li>
-            </ul>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="Data"><span class="fa fa-database"></span> <span class="caret"></span></button>
-            <ul class="dropdown-menu">
-                <li><a href="#" data-bind="enable: viewModels.profiles.allProfiles().length > 0, click: function() { viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
-                <li><a href="#" data-bind="click: function() { viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
-            </ul>
-        </div>
-    </span>
+  <!-- action buttons -->
+  <span class="btn-group pull-right">
+
+    <!-- refresh inventory -->
+    <button class="btn btn-default" title="Refresh" data-bind="click: function() { $root.viewModels.spools.requestSpools() }"><span class="fa fa-refresh" data-bind="css: { 'fa-spin': $root.viewModels.spools.requestInProgress() }"></span></button>
+
+    <!-- select items per page -->
+    <div class="btn-group">
+      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span data-bind="text: $root.viewModels.spools.supportedPageSizes[$root.viewModels.spools.currentPageSize()].name"></span> <span class="caret"></span></button>
+      <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.supportedPageSizes">
+        <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.currentPageSize($index()); }"></a></li>
+      </ul>
+    </div>
+
+    <!-- open data dialogs -->
+    <div class="btn-group">
+      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="Data"><span class="fa fa-database"></span> <span class="caret"></span></button>
+      <ul class="dropdown-menu">
+        <li><a href="#" data-bind="enable: $root.viewModels.profiles.allProfiles().length > 0, click: function() { $root.viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
+      </ul>
+    </div>
+  </span>
 </div>
 
 <!-- inventory table -->
-
 <table class="table table-striped table-hover">
-    <thead>
-        <tr>
-            <th class="fm_inventory_table_column_name" data-bind="click: function() { $root.viewModels.spools.toggleSortForColumn('name'); }">{{ _('Name') }} <span class="fa fa-angle-up"></span></th>
-            <th class="fm_inventory_table_column_material" data-bind="click: function() { $root.viewModels.spools.toggleSortForColumn('material'); }">{{ _('Material') }} <span class="fa"></span></th>
-            <th class="fm_inventory_table_column_vendor" data-bind="click: function() { $root.viewModels.spools.toggleSortForColumn('vendor'); }">{{ _('Vendor') }} <span class="fa"></span></th>
-            <th class="fm_inventory_table_column_remaining" data-bind="click: function() { $root.viewModels.spools.toggleSortForColumn('remaining'); }">{{ _('Remaining') }} <span class="fa"></span></th>
-            <th class="fm_inventory_table_column_action"></th>
-        </tr>
-    </thead>
-    <tbody data-bind="foreach: viewModels.spools.allSpools.paginatedItems">
-        <tr>
-            <td class="fm_inventory_table_column_name" data-bind="text: name"></td>
-            <td class="fm_inventory_table_column_material" data-bind="text: profile.material"></td>
-            <td class="fm_inventory_table_column_vendor" data-bind="text: profile.vendor"></td>
-            <td class="fm_inventory_table_column_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
-            <td class="fm_inventory_table_column_action">
-                <div class="dropdown">
-                    <a href="#" class="fa fa-caret-down" title="{{ _('Action Menu') }}" data-toggle="dropdown"></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
-                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
-                          <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
-                    </ul>
-                </div>
-            </td>
-        </tr>
-    </tbody>
+  <thead>
+    <tr>
+      <th class="fm_inventory_table_column_name" data-bind="click: function() { $root.viewModels.spools.setSorting('name'); }">{{ _('Name') }} <span class="sort-icon fa fa-angle-up"></span></th>
+      <th class="fm_inventory_table_column_material" data-bind="click: function() { $root.viewModels.spools.setSorting('material'); }">{{ _('Material') }} <span class="sort-icon fa"></span></th>
+      <th class="fm_inventory_table_column_vendor" data-bind="click: function() { $root.viewModels.spools.setSorting('vendor'); }">{{ _('Vendor') }} <span class="sort-icon fa"></span></th>
+      <th class="fm_inventory_table_column_remaining" data-bind="click: function() { $root.viewModels.spools.setSorting('remaining'); }">{{ _('Remaining') }} <span class="sort-icon fa"></span></th>
+      <th class="fm_inventory_table_column_action"></th>
+    </tr>
+  </thead>
+  <tbody data-bind="foreach:$root.viewModels.spools.inventory.paginatedItems">
+    <tr>
+      <td class="fm_inventory_table_column_name" data-bind="text: name"></td>
+      <td class="fm_inventory_table_column_material" data-bind="text: profile.material"></td>
+      <td class="fm_inventory_table_column_vendor" data-bind="text: profile.vendor"></td>
+      <td class="fm_inventory_table_column_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
+      <td class="fm_inventory_table_column_action">
+        <div class="dropdown">
+          <a href="#" class="fa fa-caret-down" title="{{ _('Action Menu') }}" data-toggle="dropdown"></a>
+          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
+            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
+            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  </tbody>
 </table>
 
 <!-- pagination -->
-
 <div class="pagination pagination-mini pagination-centered">
-    <ul>
-        <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === 0}"><a href="#" data-bind="click: viewModels.spools.allSpools.prevPage">«</a></li>
-    </ul>
-    <ul data-bind="foreach: viewModels.spools.allSpools.pages">
-        <li data-bind="css: { active: $data.number === $root.viewModels.spools.allSpools.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.viewModels.spools.allSpools.changePage($data.number); }"></a></li>
-    </ul>
-    <ul>
-        <li data-bind="css: {disabled: viewModels.spools.allSpools.currentPage() === viewModels.spools.allSpools.lastPage() || viewModels.spools.allSpools.lastPage() === -1}"><a href="#" data-bind="click: viewModels.spools.allSpools.nextPage">»</a></li>
-    </ul>
+
+  <!-- go to previous page -->
+  <ul>
+    <li data-bind="css: {disabled:$root.viewModels.spools.inventory.currentPage() === 0}"><a href="#" data-bind="click:$root.viewModels.spools.inventory.prevPage">«</a></li>
+  </ul>
+
+  <!-- go to specific page -->
+  <ul data-bind="foreach:$root.viewModels.spools.inventory.pages">
+    <li data-bind="css: { active: $data.number === $root.viewModels.spools.inventory.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.viewModels.spools.inventory.changePage($data.number); }"></a></li>
+  </ul>
+
+  <!-- go to next page -->
+  <ul>
+    <li data-bind="css: {disabled:$root.viewModels.spools.inventory.currentPage() === $root.viewModels.spools.inventory.lastPage() ||$root.viewModels.spools.inventory.lastPage() === -1}"><a href="#" data-bind="click:$root.viewModels.spools.inventory.nextPage">»</a></li>
+  </ul>
 </div>
