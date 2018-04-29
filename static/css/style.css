@@ -15,6 +15,20 @@
     padding-bottom: 0px;
 }
 
+#sidebar_plugin_filamentmanager .controls {
+    display: flex;
+    flex-direction:row;
+    align-items: center;
+}
+
+#sidebar_plugin_filamentmanager .controls > label {
+    margin: 0;
+}
+
+#sidebar_plugin_filamentmanager .controls > select {
+    flex: 1;
+}
+
 #fm_inventory_tab table th:not(.fm_inventory_table_column_action) {
     cursor: pointer;
 }
