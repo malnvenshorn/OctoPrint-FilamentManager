@@ -109,3 +109,9 @@ table td.fm_inventory_table_column_action a {
   border-bottom-left-radius: 0;
   border-top-left-radius: 0;
 }
+
+/* fix disabled dropdown-menu items */
+
+.dropdown-menu > li.disabled {
+    pointer-events: none;
+}

@@ -31,8 +31,8 @@
     <div class="btn-group">
       <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="Data"><span class="fa fa-database"></span> <span class="caret"></span></button>
       <ul class="dropdown-menu">
-        <li><a href="#" data-bind="enable: $root.viewModels.profiles.allProfiles().length > 0, click: function() { $root.viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
+        <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() || $root.viewModels.profiles.allProfiles().length < 1 }"><a href="#" data-bind="click: function() { $root.viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
+        <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" data-bind="click: function() { $root.viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
       </ul>
     </div>
   </span>
@@ -60,15 +60,17 @@
         <div class="dropdown">
           <a href="#" class="fa fa-caret-down" title="{{ _('Action Menu') }}" data-toggle="dropdown"></a>
           <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-            <li class="dropdown-submenu pull-left">
+            <!-- select -->
+            <li class="dropdown-submenu pull-left" data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() || $root.core.bridge.allViewModels.printerStateViewModel.isPrinting() }">
               <a href="#"><span class="fa fa-power-off" data-toggle="dropdown"></span>{{ _('Activate') }}</a>
               <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" data-bind="foreach: $root.viewModels.selections.tools">
                 <li><a href="#" data-bind="click: function() { $root.viewModels.selections.updateSelectedSpool($index(), $parent.id); }">{{ _('Tool') }} <span data-bind="text: $index"></a></li>
               </ul>
             </li>
-            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
-            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
-            <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
+            <!-- modify -->
+            <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" tabindex="-1" data-bind="click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
+            <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" tabindex="-1" data-bind="click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
+            <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" tabindex="-1" data-bind="click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
           </ul>
         </div>
       </td>
