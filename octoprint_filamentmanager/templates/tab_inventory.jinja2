@@ -21,9 +21,9 @@
 
     <!-- select items per page -->
     <div class="btn-group">
-      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span data-bind="text: $root.viewModels.spools.supportedPageSizes[$root.viewModels.spools.currentPageSize()].name"></span> <span class="caret"></span></button>
+      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="{{ _('Items per page') }}"><span data-bind="text: $root.viewModels.spools.pageSizeText"></span> <span class="caret"></span></button>
       <ul class="dropdown-menu" data-bind="foreach: $root.viewModels.spools.supportedPageSizes">
-        <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.currentPageSize($index()); }"></a></li>
+        <li><a href="#" data-bind="text: name, click: function() { $root.viewModels.spools.inventory.pageSize(size); }"></a></li>
       </ul>
     </div>
 

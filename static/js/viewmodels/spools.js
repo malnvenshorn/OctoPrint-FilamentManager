@@ -82,17 +82,16 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         },
     };
 
-    self.currentPageSize = ko.observable(0);
     self.currentFilter = ko.observable(0);
 
-    self.inventory = new ItemListHelper(
+    self.inventory = new Utils.ItemListHelper(
         'fm_inventory_table',
         self.supportedSorting,
         {},
         'name_asc',
         [],
         [],
-        self.supportedPageSizes[self.currentPageSize()].size,
+        self.supportedPageSizes[0].size,
     );
 
     /**
@@ -152,9 +151,15 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     });
 
     /**
-     * React to each change of the page size and applies to new size to the inventory.
+     * React to each change of the page size and provides the matching button text.
      */
-    self.currentPageSize.subscribe(pageSize => self.inventory.pageSize(self.supportedPageSizes[pageSize].size));
+    self.pageSizeText = ko.pureComputed(() => {
+        const currentPageSize = self.supportedPageSizes.find(pageSize => pageSize.size === self.inventory.pageSize());
+        if (currentPageSize !== undefined) {
+            return currentPageSize.name;
+        }
+        return undefined;
+    });
 
     // --------------------------------------------------------------------------------------------
 
