@@ -17,7 +17,7 @@
   <span class="btn-group pull-right">
 
     <!-- refresh inventory -->
-    <button class="btn btn-default" title="Refresh" data-bind="click: function() { $root.viewModels.spools.requestSpools() }"><span class="fa fa-refresh" data-bind="css: { 'fa-spin': $root.viewModels.spools.requestInProgress() }"></span></button>
+    <button class="btn btn-default" title="Refresh" data-bind="click: function() { $root.viewModels.spools.requestSpools(true) }"><span class="fa fa-refresh" data-bind="css: { 'fa-spin': $root.viewModels.spools.requestInProgress() }"></span></button>
 
     <!-- select items per page -->
     <div class="btn-group">
