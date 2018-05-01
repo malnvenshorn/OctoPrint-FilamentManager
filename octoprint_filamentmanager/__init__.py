@@ -6,6 +6,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2017 Sven Lohrmann - Released under terms of the AGPLv3 License"
 
 from math import pi as PI
+from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
@@ -212,9 +213,10 @@ class FilamentManagerPlugin(FilamentManagerApi,
             dict(type="settings", template="settings.jinja2"),
             dict(type="generic", template="dialog_profile.jinja2"),
             dict(type="generic", template="dialog_spool.jinja2"),
-            dict(type="sidebar", icon="reel", template="sidebar.jinja2", template_header="sidebar_header.jinja2"),
+            dict(type="sidebar", name=gettext("Filament"), icon="reel", template="sidebar.jinja2",
+                 template_header="sidebar_header.jinja2"),
             dict(type="generic", template="dialog_confirmation.jinja2"),
-            dict(type="tab", template="tab_inventory.jinja2", div="fm_inventory_tab"),
+            dict(type="tab", name=gettext("Filament"), template="tab_inventory.jinja2", div="fm_inventory_tab"),
         ]
 
     # EventHandlerPlugin
