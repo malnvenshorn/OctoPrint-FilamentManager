@@ -49,16 +49,23 @@
       <th class="fm_inventory_table_column_action"></th>
     </tr>
   </thead>
-  <tbody data-bind="foreach:$root.viewModels.spools.inventory.paginatedItems">
+  <tbody data-bind="foreach: $root.viewModels.spools.inventory.paginatedItems">
     <tr>
       <td class="fm_inventory_table_column_name" data-bind="text: name"></td>
       <td class="fm_inventory_table_column_material" data-bind="text: profile.material"></td>
       <td class="fm_inventory_table_column_vendor" data-bind="text: profile.vendor"></td>
       <td class="fm_inventory_table_column_remaining"><span data-bind="text: (weight - used).toFixed(0)"></span>g</td>
+      <!-- item menu -->
       <td class="fm_inventory_table_column_action">
         <div class="dropdown">
           <a href="#" class="fa fa-caret-down" title="{{ _('Action Menu') }}" data-toggle="dropdown"></a>
           <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+            <li class="dropdown-submenu pull-left">
+              <a href="#"><span class="fa fa-power-off" data-toggle="dropdown"></span>{{ _('Activate') }}</a>
+              <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" data-bind="foreach: $root.viewModels.selections.tools">
+                <li><a href="#" data-bind="click: function() { $root.viewModels.selections.updateSelectedSpool($index(), $parent.id); }">{{ _('Tool') }} <span data-bind="text: $index"></a></li>
+              </ul>
+            </li>
             <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.showSpoolDialog($data); }"><span class="fa fa-pencil"></span>{{ _('Edit') }}</a></li>
             <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.removeSpool($data); }"><span class="fa fa-trash-o"></span>{{ _('Delete') }}</a></li>
             <li><a href="#" tabindex="-1" data-bind="enable: !$root.viewModels.spools.requestInProgress(), click: function() { $root.viewModels.spools.duplicateSpool($data); }"><span class="fa fa-clone"></span>{{ _('Duplicate') }}</a></li>
