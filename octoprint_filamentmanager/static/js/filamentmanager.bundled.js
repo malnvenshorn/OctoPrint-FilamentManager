@@ -50,7 +50,6 @@ var Utils = function () {
 
     _createClass(Utils, null, [{
         key: "validInt",
-        // eslint-disable-line no-unused-vars
         value: function validInt(value, def) {
             var v = Number.parseInt(value, 10);
             return Number.isNaN(v) ? def : v;
@@ -1322,6 +1321,18 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     self.updateCallbacks = [];
 
     /**
+     * Holds an array of all spools.
+     */
+    self.allSpools = ko.observableArray([]);
+
+    /**
+     * Automatically update the inventory on changes.
+     */
+    self.allSpools.subscribe(function (spools) {
+        return self.inventory.updateItems(spools);
+    });
+
+    /**
      * Request all spools from the backend and update the inventory.
      */
     self.requestSpools = function () {
@@ -1329,7 +1340,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
 
         self.requestInProgress(true);
         return api.spool.list(force).done(function (response) {
-            self.inventory.updateItems(response.spools);
+            self.allSpools(response.spools);
         }).fail(function () {
             PNotify.error({
                 title: gettext('Could not fetch infentory'),

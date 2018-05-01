@@ -1,4 +1,4 @@
-class Utils { // eslint-disable-line no-unused-vars
+class Utils {
     static validInt(value, def) {
         const v = Number.parseInt(value, 10);
         return Number.isNaN(v) ? def : v;

@@ -256,12 +256,22 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     self.updateCallbacks = [];
 
     /**
+     * Holds an array of all spools.
+     */
+    self.allSpools = ko.observableArray([]);
+
+    /**
+     * Automatically update the inventory on changes.
+     */
+    self.allSpools.subscribe(spools => self.inventory.updateItems(spools));
+
+    /**
      * Request all spools from the backend and update the inventory.
      */
     self.requestSpools = (force = false) => {
         self.requestInProgress(true);
         return api.spool.list(force)
-            .done((response) => { self.inventory.updateItems(response.spools); })
+            .done((response) => { self.allSpools(response.spools); })
             .fail(() => {
                 PNotify.error({
                     title: gettext('Could not fetch infentory'),
