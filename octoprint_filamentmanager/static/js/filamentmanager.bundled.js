@@ -1193,6 +1193,13 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     };
 
     /**
+     * React to each change of the filtered column and apply the filter to the new selected.
+     */
+    self.currentFilter.subscribe(function () {
+        self.applyFilter(null, { key: 'Enter', target: $('#fm_inventory_table_filter') });
+    });
+
+    /**
      * React to each change of the sorting order to set the currect icon. subscribeAndCall() is
      * used, because the ItemListHelper restors the last sorting when loading the website.
      * Therefore the observable might be already set when we get here and we would miss that

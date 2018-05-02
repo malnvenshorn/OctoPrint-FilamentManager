@@ -10,7 +10,7 @@
       </ul>
     </div>
 
-    <input type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].text }">
+    <input id="fm_inventory_table_filter" type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].text }">
   </span>
 
   <!-- action buttons -->
