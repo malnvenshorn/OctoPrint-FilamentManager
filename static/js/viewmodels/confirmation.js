@@ -5,8 +5,8 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     const { printerStateViewModel, settingsViewModel, filesViewModel } = this.core.bridge.allViewModels;
     const { selections } = this.viewModels;
 
-    const dialog = $('#plugin_filamentmanager_confirmationdialog');
-    const button = $('#plugin_filamentmanager_confirmationdialog_print');
+    const dialog = $('#fm_dialog_confirmation');
+    const button = $('#fm_dialog_confirmation_print');
 
     self.selections = ko.observableArray([]);
 

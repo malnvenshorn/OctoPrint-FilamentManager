@@ -16,6 +16,29 @@ FilamentManager.prototype = {
     viewModels: {},
     selectedSpools: undefined
 };
+ko.subscribable.fn.subscribeAndCall = function koExtensionSubscribeAndCall(callback, context, event) {
+    var subscribableValue = this();
+
+    this.subscribe(callback, context, event);
+
+    if (subscribableValue !== undefined) {
+        callback.call(context, subscribableValue);
+    }
+};
+
+// Helper function to create a new notification
+PNotify.notice = function (options) {
+    return new PNotify(Object.assign(options, { type: 'notice' }));
+};
+PNotify.info = function (options) {
+    return new PNotify(Object.assign(options, { type: 'info' }));
+};
+PNotify.success = function (options) {
+    return new PNotify(Object.assign(options, { type: 'success' }));
+};
+PNotify.error = function (options) {
+    return new PNotify(Object.assign(options, { type: 'error' }));
+};
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -27,7 +50,6 @@ var Utils = function () {
 
     _createClass(Utils, null, [{
         key: "validInt",
-        // eslint-disable-line no-unused-vars
         value: function validInt(value, def) {
             var v = Number.parseInt(value, 10);
             return Number.isNaN(v) ? def : v;
@@ -65,6 +87,349 @@ var Utils = function () {
 
     return Utils;
 }();
+
+/*
+ * Author: Gina Häußge <osd@foosel.net>
+ * Modified: Sven Lohrmann <malnvenshorn@gmail.com>
+ *
+ * - Save page size to local storage
+ */
+
+
+Utils.ItemListHelper = function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize) {
+    var self = this;
+
+    self.listType = listType;
+    self.supportedSorting = supportedSorting;
+    self.supportedFilters = supportedFilters;
+    self.defaultSorting = defaultSorting;
+    self.defaultFilters = defaultFilters;
+    self.exclusiveFilters = exclusiveFilters;
+    self.defaultPageSize = defaultPageSize;
+
+    self.searchFunction = undefined;
+
+    self.allItems = [];
+    self.allSize = ko.observable(0);
+
+    self.items = ko.observableArray([]);
+    self.pageSize = ko.observable(self.defaultPageSize);
+    self.currentPage = ko.observable(0);
+    self.currentSorting = ko.observable(self.defaultSorting);
+    self.currentFilters = ko.observableArray(self.defaultFilters);
+    self.selectedItem = ko.observable(undefined);
+
+    self.storageIds = {
+        "currentSorting": self.listType + "." + "currentSorting",
+        "currentFilters": self.listType + "." + "currentFilters",
+        "pageSize": self.listType + "." + "pageSize"
+    };
+
+    //~~ item handling
+
+    self.refresh = function () {
+        self._updateItems();
+    };
+
+    self.updateItems = function (items) {
+        self.allItems = items;
+        self.allSize(items.length);
+        self._updateItems();
+    };
+
+    self.selectItem = function (matcher) {
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                self.selectedItem(itemList[i]);
+                break;
+            }
+        }
+    };
+
+    self.selectNone = function () {
+        self.selectedItem(undefined);
+    };
+
+    self.isSelected = function (data) {
+        return self.selectedItem() == data;
+    };
+
+    self.isSelectedByMatcher = function (matcher) {
+        return matcher(self.selectedItem());
+    };
+
+    self.removeItem = function (matcher) {
+        var item = self.getItem(matcher, true);
+        if (item === undefined) {
+            return;
+        }
+
+        var index = self.allItems.indexOf(item);
+        if (index > -1) {
+            self.allItems.splice(index, 1);
+            self._updateItems();
+        }
+    };
+
+    //~~ pagination
+
+    self.paginatedItems = ko.dependentObservable(function () {
+        if (self.items() == undefined) {
+            return [];
+        } else if (self.pageSize() == 0) {
+            return self.items();
+        } else {
+            var from = Math.max(self.currentPage() * self.pageSize(), 0);
+            var to = Math.min(from + self.pageSize(), self.items().length);
+            return self.items().slice(from, to);
+        }
+    });
+    self.lastPage = ko.dependentObservable(function () {
+        return self.pageSize() == 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1;
+    });
+    self.pages = ko.dependentObservable(function () {
+        var pages = [];
+        if (self.pageSize() == 0) {
+            pages.push({ number: 0, text: 1 });
+        } else if (self.lastPage() < 7) {
+            for (var i = 0; i < self.lastPage() + 1; i++) {
+                pages.push({ number: i, text: i + 1 });
+            }
+        } else {
+            pages.push({ number: 0, text: 1 });
+            if (self.currentPage() < 5) {
+                for (var i = 1; i < 5; i++) {
+                    pages.push({ number: i, text: i + 1 });
+                }
+                pages.push({ number: -1, text: "…" });
+            } else if (self.currentPage() > self.lastPage() - 5) {
+                pages.push({ number: -1, text: "…" });
+                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
+                    pages.push({ number: i, text: i + 1 });
+                }
+            } else {
+                pages.push({ number: -1, text: "…" });
+                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+                    pages.push({ number: i, text: i + 1 });
+                }
+                pages.push({ number: -1, text: "…" });
+            }
+            pages.push({ number: self.lastPage(), text: self.lastPage() + 1 });
+        }
+        return pages;
+    });
+
+    self.switchToItem = function (matcher) {
+        var pos = -1;
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos > -1) {
+            var page = Math.floor(pos / self.pageSize());
+            self.changePage(page);
+        }
+    };
+
+    self.changePage = function (newPage) {
+        if (newPage < 0 || newPage > self.lastPage()) return;
+        self.currentPage(newPage);
+    };self.prevPage = function () {
+        if (self.currentPage() > 0) {
+            self.currentPage(self.currentPage() - 1);
+        }
+    };
+    self.nextPage = function () {
+        if (self.currentPage() < self.lastPage()) {
+            self.currentPage(self.currentPage() + 1);
+        }
+    };
+
+    self.getItem = function (matcher, all) {
+        var itemList;
+        if (all !== undefined && all === true) {
+            itemList = self.allItems;
+        } else {
+            itemList = self.items();
+        }
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                return itemList[i];
+            }
+        }
+
+        return undefined;
+    };
+
+    self.resetPage = function () {
+        if (self.currentPage() > self.lastPage()) {
+            self.currentPage(self.lastPage());
+        }
+    };
+
+    //~~ searching
+
+    self.changeSearchFunction = function (searchFunction) {
+        self.searchFunction = searchFunction;
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    self.resetSearch = function () {
+        self.changeSearchFunction(undefined);
+    };
+
+    //~~ sorting
+
+    self.changeSorting = function (sorting) {
+        if (!_.contains(_.keys(self.supportedSorting), sorting)) return;
+
+        self.currentSorting(sorting);
+        self._saveCurrentSortingToLocalStorage();
+
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    //~~ filtering
+
+    self.toggleFilter = function (filter) {
+        if (!_.contains(_.keys(self.supportedFilters), filter)) return;
+
+        if (_.contains(self.currentFilters(), filter)) {
+            self.removeFilter(filter);
+        } else {
+            self.addFilter(filter);
+        }
+    };
+
+    self.addFilter = function (filter) {
+        if (!_.contains(_.keys(self.supportedFilters), filter)) return;
+
+        for (var i = 0; i < self.exclusiveFilters.length; i++) {
+            if (_.contains(self.exclusiveFilters[i], filter)) {
+                for (var j = 0; j < self.exclusiveFilters[i].length; j++) {
+                    if (self.exclusiveFilters[i][j] == filter) continue;
+                    self.removeFilter(self.exclusiveFilters[i][j]);
+                }
+            }
+        }
+
+        var filters = self.currentFilters();
+        filters.push(filter);
+        self.currentFilters(filters);
+        self._saveCurrentFiltersToLocalStorage();
+
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    self.removeFilter = function (filter) {
+        if (!_.contains(_.keys(self.supportedFilters), filter)) return;
+
+        var filters = self.currentFilters();
+        filters = _.without(filters, filter);
+        self.currentFilters(filters);
+        self._saveCurrentFiltersToLocalStorage();
+
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    //~~ update for sorted and filtered view
+
+    self._updateItems = function () {
+        // determine comparator
+        var comparator = undefined;
+        var currentSorting = self.currentSorting();
+        if (typeof currentSorting !== 'undefined' && typeof self.supportedSorting[currentSorting] !== 'undefined') {
+            comparator = self.supportedSorting[currentSorting];
+        }
+
+        // work on all items
+        var result = self.allItems;
+
+        // filter if necessary
+        var filters = self.currentFilters();
+        _.each(filters, function (filter) {
+            if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined') result = _.filter(result, supportedFilters[filter]);
+        });
+
+        // search if necessary
+        if (typeof self.searchFunction !== 'undefined' && self.searchFunction) {
+            result = _.filter(result, self.searchFunction);
+        }
+
+        // sort if necessary
+        if (typeof comparator !== 'undefined') result.sort(comparator);
+
+        // set result list
+        self.items(result);
+    };
+
+    //~~ local storage
+
+    self._saveCurrentSortingToLocalStorage = function () {
+        if (self._initializeLocalStorage()) {
+            var currentSorting = self.currentSorting();
+            if (currentSorting !== undefined) localStorage[self.storageIds.currentSorting] = currentSorting;else localStorage[self.storageIds.currentSorting] = undefined;
+        }
+    };
+
+    self._loadCurrentSortingFromLocalStorage = function () {
+        if (self._initializeLocalStorage()) {
+            if (_.contains(_.keys(supportedSorting), localStorage[self.storageIds.currentSorting])) self.currentSorting(localStorage[self.storageIds.currentSorting]);else self.currentSorting(defaultSorting);
+        }
+    };
+
+    self._saveCurrentFiltersToLocalStorage = function () {
+        if (self._initializeLocalStorage()) {
+            var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+            localStorage[self.storageIds.currentFilters] = JSON.stringify(filters);
+        }
+    };
+
+    self._loadCurrentFiltersFromLocalStorage = function () {
+        if (self._initializeLocalStorage()) {
+            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.storageIds.currentFilters])));
+        }
+    };
+
+    self._savePageSizeToLocalStorage = function (pageSize) {
+        if (self._initializeLocalStorage()) {
+            localStorage[self.storageIds.pageSize] = pageSize;
+        }
+    };
+
+    self.pageSize.subscribe(self._savePageSizeToLocalStorage);
+
+    self._loadPageSizeFromLocalStorage = function () {
+        if (self._initializeLocalStorage) {
+            self.pageSize(parseInt(localStorage[self.storageIds.pageSize]));
+        }
+    };
+
+    self._initializeLocalStorage = function () {
+        if (!Modernizr.localstorage) return false;
+
+        if (localStorage[self.storageIds.currentSorting] !== undefined && localStorage[self.storageIds.currentFilters] !== undefined && JSON.parse(localStorage[self.storageIds.currentFilters]) instanceof Array && localStorage[self.storageIds.pageSize] !== undefined) return true;
+
+        localStorage[self.storageIds.currentSorting] = self.defaultSorting;
+        localStorage[self.storageIds.currentFilters] = JSON.stringify(self.defaultFilters);
+        localStorage[self.storageIds.pageSize] = self.defaultPageSize;
+
+        return true;
+    };
+
+    self._loadCurrentFiltersFromLocalStorage();
+    self._loadCurrentSortingFromLocalStorage();
+    self._loadPageSizeFromLocalStorage();
+};
 /* global FilamentManager  _ */
 
 FilamentManager.prototype.core.bridge = function pluginBridge() {
@@ -75,7 +440,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#settings_plugin_filamentmanager_profiledialog', '#settings_plugin_filamentmanager_spooldialog', '#settings_plugin_filamentmanager_configurationdialog', '#sidebar_plugin_filamentmanager_wrapper', '#plugin_filamentmanager_confirmationdialog'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#fm_inventory_tab', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -231,17 +596,6 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
 
-    var dialog = $('#settings_plugin_filamentmanager_configurationdialog');
-
-    self.showDialog = function showConfigurationDialog() {
-        self.loadData();
-        dialog.modal('show');
-    };
-
-    self.hideDialog = function hideConfigurationDialog() {
-        dialog.modal('hide');
-    };
-
     self.config = ko.mapping.fromJS({});
 
     self.saveData = function savePluginConfiguration(viewModel, event) {
@@ -300,8 +654,8 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     var selections = this.viewModels.selections;
 
 
-    var dialog = $('#plugin_filamentmanager_confirmationdialog');
-    var button = $('#plugin_filamentmanager_confirmationdialog_print');
+    var dialog = $('#fm_dialog_confirmation');
+    var button = $('#fm_dialog_confirmation_print');
 
     self.selections = ko.observableArray([]);
 
@@ -512,7 +866,7 @@ FilamentManager.prototype.viewModels.profiles = function profilesViewModel() {
         };
     };
 
-    var dialog = $('#settings_plugin_filamentmanager_profiledialog');
+    var dialog = $('#fm_dialog_profile');
 
     self.showProfileDialog = function showProfileDialog() {
         self.fromProfileData();
@@ -701,34 +1055,86 @@ FilamentManager.prototype.viewModels.selections = function selectedSpoolsViewMod
         }
     };
 };
-/* global FilamentManager ItemListHelper ko Utils $ PNotify gettext showConfirmationDialog */
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
-    var profilesViewModel = this.viewModels.profiles;
+    self.supportedPageSizes = [{ name: '10', size: 10 }, { name: '25', size: 25 }, { name: '50', size: 50 }, { name: gettext('All'), size: 0 }];
 
-    self.allSpools = new ItemListHelper('filamentSpools', {
-        name: function name(a, b) {
+    self.supportedFilters = [{
+        name: gettext('Name'),
+        text: gettext('Filter by name'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.name === value;
+            };
+        }
+    }, {
+        name: gettext('Material'),
+        text: gettext('Filter by material'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.profile.material === value;
+            };
+        }
+    }, {
+        name: gettext('Vendor'),
+        text: gettext('Filter by vendor'),
+        filter: function filter(value) {
+            return function (item) {
+                return item.profile.vendor === value;
+            };
+        }
+    }];
+
+    self.supportedSorting = {
+        name_asc: function name_asc(a, b) {
             // sorts ascending
             if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
             if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
             return 0;
         },
-        material: function material(a, b) {
+        name_desc: function name_desc(a, b) {
+            // sorts descending
+            if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return -1;
+            if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return 1;
+            return 0;
+        },
+        material_asc: function material_asc(a, b) {
             // sorts ascending
             if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
             if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
             return 0;
         },
-        vendor: function vendor(a, b) {
+        material_desc: function material_desc(a, b) {
+            // sorts descending
+            if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return -1;
+            if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return 1;
+            return 0;
+        },
+        vendor_asc: function vendor_asc(a, b) {
             // sorts ascending
             if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
             if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
             return 0;
         },
-        remaining: function remaining(a, b) {
+        vendor_desc: function vendor_desc(a, b) {
+            // sorts descending
+            if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return -1;
+            if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return 1;
+            return 0;
+        },
+        remaining_asc: function remaining_asc(a, b) {
+            // sorts ascending
+            var ra = parseFloat(a.weight) - parseFloat(a.used);
+            var rb = parseFloat(b.weight) - parseFloat(b.used);
+            if (ra < rb) return -1;
+            if (ra > rb) return 1;
+            return 0;
+        },
+        remaining_desc: function remaining_desc(a, b) {
             // sorts descending
             var ra = parseFloat(a.weight) - parseFloat(a.used);
             var rb = parseFloat(b.weight) - parseFloat(b.used);
@@ -736,18 +1142,115 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             if (ra < rb) return 1;
             return 0;
         }
-    }, {}, 'name', [], [], 10);
+    };
 
-    self.pageSize = ko.pureComputed({
-        read: function read() {
-            return self.allSpools.pageSize();
-        },
-        write: function write(value) {
-            self.allSpools.pageSize(Utils.validInt(value, self.allSpools.pageSize()));
+    self.currentFilter = ko.observable(0);
+
+    self.inventory = new Utils.ItemListHelper('fm_inventory_table', self.supportedSorting, {}, 'name_asc', [], [], self.supportedPageSizes[0].size);
+
+    /**
+     * This function will be invoked whenever a key was pressed inside the text field for the
+     * filter value. If the pressed key is recognized as 'Enter' the currently selected filter
+     * gets applied to the inventory with the value from the input field. If the input field is
+     * empty the filter will be reset (showing all entries again).
+     */
+    self.applyFilter = function (data, event) {
+        if (event.key !== 'Enter') return;
+
+        var value = $(event.target).val();
+
+        if (value) {
+            var filter = self.supportedFilters[self.currentFilter()].filter(value);
+            self.inventory.changeSearchFunction(filter);
+        } else {
+            self.inventory.resetSearch();
         }
+    };
+
+    /**
+     * This function will be invoked whenver the close button of the filter input field is clicked.
+     * It will clear the input field and reset the filter.
+     */
+    self.resetFilter = function () {
+        $('#fm_inventory_table_filter').val('');
+        self.inventory.resetSearch();
+    };
+
+    /**
+     * Sort by the given column in ascending order. If the inventory is already sorted by that
+     * column the order gets toggled (ascending => descending, descending => ascending).
+     */
+    self.setSorting = function (column) {
+        if (self.inventory.currentSorting() === column + '_asc') {
+            self.inventory.changeSorting(column + '_desc');
+        } else {
+            self.inventory.changeSorting(column + '_asc');
+        }
+    };
+
+    /**
+     * Set the appropreate icon to the column header depending on the given sort order.
+     */
+    self.setSortIcon = function (column, order) {
+        var icons = ['fa-angle-up', 'fa-angle-down'];
+
+        $('#fm_inventory_tab table th span.sort-icon').each(function (index, element) {
+            $(element).removeClass(icons.join(' '));
+        });
+
+        $('#fm_inventory_tab table th.fm_inventory_table_column_' + column + ' span.sort-icon').addClass(order === 'asc' ? icons[0] : icons[1]);
+    };
+
+    /**
+     * React to each change of the filtered column and apply the filter to the new selected.
+     */
+    self.currentFilter.subscribe(function () {
+        self.applyFilter(null, { key: 'Enter', target: $('#fm_inventory_table_filter') });
     });
 
-    self.cleanSpool = function getDefaultValuesForNewSpool() {
+    /**
+     * React to each change of the sorting order to set the currect icon. subscribeAndCall() is
+     * used, because the ItemListHelper restors the last sorting when loading the website.
+     * Therefore the observable might be already set when we get here and we would miss that
+     * update otherwise.
+     */
+    self.inventory.currentSorting.subscribeAndCall(function (sorting) {
+        var _sorting$split = sorting.split('_', 2),
+            _sorting$split2 = _slicedToArray(_sorting$split, 2),
+            column = _sorting$split2[0],
+            order = _sorting$split2[1];
+
+        self.setSortIcon(column, order);
+    });
+
+    /**
+     * React to each change of the page size and provides the matching button text.
+     */
+    self.pageSizeText = ko.pureComputed(function () {
+        var currentPageSize = self.supportedPageSizes.find(function (pageSize) {
+            return pageSize.size === self.inventory.pageSize();
+        });
+        if (currentPageSize !== undefined) {
+            return currentPageSize.name;
+        }
+        return undefined;
+    });
+
+    // --------------------------------------------------------------------------------------------
+
+    self.showSpoolDialog = function (data) {
+        self.fromSpoolData(data);
+        $('#fm_dialog_spool').modal('show');
+    };
+
+    self.hideSpoolDialog = function () {
+        $('#fm_dialog_spool').modal('hide');
+    };
+
+    /**
+     * Get a new spool object with default values.
+     */
+    self.cleanSpool = function () {
         return {
             id: undefined,
             name: '',
@@ -756,11 +1259,15 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             used: 0,
             temp_offset: 0,
             profile: {
-                id: profilesViewModel.allProfiles().length > 0 ? profilesViewModel.allProfiles()[0].id : undefined
+                id: undefined
             }
         };
     };
 
+    /**
+     * Holds the data for the spool dialog. Every change in the form will be reflected by this
+     * object.
+     */
     self.loadedSpool = {
         id: ko.observable(),
         name: ko.observable(),
@@ -776,7 +1283,11 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         return !self.loadedSpool.name();
     });
 
-    self.fromSpoolData = function setLoadedSpoolsFromJSObject() {
+    /**
+     * Updates the 'loadedSpool' object with the data from the given spool. If no spool object is
+     * passed as parameter it uses the default data provided by the 'cleanSpool()' function.
+     */
+    self.fromSpoolData = function () {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.cleanSpool();
 
         self.loadedSpool.isNew(data.id === undefined);
@@ -789,7 +1300,11 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         self.loadedSpool.temp_offset(data.temp_offset);
     };
 
-    self.toSpoolData = function getLoadedProfileAsJSObject() {
+    /**
+     * Returns a spool object containing the data from the dialog provided by the 'cleanSpool()'
+     * function.
+     */
+    self.toSpoolData = function () {
         var defaultSpool = self.cleanSpool();
         var totalWeight = Utils.validFloat(self.loadedSpool.totalWeight(), defaultSpool.weight);
         var remaining = Math.min(Utils.validFloat(self.loadedSpool.remaining(), defaultSpool.weight), totalWeight);
@@ -807,38 +1322,65 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         };
     };
 
-    var dialog = $('#settings_plugin_filamentmanager_spooldialog');
+    // --------------------------------------------------------------------------------------------
 
-    self.showSpoolDialog = function showSpoolDialog(data) {
-        self.fromSpoolData(data);
-        dialog.modal('show');
-    };
+    /**
+     * Initialized with 'true' to signalize that there was no data fetched yet. This is usefull to
+     * show the spinning icon while the page is loading, because the first data request will be
+     * send only after the page is fully loaded.
+     */
+    self.requestInProgress = ko.observable(true);
 
-    self.hideSpoolDialog = function hideSpoolDialog() {
-        dialog.modal('hide');
-    };
+    /**
+     * List of callbacks to be applied after a spool has been updated.
+     */
+    self.updateCallbacks = [];
 
-    self.requestInProgress = ko.observable(false);
+    /**
+     * Holds an array of all spools.
+     */
+    self.allSpools = ko.observableArray([]);
 
-    self.processSpools = function processRequestedSpools(data) {
-        self.allSpools.updateItems(data.spools);
-    };
+    /**
+     * Automatically update the inventory on changes.
+     */
+    self.allSpools.subscribe(function (spools) {
+        return self.inventory.updateItems(spools);
+    });
 
-    self.requestSpools = function requestAllSpoolsFromBackend(force) {
+    /**
+     * Request all spools from the backend and update the inventory.
+     */
+    self.requestSpools = function () {
+        var force = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
         self.requestInProgress(true);
         return api.spool.list(force).done(function (response) {
-            self.processSpools(response);
+            self.allSpools(response.spools);
+        }).fail(function () {
+            PNotify.error({
+                title: gettext('Could not fetch infentory'),
+                text: gettext('There was an unexpected error while fetching the spool inventory, please consult the logs.'),
+                hide: false
+            });
+            self.inventory.updateItems([]);
         }).always(function () {
             self.requestInProgress(false);
         });
     };
 
+    /**
+     * Saves the passed spool to the database either by an add or update request.
+     */
     self.saveSpool = function saveSpoolToBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
         return self.loadedSpool.isNew() ? self.addSpool(data) : self.updateSpool(data);
     };
 
+    /**
+     * Add the passed spool to the database.
+     */
     self.addSpool = function addSpoolToBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
@@ -847,18 +1389,18 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             self.hideSpoolDialog();
             self.requestSpools();
         }).fail(function () {
-            new PNotify({ // eslint-disable-line no-new
+            PNotify.error({
                 title: gettext('Could not add spool'),
                 text: gettext('There was an unexpected error while saving the filament spool, please consult the logs.'),
-                type: 'error',
                 hide: false
             });
             self.requestInProgress(false);
         });
     };
 
-    self.updateCallbacks = [];
-
+    /**
+     * Updates the passed spool in the database.
+     */
     self.updateSpool = function updateSpoolInBackend() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : self.toSpoolData();
 
@@ -870,26 +1412,28 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
                 callback();
             });
         }).fail(function () {
-            new PNotify({ // eslint-disable-line no-new
+            PNotify.error({
                 title: gettext('Could not update spool'),
                 text: gettext('There was an unexpected error while updating the filament spool, please consult the logs.'),
-                type: 'error',
                 hide: false
             });
             self.requestInProgress(false);
         });
     };
 
+    /**
+     * Removes the passed spool from the database. Opens a dialog where the action has to be
+     * confirmed.
+     */
     self.removeSpool = function removeSpoolFromBackend(data) {
         var perform = function performSpoolRemoval() {
             self.requestInProgress(true);
             api.spool.delete(data.id).done(function () {
                 self.requestSpools();
             }).fail(function () {
-                new PNotify({ // eslint-disable-line no-new
+                PNotify.error({
                     title: gettext('Could not delete spool'),
                     text: gettext('There was an unexpected error while removing the filament spool, please consult the logs.'),
-                    type: 'error',
                     hide: false
                 });
                 self.requestInProgress(false);
@@ -904,6 +1448,10 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
         });
     };
 
+    /**
+     * Duplicates the passed spool in the database. The filament counter of this new spool will be
+     * reset.
+     */
     self.duplicateSpool = function duplicateAndAddSpoolToBackend(data) {
         var newData = data;
         newData.used = 0;
