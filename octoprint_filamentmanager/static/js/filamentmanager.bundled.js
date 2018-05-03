@@ -1359,7 +1359,7 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
             self.allSpools(response.spools);
         }).fail(function () {
             PNotify.error({
-                title: gettext('Could not fetch infentory'),
+                title: gettext('Could not fetch inventory'),
                 text: gettext('There was an unexpected error while fetching the spool inventory, please consult the logs.'),
                 hide: false
             });
