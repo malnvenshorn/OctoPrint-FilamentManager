@@ -1168,6 +1168,15 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     };
 
     /**
+     * This function will be invoked whenver the close button of the filter input field is clicked.
+     * It will clear the input field and reset the filter.
+     */
+    self.resetFilter = function () {
+        $('#fm_inventory_table_filter').val('');
+        self.inventory.resetSearch();
+    };
+
+    /**
      * Sort by the given column in ascending order. If the inventory is already sorted by that
      * column the order gets toggled (ascending => descending, descending => ascending).
      */

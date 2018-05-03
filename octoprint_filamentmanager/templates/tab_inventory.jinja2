@@ -10,7 +10,8 @@
       </ul>
     </div>
 
-    <input id="fm_inventory_table_filter" type="text" class="input-medium" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].text }">
+    <input id="fm_inventory_table_filter" required type="text" class="input-medium search-box" placeholder="" data-bind="event: { keyup: $root.viewModels.spools.applyFilter }, attr: { placeholder: $root.viewModels.spools.supportedFilters[$root.viewModels.spools.currentFilter()].text }">
+    <button class="close-icon" title="{{ _('Clear filter') }}" data-bind="click: function() { $root.viewModels.spools.resetFilter(); }"></button>
   </span>
 
   <!-- action buttons -->
