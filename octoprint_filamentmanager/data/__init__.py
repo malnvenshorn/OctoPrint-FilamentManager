@@ -23,9 +23,6 @@ from .listen import PGNotify
 
 class FilamentManager(object):
 
-    DIALECT_SQLITE = "sqlite"
-    DIALECT_POSTGRESQL = "postgresql"
-
     def __init__(self, config):
         self.notify = None
         self.conn = self.connect(config.get("uri", ""),
@@ -39,19 +36,19 @@ class FilamentManager(object):
         # when using a connection pool how do we prevent notifiying ourself on database changes?
         self.lock = Lock()
 
-        if self.engine_dialect_is(self.DIALECT_SQLITE):
+        if self.engine_dialect_is(Dialect.sqlite):
             # Enable foreign key constraints
             self.conn.execute(text("PRAGMA foreign_keys = ON").execution_options(autocommit=True))
-        elif self.engine_dialect_is(self.DIALECT_POSTGRESQL):
+        elif self.engine_dialect_is(Dialect.postgresql):
             # Create listener thread
             self.notify = PGNotify(self.conn.engine.url)
 
     def connect(self, uri, database="", username="", password=""):
         uri_parts = urisplit(uri)
 
-        if uri_parts.scheme == self.DIALECT_SQLITE:
+        if uri_parts.scheme == Dialect.sqlite:
             engine = create_engine(uri, connect_args={"check_same_thread": False})
-        elif uri_parts.scheme == self.DIALECT_POSTGRESQL:
+        elif uri_parts.scheme == Dialect.postgresql:
             uri = URL(drivername=uri_parts.scheme,
                       host=uri_parts.host,
                       port=uri_parts.getport(default=5432),
@@ -106,7 +103,7 @@ class FilamentManager(object):
                                    Column("changed_at", TIMESTAMP, nullable=False,
                                           server_default=text("CURRENT_TIMESTAMP")))
 
-        if self.engine_dialect_is(self.DIALECT_POSTGRESQL):
+        if self.engine_dialect_is(Dialect.postgresql):
             def should_create_function(name):
                 row = self.conn.execute("select proname from pg_proc where proname = '%s'" % name).scalar()
                 return not bool(row)
@@ -143,7 +140,7 @@ class FilamentManager(object):
                     if should_create_trigger(name):
                         event.listen(metadata, "after_create", trigger)
 
-        elif self.engine_dialect_is(self.DIALECT_SQLITE):
+        elif self.engine_dialect_is(Dialect.sqlite):
             for table in [self.profiles.name, self.spools.name]:
                 for action in ["INSERT", "UPDATE", "DELETE"]:
                     name = "{table}_on_{action}".format(table=table, action=action.lower())
@@ -326,10 +323,10 @@ class FilamentManager(object):
     def update_selection(self, identifier, client_id, data):
         with self.lock, self.conn.begin():
             values = dict()
-            if self.engine_dialect_is(self.DIALECT_SQLITE):
+            if self.engine_dialect_is(Dialect.sqlite):
                 stmt = insert(self.selections).prefix_with("OR REPLACE")\
                     .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])
-            elif self.engine_dialect_is(self.DIALECT_POSTGRESQL):
+            elif self.engine_dialect_is(Dialect.postgresql):
                 stmt = pg_insert(self.selections)\
                     .values(tool=identifier, client_id=client_id, spool_id=data["spool"]["id"])\
                     .on_conflict_do_update(constraint="selections_pkey", set_=dict(spool_id=data["spool"]["id"]))
@@ -360,7 +357,7 @@ class FilamentManager(object):
                     for row in csv_reader:
                         values = dict(zip(header, row))
 
-                        if self.engine_dialect_is(self.DIALECT_SQLITE):
+                        if self.engine_dialect_is(Dialect.sqlite):
                             identifier = values[table.c.id.name]
                             # try to update entry
                             stmt = update(table).values(values).where(table.c.id == identifier)
@@ -368,12 +365,12 @@ class FilamentManager(object):
                                 # identifier doesn't match any => insert new entry
                                 stmt = insert(table).values(values)
                                 self.conn.execute(stmt)
-                        elif self.engine_dialect_is(self.DIALECT_POSTGRESQL):
+                        elif self.engine_dialect_is(Dialect.postgresql):
                             stmt = pg_insert(table).values(values)\
                                 .on_conflict_do_update(index_elements=[table.c.id], set_=values)
                             self.conn.execute(stmt)
 
-                    if self.engine_dialect_is(self.DIALECT_POSTGRESQL):
+                    if self.engine_dialect_is(Dialect.postgresql):
                         # update sequence
                         sql = "SELECT setval('{table}_id_seq', max(id)) FROM {table}".format(table=table.name)
                         self.conn.execute(text(sql))
