@@ -13,11 +13,11 @@ from uritools import urisplit
 from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.schema import MetaData, Table, Column, ForeignKeyConstraint, DDL, PrimaryKeyConstraint
-from sqlalchemy.sql import insert, update, delete, select
+from sqlalchemy.sql import insert, update, delete, select, func
 from sqlalchemy.types import INTEGER, VARCHAR, REAL, TIMESTAMP
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-import sqlalchemy.sql.functions as func
 
+from .dialect import Dialect
 from .listen import PGNotify
 
 
@@ -155,6 +155,22 @@ class FilamentManager(object):
                                   """.format(name=name, table=table, action=action))
                     event.listen(metadata, "after_create", trigger)
 
+        # create indecies
+
+        idxTableSpools = DDL('CREATE INDEX IF NOT EXISTS '
+                             'idx_spools_name '
+                             'ON spools(lower(name))')
+
+        event.listen(metadata, 'after_create', idxTableSpools.execute_if(dialect=Dialect.all()))
+
+        idxTableProfiles = DDL('CREATE INDEX IF NOT EXISTS '
+                               'idx_profiles_material_vendor '
+                               'ON profiles(lower(material), lower(vendor))')
+
+        event.listen(metadata, 'after_create', idxTableProfiles.execute_if(dialect=Dialect.all()))
+
+        # create tables
+
         metadata.create_all(self.conn, checkfirst=True)
 
     def execute_script(self, script):
@@ -230,7 +246,10 @@ class FilamentManager(object):
     def get_all_spools(self):
         with self.lock, self.conn.begin():
             j = self.spools.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
-            stmt = select([self.spools, self.profiles]).select_from(j).order_by(self.spools.c.name)
+            stmt = select([self.spools, self.profiles]).select_from(j)\
+                .order_by(func.lower(self.spools.c.name),
+                          func.lower(self.profiles.c.material),
+                          func.lower(self.profiles.c.vendor))
             result = self.conn.execute(stmt)
         return [self._build_spool_dict(row, row.keys()) for row in result.fetchall()]
 
@@ -243,8 +262,7 @@ class FilamentManager(object):
     def get_spool(self, identifier):
         with self.lock, self.conn.begin():
             j = self.spools.join(self.profiles, self.spools.c.profile_id == self.profiles.c.id)
-            stmt = select([self.spools, self.profiles]).select_from(j)\
-                .where(self.spools.c.id == identifier).order_by(self.spools.c.name)
+            stmt = select([self.spools, self.profiles]).select_from(j).where(self.spools.c.id == identifier)
             result = self.conn.execute(stmt)
         row = result.fetchone()
         return self._build_spool_dict(row, row.keys()) if row is not None else None
