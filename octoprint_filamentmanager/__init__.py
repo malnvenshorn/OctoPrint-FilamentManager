@@ -281,10 +281,10 @@ class FilamentManagerPlugin(FilamentManagerApi,
                 self.filamentManager.update_spool(spool["id"], spool)
 
                 # logging
-                spool_string = "{name} - {material} ({vendor})"
+                spool_string = u"{name} - {material} ({vendor})"
                 spool_string = spool_string.format(name=spool["name"], material=spool["profile"]["material"],
                                                    vendor=spool["profile"]["vendor"])
-                self._logger.debug("Updated remaining filament on spool '{spool}' from {old}g to {new}g ({diff}g)"
+                self._logger.debug(u"Updated remaining filament on spool '{spool}' from {old}g to {new}g ({diff}g)"
                                    .format(spool=spool_string, old=str(old_value), new=str(new_value),
                                            diff=str(new_value - old_value)))
             except Exception as e:
