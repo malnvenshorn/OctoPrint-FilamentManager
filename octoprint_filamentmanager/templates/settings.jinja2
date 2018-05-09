@@ -103,27 +103,6 @@
           <button class="btn pull-right" data-bind="click: viewModels.config.connectionTest">{{ _("Test connection") }}</button>
         </div>
       </fieldset>
-
-      <fieldset>
-        <!-- import & export -->
-        <legend>{{ _("Import & Export") }} <i class="fa fa-spinner" data-bind="visible: viewModels.import.importInProgress, css: {'fa-spin': viewModels.import.importInProgress}"></i></legend>
-        <!-- <form class="form-inline"> -->
-          <div class="control-group" style="padding-left:1px;" data-bind="css: {error: viewModels.import.invalidArchive}">
-            <div class="input-prepend input-append">
-              <span class="btn fileinput-button">
-                <span>{{ _("Browse...") }}</span>
-                <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
-              </span>
-              <input type="text" class="input-xlarge text-center" data-bind="value: viewModels.import.importFilename" readonly></span>
-              <div class="btn-group">
-                <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: viewModels.import.enableImport"><i class="fa fa-upload"></i> {{ _("Import") }}</button>
-                <a class="btn pull-right" data-bind="attr: {href: '{{ url_for('plugin.filamentmanager.export_data', apikey='') }}' + UI_API_KEY}" download><i class="fa fa-download"></i> {{ _("Export") }}</a>
-              </div>
-            </div>
-          </div>
-          <div class="help-block" data-bind="visible: viewModels.import.invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
-        <!-- </form> -->
-      </fieldset>
     </div>
     <!-- appearance -->
     <div id="fm_settings_appearance" class="tab-pane">

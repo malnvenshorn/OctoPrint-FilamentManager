@@ -440,7 +440,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
 
         REQUIRED_VIEWMODELS: ['settingsViewModel', 'printerStateViewModel', 'loginStateViewModel', 'temperatureViewModel', 'filesViewModel'],
 
-        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#fm_inventory_tab', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation'],
+        BINDINGS: ['#settings_plugin_filamentmanager', '#sidebar_plugin_filamentmanager_wrapper', '#fm_inventory_tab', '#fm_dialog_profile', '#fm_dialog_spool', '#fm_dialog_confirmation', '#fm_dialog_import'],
 
         viewModel: function FilamentManagerViewModel(viewModels) {
             self.core.bridge.allViewModels = _.object(self.core.bridge.REQUIRED_VIEWMODELS, viewModels);
@@ -737,6 +737,14 @@ FilamentManager.prototype.viewModels.import = function importDataViewModel() {
     var importButton = $('#settings_plugin_filamentmanager_import_button');
     var importElement = $('#settings_plugin_filamentmanager_import');
 
+    self.showImportDialog = function () {
+        $('#fm_dialog_import').modal('show');
+    };
+
+    self.hideSpoolDialog = function () {
+        $('#fm_dialog_import').modal('hide');
+    };
+
     self.importFilename = ko.observable();
     self.importInProgress = ko.observable(false);
 
@@ -749,7 +757,7 @@ FilamentManager.prototype.viewModels.import = function importDataViewModel() {
 
     self.enableImport = ko.pureComputed(function () {
         var name = self.importFilename();
-        return name !== undefined && name.trim() !== '' && !self.invalidArchive();
+        return name !== undefined && name.trim() !== '' && !self.invalidArchive() && !self.importInProgress();
     });
 
     importElement.fileupload({

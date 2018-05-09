@@ -6,6 +6,14 @@ FilamentManager.prototype.viewModels.import = function importDataViewModel() {
     const importButton = $('#settings_plugin_filamentmanager_import_button');
     const importElement = $('#settings_plugin_filamentmanager_import');
 
+    self.showImportDialog = () => {
+        $('#fm_dialog_import').modal('show');
+    };
+
+    self.hideSpoolDialog = () => {
+        $('#fm_dialog_import').modal('hide');
+    };
+
     self.importFilename = ko.observable();
     self.importInProgress = ko.observable(false);
 
@@ -18,7 +26,7 @@ FilamentManager.prototype.viewModels.import = function importDataViewModel() {
 
     self.enableImport = ko.pureComputed(() => {
         const name = self.importFilename();
-        return name !== undefined && name.trim() !== '' && !self.invalidArchive();
+        return name !== undefined && name.trim() !== '' && !self.invalidArchive() && !self.importInProgress();
     });
 
     importElement.fileupload({

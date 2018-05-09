@@ -34,6 +34,9 @@
       <ul class="dropdown-menu">
         <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() || $root.viewModels.profiles.allProfiles().length < 1 }"><a href="#" data-bind="click: function() { $root.viewModels.spools.showSpoolDialog(); }">{{ _("Add Spool") }}</a></li>
         <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" data-bind="click: function() { $root.viewModels.profiles.showProfileDialog(); }">{{ _("Manage Profiles") }}</a></li>
+        <li class="divider"></li>
+        <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" data-bind="attr: {href: '{{ url_for('plugin.filamentmanager.export_data', apikey='') }}' + UI_API_KEY}" download>{{ _('Export data') }}</a></li>
+        <li data-bind="css: { disabled: !$root.core.bridge.allViewModels.loginStateViewModel.isUser() }"><a href="#" data-bind="click: function() { $root.viewModels.import.showImportDialog(); }">{{ _("Import data") }}</a></li>
       </ul>
     </div>
   </span>

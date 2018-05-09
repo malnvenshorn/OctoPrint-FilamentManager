@@ -21,6 +21,7 @@ FilamentManager.prototype.core.bridge = function pluginBridge() {
             '#fm_dialog_profile',
             '#fm_dialog_spool',
             '#fm_dialog_confirmation',
+            '#fm_dialog_import',
         ],
 
         viewModel: function FilamentManagerViewModel(viewModels) {

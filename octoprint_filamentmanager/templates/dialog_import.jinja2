@@ -1,0 +1,28 @@
+<div id="fm_dialog_import" class="modal hide fade">
+
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>{{ _('Import data') }}</h3>
+  </div>
+
+  <div class="modal-body">
+    <div class="control-group" data-bind="css: {error: viewModels.import.invalidArchive}">
+      <div class="input-prepend input-append">
+        <span class="btn fileinput-button">
+          <span>{{ _("Browse...") }}</span>
+          <input id="settings_plugin_filamentmanager_import" type="file" name="file" accept=".zip" data-url="{{ url_for('plugin.filamentmanager.import_data') }}">
+        </span>
+        <input type="text" class="input-xlarge text-center" data-bind="value: viewModels.import.importFilename" readonly></span>
+        <div class="btn-group">
+          <button id="settings_plugin_filamentmanager_import_button" class="btn" data-bind="enable: viewModels.import.enableImport"><i class="fa fa-spinner fa-spin" data-bind="visible: viewModels.import.importInProgress"></i> {{ _("Import") }}</button>
+        </div>
+      </div>
+    </div>
+    <div class="help-block" data-bind="visible: viewModels.import.invalidArchive">{{ _('This does not look like a valid import archive. Only zip files are supported.') }}</div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal">{{ _('Close') }}</button>
+  </div>
+
+</div>
