@@ -5,32 +5,10 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     const api = this.core.client;
     const { settingsViewModel } = this.core.bridge.allViewModels;
 
-    self.config = ko.mapping.fromJS({});
-
-    self.saveData = function savePluginConfiguration(viewModel, event) {
-        const target = $(event.target);
-        target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
-
-        const data = {
-            plugins: {
-                filamentmanager: ko.mapping.toJS(self.config),
-            },
-        };
-
-        settingsViewModel.saveData(data, {
-            success() {
-                self.hideDialog();
-            },
-            complete() {
-                $('i.fa-spinner', target).remove();
-            },
-            sending: true,
-        });
-    };
+    self.config = {};
 
     self.loadData = function mapPluginConfigurationToObservables() {
-        const pluginSettings = settingsViewModel.settings.plugins.filamentmanager;
-        ko.mapping.fromJS(ko.toJS(pluginSettings), self.config);
+        self.config = settingsViewModel.settings.plugins.filamentmanager;
     };
 
     self.connectionTest = function runExternalDatabaseConnectionTest(viewModel, event) {
