@@ -200,7 +200,7 @@ class FilamentManager(object):
                 .values(vendor=data["vendor"], material=data["material"], density=data["density"],
                         diameter=data["diameter"])
             result = self.db.execute(stmt)
-        data["id"] = result..inserted_primary_key[0]
+        data["id"] = result.inserted_primary_key[0]
         return data
 
     def update_profile(self, identifier, data):
