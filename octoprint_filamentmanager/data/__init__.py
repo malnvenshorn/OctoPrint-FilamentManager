@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 
 __author__ = "Sven Lohrmann <malnvenshorn@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -213,7 +214,7 @@ class FilamentManager(object):
                 .values(vendor=data["vendor"], material=data["material"], density=data["density"],
                         diameter=data["diameter"])
             result = self.db.execute(stmt)
-        data["id"] = result..inserted_primary_key[0]
+        data["id"] = result.inserted_primary_key[0]
         return data
 
     def update_profile(self, identifier, data):
