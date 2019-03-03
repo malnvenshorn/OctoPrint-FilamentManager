@@ -14,7 +14,7 @@ plugin_url = "https://github.com/malnvenshorn/OctoPrint-FilamentManager"
 plugin_license = "AGPLv3"
 plugin_requires = ["backports.csv>=1.0.5,<1.1",
                    "uritools>=2.1,<2.2",
-                   "SQLAlchemy>=1.1.15,<1.2"]
+                   "SQLAlchemy>=1.2"]
 plugin_additional_data = []
 plugin_additional_packages = []
 plugin_ignored_packages = []

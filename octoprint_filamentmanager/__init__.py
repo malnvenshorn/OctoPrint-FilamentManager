@@ -138,10 +138,6 @@ class FilamentManagerPlugin(FilamentManagerApi,
         except Exception as e:
             self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
 
-    def on_shutdown(self):
-        if self.filamentManager is not None:
-            self.filamentManager.close()
-
     def on_data_modified(self, data, action):
         if action.lower() == "update":
             # if either profiles, spools or selections are updated

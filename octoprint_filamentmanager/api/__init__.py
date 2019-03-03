@@ -395,10 +395,11 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 return make_response("Configuration does not contain mandatory '{}' field".format(key), 400)
 
         try:
-            connection = self.filamentManager.connect(config["uri"],
-                                                      database=config["name"],
-                                                      username=config["user"],
-                                                      password=config["password"])
+            db = self.filamentManager.get_database(config["uri"],
+                                          database=config["name"],
+                                          username=config["user"],
+                                          password=config["password"])
+            connection = db.connect()
         except Exception as e:
             return make_response("Failed to connect to the database with the given configuration", 400)
         else:
