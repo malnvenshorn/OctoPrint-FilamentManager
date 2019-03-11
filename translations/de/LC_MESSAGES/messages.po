@@ -34,7 +34,7 @@ msgstr "Daten-Import fehlgeschlagen"
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:425
 msgid "Something went wrong, please consult the logs."
-msgstr "Etwas ist schief gelaufen, bitte konsultiere das Log."
+msgstr "Etwas ist schief gelaufen, bitte konsultiere den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:557
 msgid "Could not add profile"
@@ -45,7 +45,7 @@ msgid ""
 "There was an unexpected error while saving the filament profile, please consult "
 "the logs."
 msgstr ""
-"Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere das "
+"Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere den "
 "Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:579
@@ -58,7 +58,7 @@ msgid ""
 "consult the logs."
 msgstr ""
 "Unerwarteter Fehler beim Aktualisieren des Filamentprofils, bitte konsultiere "
-"das Log."
+"den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:594
 msgid "Could not delete profile"
@@ -69,7 +69,7 @@ msgid ""
 "There was an unexpected error while removing the filament profile, please "
 "consult the logs."
 msgstr ""
-"Unerwarteter Fehler beim Löschen des Filamentprofils, bitte konsultiere das Log."
+"Unerwarteter Fehler beim Löschen des Filamentprofils, bitte konsultiere den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:604
 msgid "Delete profile?"
@@ -97,7 +97,7 @@ msgstr "Konnte Spule nicht auswählen"
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:687
 msgid ""
 "There was an unexpected error while selecting the spool, please consult the logs."
-msgstr "Unerwarteter Fehler beim auswählen der Spule, bitte konsultiere das Log."
+msgstr "Unerwarteter Fehler beim auswählen der Spule, bitte konsultiere den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:851
 msgid "Could not add spool"
@@ -108,7 +108,7 @@ msgid ""
 "There was an unexpected error while saving the filament spool, please consult "
 "the logs."
 msgstr ""
-"Unerwarteter Fehler beim speichern der Filamentspule, bitte konsultiere das Log."
+"Unerwarteter Fehler beim speichern der Filamentspule, bitte konsultiere den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:874
 msgid "Could not update spool"
@@ -119,7 +119,7 @@ msgid ""
 "There was an unexpected error while updating the filament spool, please consult "
 "the logs."
 msgstr ""
-"Unerwarteter Fehler beim Aktualisieren der Filamentspule, bitte konsultiere das "
+"Unerwarteter Fehler beim Aktualisieren der Filamentspule, bitte konsultiere den "
 "Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:890
@@ -131,7 +131,7 @@ msgid ""
 "There was an unexpected error while removing the filament spool, please consult "
 "the logs."
 msgstr ""
-"Unerwarteter Fehler beim Löschen der Filamentspule, bitte konsultiere das Log."
+"Unerwarteter Fehler beim Löschen der Filamentspule, bitte konsultiere den Log."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:900
 msgid "Delete spool?"
@@ -268,7 +268,7 @@ msgstr "Software-Hodometer aktivieren, um den Filamentverbrauch zu messen"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:50
 msgid "Pause print if filament runs out"
-msgstr "Druck pausieren, wenn Filament zur zeige geht"
+msgstr "Druck pausieren, wenn Filament zur neige geht"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:56
 msgid "Pause threshold"
@@ -447,7 +447,7 @@ msgstr ""
 #~ "There was an unexpected database error while saving the filament profile, "
 #~ "please consult the logs."
 #~ msgstr ""
-#~ "Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere das "
+#~ "Unerwarteter Fehler beim Speichern des Filamentprofils, bitte konsultiere den "
 #~ "Log."
 
 #~ msgid ""
