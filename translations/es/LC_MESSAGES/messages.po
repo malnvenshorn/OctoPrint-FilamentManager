@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.4.0\n"
-"Language: Spanish (es)\n"
+"Language: es\n"
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:334
 msgid "Start Print"
