@@ -17,4 +17,4 @@ def add_revalidation_header_with_no_max_age(response, lm, etag):
 
 
 def entity_tag(lm):
-    return (hashlib.sha1(str(lm).encode(encoding='UTF-8')).hexdigest()
+    return (hashlib.sha1(str(lm).encode(encoding='UTF-8')).hexdigest())
