@@ -257,7 +257,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             volume = (length * PI * radius * radius) / 1000  # cm³
             return volume * profile["density"]  # g
 
-        for tool in xrange(0, numTools):
+        for tool in range(0, numTools):
             self._logger.info("Filament used: {length} mm (tool{id})"
                               .format(length=str(extrusion[tool]), id=str(tool)))
 
