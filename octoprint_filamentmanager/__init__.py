@@ -257,7 +257,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             volume = (length * PI * radius * radius) / 1000  # cm³
             return volume * profile["density"]  # g
 
-        for tool in xrange(0, numTools):
+        for tool in range(0, numTools):
             self._logger.info("Filament used: {length} mm (tool{id})"
                               .format(length=str(extrusion[tool]), id=str(tool)))
 
@@ -357,7 +357,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
 
 __plugin_name__ = "Filament Manager"
-
+__plugin_pythoncompat__ = ">=2.7,<4"
 __required_octoprint_version__ = ">=1.3.6"
 
 
