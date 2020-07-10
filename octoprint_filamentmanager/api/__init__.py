@@ -21,7 +21,6 @@ from octoprint.util import dict_merge
 
 from .util import *
 
-
 class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
     def send_client_message(self, message_type, data=None):
@@ -202,6 +201,12 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
         try:
             saved_spool = self.filamentManager.create_spool(new_spool)
+
+            if "update" in json_data:
+                update = json_data["update"]
+                if update == True:
+                    self.send_client_message("data_changed", data=dict(table="spools", action="update"))
+
             return jsonify(dict(spool=saved_spool))
         except Exception as e:
             self._logger.error("Failed to create spool: {message}".format(message=str(e)))
@@ -237,10 +242,6 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
         try:
             saved_spool = self.filamentManager.update_spool(identifier, merged_spool)
-            if "update" in json_data:
-                update = json_data["update"]
-                if update == True:
-                    self.send_client_message("data_changed", data=dict(table="spools", action="update"))
         except Exception as e:
             self._logger.error("Failed to update spool with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
@@ -295,10 +296,12 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
         try:
             saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+
             if "update" in json_data:
                 update = json_data["update"]
                 if update == True:
-                    self.send_client_message("data_changed", data=dict(table="spools", action="update")))
+                    self.send_client_message("data_changed", data=dict(table="spools", action="update"))
+
         except Exception as e:
             self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
