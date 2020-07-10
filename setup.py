@@ -6,11 +6,11 @@ from setuptools import setup
 plugin_identifier = "filamentmanager"
 plugin_package = "octoprint_filamentmanager"
 plugin_name = "OctoPrint-FilamentManager"
-plugin_version = "0.5.3"
+plugin_version = "0.5.4"
 plugin_description = "Manage your spools and keep track of remaining filament on them"
 plugin_author = "Sven Lohrmann"
-plugin_author_email = "malnvenshorn@gmail.com"
-plugin_url = "https://github.com/malnvenshorn/OctoPrint-FilamentManager"
+plugin_author_email = "oschwartz10612@gmail.com"
+plugin_url = "https://github.com/oschwartz10612/OctoPrint-FilamentManager"
 plugin_license = "AGPLv3"
 plugin_requires = ["backports.csv>=1.0.5,<1.1",
                    "uritools>=2.1,<2.2",
