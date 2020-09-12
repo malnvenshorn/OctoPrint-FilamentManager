@@ -16,6 +16,7 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server import admin_permission
+from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
 from octoprint.util import dict_merge
 
@@ -302,7 +303,7 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
     @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
     @restricted_access
-    @admin_permission.require(403)
+    @Permissions.ADMIN.require(403)
     def export_data(self):
         try:
             tempdir = tempfile.mkdtemp()
@@ -337,7 +338,7 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
     @octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
     @restricted_access
-    @admin_permission.require(403)
+    @Permissions.ADMIN.require(403)
     def import_data(self):
         def unzip(filename, extract_dir):
             # python 2.7 lacks of shutil.unpack_archive ¯\_(ツ)_/¯

@@ -50,7 +50,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
         self.client_id = get_client_id()
 
         self.filamentOdometer = FilamentOdometer()
-        self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
+        self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
 
         db_config = self._settings.get(["database"], merged=True)
         migrate_schema_version = False
@@ -196,7 +196,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             # we have to recalculate the pause thresholds
             self.update_pause_thresholds()
 
-        self.filamentOdometer.set_g90_extruder(self._settings.getBoolean(["feature", "g90InfluencesExtruder"]))
+        self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
 
     # AssetPlugin
 
@@ -232,8 +232,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
             else:
                 # starting new print
                 self.filamentOdometer.reset()
-            self.odometerEnabled = self._settings.getBoolean(["enableOdometer"])
-            self.pauseEnabled = self._settings.getBoolean(["autoPause"])
+            self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
+            self.pauseEnabled = self._settings.get_boolean(["autoPause"])
             self._logger.debug("Printer State: %s" % payload["state_string"])
             self._logger.debug("Odometer: %s" % ("On" if self.odometerEnabled else "Off"))
             self._logger.debug("AutoPause: %s" % ("On" if self.pauseEnabled and self.odometerEnabled else "Off"))
@@ -257,7 +257,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             volume = (length * PI * radius * radius) / 1000  # cm³
             return volume * profile["density"]  # g
 
-        for tool in xrange(0, numTools):
+        for tool in range(0, numTools):
             self._logger.info("Filament used: {length} mm (tool{id})"
                               .format(length=str(extrusion[tool]), id=str(tool)))
 
@@ -346,18 +346,19 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
                 # version check: github repository
                 type="github_release",
-                user="malnvenshorn",
+                user="OllisGit",
                 repo="OctoPrint-FilamentManager",
                 current=self._plugin_version,
 
                 # update method: pip
-                pip="https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/{target_version}.zip"
+                #pip="https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/{target_version}.zip"
+                pip="https://github.com/OllisGit/OctoPrint-FilamentManager/releases/latest/download/master.zip"
             )
         )
 
 
 __plugin_name__ = "Filament Manager"
-
+__plugin_pythoncompat__ = ">=2.7,<4"
 __required_octoprint_version__ = ">=1.3.6"
 
 
