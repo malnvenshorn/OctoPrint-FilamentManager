@@ -323,9 +323,13 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         archive_name = "filament_export_{timestamp}.zip".format(timestamp=timestamp)
 
         def file_generator():
-            with open(archive_path) as f:
-                for c in f:
-                    yield c
+            with open(archive_path, "rb") as f:
+                while True:
+                    chunk = f.read()
+                    if chunk:
+                        yield(chunk)
+                    else:
+                        break
             try:
                 os.remove(archive_path)
             except Exception as e:
