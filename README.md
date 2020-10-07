@@ -24,7 +24,7 @@
 
 This OctoPrint plugin makes it easy to manage your inventory of filament spools. You can add all your spools and assign them to print jobs. The Filament Manager will automatically track the amount of extruded filament so you can always see how much is left on your spools.
 
-If you have questions or encounter issues please take a look at the [Frequently Asked Questions](https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq) first. There might be already an answer. In case you haven't found what you are looking for, feel free to open a [ticket](https://github.com/malnvenshorn/OctoPrint-FilamentManager/issues/new) and I'll try to help. Since OctoPrint provides an own [community forum](https://discourse.octoprint.org/) questions and requests for help should be placed there.
+If you have questions or encounter issues please take a look at the [Frequently Asked Questions](https://github.com/malnvenshorn/OctoPrint-FilamentManager/wiki#faq) first. There might be already an answer. In case you haven't found what you are looking for, feel free to open a [ticket](https://github.com/OllisGit/OctoPrint-FilamentManager/issues/new/choose) and I'll try to help. Since OctoPrint provides an own [community forum](https://discourse.octoprint.org/) questions and requests for help should be placed there.
 
 #### Support my Efforts
 
