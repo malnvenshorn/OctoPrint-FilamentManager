@@ -289,6 +289,7 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
         try:
             saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+            self.send_client_message("selection_changed", data=dict(table="selections", action="update"))
         except Exception as e:
             self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
