@@ -204,8 +204,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         try:
             saved_spool = self.filamentManager.create_spool(new_spool)
 
-            if "update" in json_data:
-                update = json_data["update"]
+            if "updateui" in json_data:
+                update = json_data["updateui"]
                 if update == True:
                     self.send_client_message("data_changed", data=dict(table="spools", action="update"))
 
@@ -299,8 +299,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         try:
             saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
 
-            if "update" in json_data:
-                update = json_data["update"]
+            if "updateui" in json_data:
+                update = json_data["updateui"]
                 if update == True:
                     self.send_client_message("data_changed", data=dict(table="spools", action="update"))
 
