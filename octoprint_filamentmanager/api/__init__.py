@@ -25,9 +25,6 @@ from .util import *
 
 class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
-    def send_client_message(self, message_type, data=None):
-        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
-
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
         force = request.values.get("force", "false") in valid_boolean_trues
@@ -247,6 +244,10 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         try:
             if (self.filamentManager != None):
                 saved_spool = self.filamentManager.create_spool(new_spool)
+                if ("updateui" in json_data):
+                    update = json_data["updateui"]
+                    if update == True:
+                        self.send_client_message("data_changed", data=dict(table="spools", action="update"))
             else:
                 self._logger.warn("self.filamentManager is not initialized yet")
                 return
@@ -362,6 +363,11 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
                 # Inform (external e.g. OctoPod) UI about spool selection change
                 self.send_client_message("selection_changed", data=dict(table="selections", action="update"))
+                if ("updateui" in json_data["selection"]):
+                    update = json_data["selection"]["updateui"]
+                    if update == True:
+                        self.send_client_message("data_changed", data=dict(table="spools", action="update"))
+
             else:
                 self._logger.warn("self.filamentManager is not initialized yet")
                 return
