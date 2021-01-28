@@ -25,6 +25,9 @@ from .util import *
 
 class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
+    def send_client_message(self, message_type, data=None):
+        self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
+
     @octoprint.plugin.BlueprintPlugin.route("/profiles", methods=["GET"])
     def get_profiles_list(self):
         force = request.values.get("force", "false") in valid_boolean_trues
