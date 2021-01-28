@@ -97,6 +97,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
                                   .format(old=schema_version, new=self.DB_VERSION))
         except Exception as e:
             self._logger.error("Failed to initialize database: {message}".format(message=str(e)))
+            self._logger.exception("Failed to initialize database: {message}".format(message=str(e)))
 
     def migrate_database_schema(self, target, current):
         if current <= 1:
@@ -137,6 +138,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
             self.set_temp_offsets(all_selections)
         except Exception as e:
             self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
+            self._logger.exception("Failed to set temperature offsets: {message}".format(message=str(e)))
 
     def on_shutdown(self):
         if self.filamentManager is not None:
@@ -288,6 +290,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
             except Exception as e:
                 self._logger.error("Failed to update filament on tool{id}: {message}"
                                    .format(id=str(tool), message=str(e)))
+                self._logger.exception("Failed to update filament on tool{id}: {message}"
+                                   .format(id=str(tool), message=str(e)))
 
         self.send_client_message("data_changed", data=dict(table="spools", action="update"))
         self.on_data_modified("spools", "update")
@@ -329,6 +333,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
             selections = self.filamentManager.get_all_selections(self.client_id)
         except Exception as e:
             self._logger.error("Failed to fetch selected spools, pause feature will not be available: {message}"
+                               .format(message=str(e)))
+            self._logger.exception("Failed to fetch selected spools, pause feature will not be available: {message}"
                                .format(message=str(e)))
         else:
             for s in selections:
