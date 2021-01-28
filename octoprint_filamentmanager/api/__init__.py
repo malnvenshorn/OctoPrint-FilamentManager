@@ -357,10 +357,11 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         try:
             if (self.filamentManager != None):
                 saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+                # Inform (external e.g. OctoPod) UI about spool selection change
+                self.send_client_message("selection_changed", data=dict(table="selections", action="update"))
             else:
                 self._logger.warn("self.filamentManager is not initialized yet")
                 return
-            self.send_client_message("selection_changed", data=dict(table="selections", action="update"))
         except Exception as e:
             self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
