@@ -15,7 +15,6 @@
      (https://github.com/OllisGit/OctoPrint-SpoolManager)
     - ...also I will move more and more features from FilamentManager to SpoolManager (e.g. external Database, MultiTool, ...)
 
-
 # Overview
 
 [![Version](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=version&url=https://api.github.com/repos/OllisGit/OctoPrint-FilamentManager/releases&query=$[0].name)]()
