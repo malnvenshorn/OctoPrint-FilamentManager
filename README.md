@@ -4,7 +4,7 @@
 
     Hi everybody,
     because there was no activtiy in the last month on the origial GitHub-Repository from @malnvenshorn,
-    the community deceided to find a new home of this OctoPrint-Plugin and here it it ;-)
+    the community decided to find a new home of this OctoPrint-Plugin and here it is ;-)
     See https://github.com/OctoPrint/plugins.octoprint.org/issues/471 for more details
 
     What is my roadmap/stratagy of "hosting" this plugin?
