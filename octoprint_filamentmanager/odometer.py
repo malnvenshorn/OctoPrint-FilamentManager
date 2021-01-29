@@ -24,6 +24,7 @@ class FilamentOdometer(object):
         self.totalExtrusion = [0.0]
         self.maxExtrusion = [0.0]
         self.currentTool = 0
+        self.parseCount = 0
 
     def reset_extruded_length(self):
         tools = len(self.maxExtrusion)
@@ -31,6 +32,7 @@ class FilamentOdometer(object):
         self.totalExtrusion = [0.0] * tools
 
     def parse(self, gcode, cmd):
+        self.parseCount = self.parseCount + 1
         if gcode is None:
             return
 
@@ -57,6 +59,12 @@ class FilamentOdometer(object):
         elif gcode == "G92":  # set position
             e = self._get_float(cmd, self.regexE)
             if e is not None:
+
+                print("*****")
+                print(str(self.parseCount))
+                print(cmd)
+                print("*****")
+
                 self.lastExtrusion[self.currentTool] = e
         elif gcode == "M82":  # set extruder to absolute mode
             self.relativeExtrusion = False

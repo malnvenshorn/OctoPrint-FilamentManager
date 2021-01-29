@@ -15,7 +15,8 @@ from octoprint.util.version import is_octoprint_compatible
 
 from .api import FilamentManagerApi
 from .data import FilamentManager
-from .odometer import FilamentOdometer
+from .newodometer import NewFilamentOdometer
+# from .odometer import FilamentOdometer
 
 
 class FilamentManagerPlugin(FilamentManagerApi,
@@ -31,7 +32,8 @@ class FilamentManagerPlugin(FilamentManagerApi,
     def __init__(self):
         self.client_id = None
         self.filamentManager = None
-        self.filamentOdometer = None
+        # self.filamentOdometer = None
+        self.myFilamentOdometer = None
         self.lastPrintState = None
 
         self.odometerEnabled = False
@@ -49,8 +51,13 @@ class FilamentManagerPlugin(FilamentManagerApi,
 
         self.client_id = get_client_id()
 
-        self.filamentOdometer = FilamentOdometer()
-        self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+        # self.filamentOdometer = FilamentOdometer()
+        # self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+
+        self.myFilamentOdometer = NewFilamentOdometer()
+        self.myFilamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+
+        self.alreadyCanceled = False
 
         db_config = self._settings.get(["database"], merged=True)
         migrate_schema_version = False
@@ -119,6 +126,9 @@ class FilamentManagerPlugin(FilamentManagerApi,
             self.filamentManager.initialize()
 
     def on_after_startup(self):
+        self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
+        self.pauseEnabled = self._settings.get_boolean(["autoPause"])
+
         # subscribe to the notify channel so that we get notified if another client has altered the data
         # notify is not available if we are connected to the internal sqlite database
         if self.filamentManager is not None and self.filamentManager.notify is not None:
@@ -198,7 +208,11 @@ class FilamentManagerPlugin(FilamentManagerApi,
             # we have to recalculate the pause thresholds
             self.update_pause_thresholds()
 
-        self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+        # self.filamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+        self.myFilamentOdometer.set_g90_extruder(self._settings.get_boolean(["feature", "g90InfluencesExtruder"]))
+
+        self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
+        self.pauseEnabled = self._settings.get_boolean(["autoPause"])
 
     # AssetPlugin
 
@@ -223,41 +237,101 @@ class FilamentManagerPlugin(FilamentManagerApi,
     # EventHandlerPlugin
 
     def on_event(self, event, payload):
-        if event == Events.PRINTER_STATE_CHANGED:
-            self.on_printer_state_changed(payload)
+        # if event == Events.PRINTER_STATE_CHANGED:
+        #     self.on_printer_state_changed(payload)
 
-    def on_printer_state_changed(self, payload):
-        if payload['state_id'] == "PRINTING":
-            if self.lastPrintState == "PAUSED":
-                # resuming print
-                self.filamentOdometer.reset_extruded_length()
-            else:
-                # starting new print
-                self.filamentOdometer.reset()
-            self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
-            self.pauseEnabled = self._settings.get_boolean(["autoPause"])
-            self._logger.debug("Printer State: %s" % payload["state_string"])
-            self._logger.debug("Odometer: %s" % ("On" if self.odometerEnabled else "Off"))
-            self._logger.debug("AutoPause: %s" % ("On" if self.pauseEnabled and self.odometerEnabled else "Off"))
-        elif self.lastPrintState == "PRINTING":
-            # print state changed from printing => update filament usage
-            self._logger.debug("Printer State: %s" % payload["state_string"])
-            if self.odometerEnabled:
-                self.odometerEnabled = False  # disabled because we don't want to track manual extrusion
-                self.update_filament_usage()
+        if Events.PRINT_STARTED == event:
+            self.alreadyCanceled = False
+            self._printJobStarted(payload)
+        elif Events.PRINT_PAUSED == event:
+            self.alreadyCanceled = True
+            self._printJobPaused()
+        elif Events.PRINT_RESUMED == event:
+            self.alreadyCanceled = True
+            self._printJobResumed()
+        elif Events.PRINT_DONE == event:
+            self._printJobFinished()
+        elif Events.PRINT_FAILED == event:
+            if self.alreadyCanceled == False:
+                self._printJobFinished()
+        elif Events.PRINT_CANCELLED == event:
+            self.alreadyCanceled = True
+            self._printJobFinished()
+        pass
 
-        # update last print state
-        self.lastPrintState = payload['state_id']
+    def _printJobStarted(self, payload):
+
+        # starting new print
+        # self.filamentOdometer.reset()
+        self.myFilamentOdometer.reset()
+
+        self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
+        self.pauseEnabled = self._settings.get_boolean(["autoPause"])
+        self._logger.debug("Printer started")
+        self._logger.debug("Odometer: %s" % ("On" if self.odometerEnabled else "Off"))
+        self._logger.debug("AutoPause: %s" % ("On" if self.pauseEnabled and self.odometerEnabled else "Off"))
+
+        pass
+
+    def _printJobPaused(self):
+        # do nothing
+        pass
+
+    def _printJobResumed(self):
+        # do nothing
+        pass
+
+    def _printJobFinished(self):
+        self.update_filament_usage()
+        pass
+
+    # def on_printer_state_changed(self, payload):
+    #     if payload['state_id'] == "PRINTING":
+    #         if self.lastPrintState == "PAUSED":
+    #             # resuming print
+    #             # no idea why on pausing the extruded length should be reseted self.filamentOdometer.reset_extruded_length()
+    #             pass
+    #         else:
+    #             # starting new print
+    #             # self.filamentOdometer.reset()
+    #             self.myFilamentOdometer.reset()
+    #         self.odometerEnabled = self._settings.get_boolean(["enableOdometer"])
+    #         self.pauseEnabled = self._settings.get_boolean(["autoPause"])
+    #         self._logger.debug("Printer State: %s" % payload["state_string"])
+    #         self._logger.debug("Odometer: %s" % ("On" if self.odometerEnabled else "Off"))
+    #         self._logger.debug("AutoPause: %s" % ("On" if self.pauseEnabled and self.odometerEnabled else "Off"))
+    #     elif self.lastPrintState == "PRINTING":
+    #         # print state changed from printing => update filament usage
+    #         self._logger.debug("Printer State: %s" % payload["state_string"])
+    #         if self.odometerEnabled:
+    #             self.odometerEnabled = False  # disabled because we don't want to track manual extrusion
+    #             self.update_filament_usage()
+    #
+    #     # update last print state
+    #     self.lastPrintState = payload['state_id']
 
     def update_filament_usage(self):
         printer_profile = self._printer_profile_manager.get_current_or_default()
-        extrusion = self.filamentOdometer.get_extrusion()
-        numTools = min(printer_profile['extruder']['count'], len(extrusion))
+        # extrusion = self.filamentOdometer.get_extrusion()
+        extrusion = self.myFilamentOdometer.getExtrusionAmount()
+
+        printerProfileToolCount = printer_profile['extruder']['count']
+        self._logger.info("Updating Filament usage for octoprint configured toolcount: {toolCount}"
+                          .format(toolCount=str(printerProfileToolCount)))
+
+        self._logger.info("Filament tracked toolcount: {toolCount}"
+                          .format(toolCount=str(len(extrusion))))
+
+        self._logger.info("Filament tracked values: {trackedValues}"
+                          .format(trackedValues=str(extrusion)))
+
+        numTools = min(printerProfileToolCount, len(extrusion))
 
         def calculate_weight(length, profile):
             radius = profile["diameter"] / 2  # mm
             volume = (length * PI * radius * radius) / 1000  # cm³
             return volume * profile["density"]  # g
+
 
         for tool in range(0, numTools):
             self._logger.info("Filament used: {length} mm (tool{id})"
@@ -284,7 +358,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
                 spool_string = "{name} - {material} ({vendor})"
                 spool_string = spool_string.format(name=spool["name"], material=spool["profile"]["material"],
                                                    vendor=spool["profile"]["vendor"])
-                self._logger.debug("Updated remaining filament on spool '{spool}' from {old}g to {new}g ({diff}g)"
+                self._logger.info("Updated remaining filament on spool '{spool}' from {old}g to {new}g ({diff}g)"
                                    .format(spool=spool_string, old=str(old_value), new=str(new_value),
                                            diff=str(new_value - old_value)))
             except Exception as e:
@@ -297,18 +371,24 @@ class FilamentManagerPlugin(FilamentManagerApi,
         self.on_data_modified("spools", "update")
 
     # Protocol hook
-
     def filament_odometer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-        if self.odometerEnabled:
-            self.filamentOdometer.parse(gcode, cmd)
+        # is enabled in plugin settings and is currently prining
+
+        if self.odometerEnabled and self._printer.is_printing():
+            # self.filamentOdometer.parse(gcode, cmd)
+            self.myFilamentOdometer.processGCodeLine(cmd)
+
             if self.pauseEnabled and self.check_threshold():
                 self._logger.info("Filament is running out, pausing print")
                 self._printer.pause_print()
 
     def check_threshold(self):
-        extrusion = self.filamentOdometer.get_extrusion()
-        tool = self.filamentOdometer.get_current_tool()
+        # extrusion = self.filamentOdometer.get_extrusion()
+        extrusion = self.myFilamentOdometer.getExtrusionAmount()
+        # tool = self.filamentOdometer.get_current_tool()
+        tool = self.myFilamentOdometer.getCurrentTool()
         threshold = self.pauseThresholds.get("tool%s" % tool)
+
         return (threshold is not None and extrusion[tool] >= threshold)
 
     def update_pause_thresholds(self):
@@ -324,6 +404,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
                 if spool is not None:
                     self.pauseThresholds["tool%s" % selection["tool"]] = threshold(spool)
             except ZeroDivisionError:
+                tool = selection["tool"]
                 self._logger.warn("ZeroDivisionError while calculating pause threshold for tool{tool}, "
                                   "pause feature not available for selected spool".format(tool=tool))
 
