@@ -64,3 +64,22 @@ or manually using this URL:
 ![FilamentManager Settings Spool](screenshots/filamentmanager_settings_spool.png?raw=true)
 
 ![FilamentManager Settings](screenshots/filamentmanager_settings.png?raw=true)
+
+# Developer section
+
+## API - Calls
+
+E.g.
+```
+url = 'http://localhost/plugin/filamentmanager/selections/0'
+    headers = {'X-Api-Key': config.API_KEY}
+    payload = {
+        "selection": {
+            "tool": 0,
+            "spool": {
+                "id": id
+            }
+        },
+        "updateui": True
+    }
+```
