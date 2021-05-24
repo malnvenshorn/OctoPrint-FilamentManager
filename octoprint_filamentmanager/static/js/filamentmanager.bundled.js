@@ -707,36 +707,62 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
+
+    self.overUsedUsage = ko.observable(false);
+    self.overUsedUsage.subscribe(function(newValue){
+        debugger
+        // self.allSpools.updateItems(self.allSpools.items)
+        self.allSpools.toggleFilter("overUsedUsage");
+    });
     var profilesViewModel = this.viewModels.profiles;
 
-    self.allSpools = new ItemListHelper('filamentSpools', {
-        name: function name(a, b) {
-            // sorts ascending
-            if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
-            if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        material: function material(a, b) {
-            // sorts ascending
-            if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
-            if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        vendor: function vendor(a, b) {
-            // sorts ascending
-            if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
-            if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        remaining: function remaining(a, b) {
-            // sorts descending
-            var ra = parseFloat(a.weight) - parseFloat(a.used);
-            var rb = parseFloat(b.weight) - parseFloat(b.used);
-            if (ra > rb) return -1;
-            if (ra < rb) return 1;
-            return 0;
+
+    var myListHelperFilters = {
+        overUsedUsage: function (data){
+            debugger
+            console.error(data);
+            var result = data.used < data.weight;
+            return result;
         }
-    }, {}, 'name', [], [], 10);
+    };
+    var myListHelperExclusiveFilters = [["overUsedUsage"]];
+
+    self.allSpools = new ItemListHelper(
+        'filamentSpools',
+        {
+            name: function name(a, b) {
+                // sorts ascending
+                if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
+                if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            material: function material(a, b) {
+                // sorts ascending
+                if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
+                if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            vendor: function vendor(a, b) {
+                // sorts ascending
+                if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
+                if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            remaining: function remaining(a, b) {
+                // sorts descending
+                var ra = parseFloat(a.weight) - parseFloat(a.used);
+                var rb = parseFloat(b.weight) - parseFloat(b.used);
+                if (ra > rb) return -1;
+                if (ra < rb) return 1;
+                return 0;
+            }
+        },
+        myListHelperFilters,
+        'name',
+        [],
+        myListHelperExclusiveFilters,
+        10);
+
 
     self.pageSize = ko.pureComputed({
         read: function read() {
