@@ -316,10 +316,17 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     };
 
     var showDialog = function showSpoolConfirmationDialog() {
+        var allCurrentSelections = selections.selectedSpools != null ? selections.selectedSpools() : null;
         var s = [];
         printerStateViewModel.filament().forEach(function (value) {
             var toolID = Utils.extractToolIDFromName(value.name());
-            s.push({ spool: undefined, tool: toolID });
+
+            var currentSelectionForTool = allCurrentSelections?.[toolID]?.name;
+
+            s.push({ spool: undefined,
+                     tool: toolID,
+                     currentSpoolName: currentSelectionForTool
+            });
         });
         self.selections(s);
         button.attr('disabled', true);
@@ -710,7 +717,6 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
 
     self.overUsedUsage = ko.observable(false);
     self.overUsedUsage.subscribe(function(newValue){
-        debugger
         // self.allSpools.updateItems(self.allSpools.items)
         self.allSpools.toggleFilter("overUsedUsage");
     });
@@ -719,7 +725,6 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
 
     var myListHelperFilters = {
         overUsedUsage: function (data){
-            debugger
             console.error(data);
             var result = data.used < data.weight;
             return result;

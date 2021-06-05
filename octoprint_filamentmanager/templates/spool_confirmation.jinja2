@@ -15,7 +15,7 @@
             <!-- ko foreach: viewModels.confirmation.selections -->
             <div class="control-group">
                <div class="controls form-inline">
-                   <label class="control-label">{{ _('Tool') }} <span data-bind="text: $data.tool"></span></label>&nbsp;
+                   <label class="control-label">{{ _('Tool') }} <span data-bind="text: $data.tool"></span>:&nbsp;&nbsp;<span data-bind="text: $data.currentSpoolName"></span></label>&nbsp;
                    <select data-bind="enable: !$root.core.bridge.allViewModels.printerStateViewModel.isPrinting() && $root.core.bridge.allViewModels.loginStateViewModel.isUser(), options: $root.viewModels.spools.allSpools.items, optionsText: function(item) { return item.name + ' ' + (item.weight - item.used).toFixed(0) + 'g - ' + item.profile.material + ' (' + item.profile.vendor + ')'; }, optionsValue: function(item) { return item.id; }, optionsCaption: '{{ _('--- Select Spool ---') }}', value: $root.viewModels.confirmation.selections()[$index()].spool, event: { change: function() { $root.viewModels.confirmation.checkSelection(); } }"></select>
                </div>
             </div>
