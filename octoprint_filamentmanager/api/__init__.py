@@ -503,10 +503,10 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                                                           password=config["password"])
             else:
                 self._logger.warn("self.filamentManager is not initialized yet")
-                return
+                return make_response("FilamentManager is still initializing (if this persists, some dependencies may be missing)", 503)
         except Exception as e:
             self._logger.exception("Failed to connect to the database with the given configuration")
-            return make_response("Failed to connect to the database with the given configuration", 400)
+            return make_response("Failed to connect to the database with the given configuration: {}".format(e), 400)
         else:
             connection.close()
             return make_response("", 204)

@@ -230,6 +230,7 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
+    self.testResult = ko.observable(null);
 
     var dialog = $('#settings_plugin_filamentmanager_configurationdialog');
 
@@ -279,13 +280,23 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
 
         var data = ko.mapping.toJS(self.config.database);
 
+        self.testResult('Waiting for response...');
+
         api.database.test(data).done(function () {
             target.addClass('btn-success');
-        }).fail(function () {
+            self.testResult('Success!');
+        }).fail(function (response) {
             target.addClass('btn-danger');
+            console.log(JSON.stringify(response));
+            self.testResult(response.responseText);
         }).always(function () {
             $('i.fa-spinner', target).remove();
             target.prop('disabled', false);
+            // clear the result message after a few seconds
+            window.setTimeout(function() {
+                self.testResult('');
+                target.removeClass('btn-success btn-danger');
+            }, 7 * 1000)
         });
     };
 };

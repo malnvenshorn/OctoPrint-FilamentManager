@@ -108,7 +108,10 @@
                         </div>
                         <!-- connection test -->
                         <div class="control-group">
-                            <button class="btn pull-right" data-bind="click: viewModels.config.connectionTest">{{ _("Test connection") }}</button>
+                            <div class="controls">
+                                <button class="btn btn-primary pull-right" data-bind="click: viewModels.config.connectionTest">{{ _("Test connection") }}</button>
+                                <span data-bind="text: viewModels.config.testResult"></span>
+                            </div>
                         </div>
 
                         <span>{{ _("Note: If you change these settings you must restart your OctoPrint instance for the changes to take affect.") }}</span>
