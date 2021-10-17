@@ -230,7 +230,8 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
-    self.testResult = ko.observable(null);
+    self.testConnectionResult = ko.observable(null);
+    self.testConnectionResultTextColor = ko.observable("color:blue");
 
     var dialog = $('#settings_plugin_filamentmanager_configurationdialog');
 
@@ -280,23 +281,27 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
 
         var data = ko.mapping.toJS(self.config.database);
 
-        self.testResult('Waiting for response...');
+        self.testConnectionResult('Waiting for response...');
+        self.testConnectionResultTextColor('color:orange');
 
         api.database.test(data).done(function () {
             target.addClass('btn-success');
-            self.testResult('Success!');
+            self.testConnectionResult('Success!');
+            self.testConnectionResultTextColor('color:green');
         }).fail(function (response) {
             target.addClass('btn-danger');
             console.log(JSON.stringify(response));
-            self.testResult(response.responseText);
+            self.testConnectionResult(response.responseText);
+            self.testConnectionResultTextColor("color:red");
         }).always(function () {
             $('i.fa-spinner', target).remove();
             target.prop('disabled', false);
             // clear the result message after a few seconds
             window.setTimeout(function() {
-                self.testResult('');
+                self.testConnectionResult('');
+                self.testConnectionResultTextColor('');
                 target.removeClass('btn-success btn-danger');
-            }, 7 * 1000)
+            }, 10 * 1000)
         });
     };
 };

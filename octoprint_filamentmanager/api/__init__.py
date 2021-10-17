@@ -324,7 +324,12 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
     def get_selections_list(self):
         try:
             if (self.filamentManager != None):
+
+                printer_profile = self._printer_profile_manager.get_current_or_default()
+                printerProfileToolCount = printer_profile['extruder']['count']
                 all_selections = self.filamentManager.get_all_selections(self.client_id)
+                # return only the selection of the max tool count of the current printer profile
+                all_selections = all_selections[0:printerProfileToolCount]
             else:
                 self._logger.warn("self.filamentManager is not initialized yet")
                 return

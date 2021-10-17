@@ -51,9 +51,21 @@ or manually using this URL:
 
     `https://github.com/OllisGit/OctoPrint-FilamentManager/releases/latest/download/master.zip`
 
-1. For PostgreSQL support you need to install an additional dependency:
+1. For PostgreSQL support you need to install an additional dependency. Take a look into the [wiki](https://github.com/OllisGit/OctoPrint-FilamentManager/wiki) for more details.
 
     `pip install psycopg2`
+
+
+### Using PostgreSQL with Docker
+You need to make sure that you setup a docker runtime on your system. After that you can "manage" a PostgreSQL with the following commands:
+
+    docker-compose up
+_
+
+    docker-compose down --volumes
+_
+
+    docker-compose run postgres bash
 
 ## Screenshots
 

@@ -74,7 +74,8 @@
                                     <input type="checkbox" data-bind="checked: viewModels.config.config.database.useExternal">{{ _("Use external database") }}
                                 </label>
                                 <div class="help-block" >
-                                    <span style="color: red; ">If you want to use an external database, please take a look into my <a href="https://github.com/OllisGit/OctoPrint-FilamentManager/wiki/Setup-PostgreSQL-on-Raspbian-(Stretch)" target="newTab">wiki</a> how to install the drivers and setup the database.</span>
+{#                                    <span style="color: red; ">If you want to use an external database, please take a look into my <a href="https://github.com/OllisGit/OctoPrint-FilamentManager/wiki/Setup-PostgreSQL-on-Raspbian-(Stretch)" target="newTab">wiki</a> how to install the drivers and setup the database.</span>#}
+                                    <span style="color: red; ">{{ _('If you want to use an external database, please take a look into my <a href="https://github.com/OllisGit/OctoPrint-FilamentManager/wiki/Setup-PostgreSQL-on-Raspbian-(Stretch)" target="newTab">wiki</a> how to install the drivers and setup the database.') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +111,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <button class="btn btn-primary pull-right" data-bind="click: viewModels.config.connectionTest">{{ _("Test connection") }}</button>
-                                <span data-bind="text: viewModels.config.testResult"></span>
+                                <span data-bind="text: viewModels.config.testConnectionResult, attr:{style: viewModels.config.testConnectionResultTextColor }"></span>
                             </div>
                         </div>
 

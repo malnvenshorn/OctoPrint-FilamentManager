@@ -143,12 +143,7 @@ class FilamentManagerPlugin(FilamentManagerApi,
         self.update_pause_thresholds()
 
         # set temperature offsets for saved selections
-        try:
-            all_selections = self.filamentManager.get_all_selections(self.client_id)
-            self.set_temp_offsets(all_selections)
-        except Exception as e:
-            self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
-            self._logger.exception("Failed to set temperature offsets: {message}".format(message=str(e)))
+        self.assign_temperature_offset()
 
     def on_shutdown(self):
         if self.filamentManager is not None:
@@ -257,6 +252,10 @@ class FilamentManagerPlugin(FilamentManagerApi,
         elif Events.PRINT_CANCELLED == event:
             self.alreadyCanceled = True
             self._printJobFinished()
+
+        elif Events.CONNECTED == event:
+            self.assign_temperature_offset()
+
         pass
 
     def _printJobStarted(self, payload):
@@ -309,6 +308,14 @@ class FilamentManagerPlugin(FilamentManagerApi,
     #
     #     # update last print state
     #     self.lastPrintState = payload['state_id']
+
+    def assign_temperature_offset(self):
+        try:
+            all_selections = self.filamentManager.get_all_selections(self.client_id)
+            self.set_temp_offsets(all_selections)
+        except Exception as e:
+            self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
+            self._logger.exception("Failed to set temperature offsets: {message}".format(message=str(e)))
 
     def update_filament_usage(self):
         printer_profile = self._printer_profile_manager.get_current_or_default()
