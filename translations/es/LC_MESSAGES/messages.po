@@ -3,14 +3,15 @@
 # This file is distributed under the same license as the
 # OctoPrint-FilamentManager project.
 # Ivan Garcia <ivan.garcia@studio-point.com>, 2019.
+# Carlos Romero <deses12@gmail.com>, 2021.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint-FilamentManager 0.5.2\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
 "POT-Creation-Date: 2021-10-17 11:30+0200\n"
-"PO-Revision-Date: 2019-05-06 11:31+0100\n"
-"Last-Translator: Ivan Garcia <ivan.garcia@studio-point.com>\n"
+"PO-Revision-Date: 2021-10-18 12:35+0100\n"
+"Last-Translator: Carlos Romero <deses12@gmail.com>\n"
 "Language: es\n"
 "Language-Team: es <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -141,7 +142,7 @@ msgstr "¿Borrar bobina?"
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:948
 msgid "You are about to delete the filament spool <strong> -  ()</strong>."
-msgstr "Estás apunto de borrar la bobina de filamento <strong> -  ()</strong>."
+msgstr "Estás a punto de borrar la bobina de filamento <strong> -  ()</strong>."
 
 #: octoprint_filamentmanager/static/js/filamentmanager.bundled.js:1020
 msgid "Insufficient filament"
@@ -152,13 +153,13 @@ msgid ""
 "The current print job needs more material than what's left on the "
 "selected spool."
 msgstr ""
-"La impresión actual necesita mas filamento del que hay en la bobina "
+"La impresión actual necesita más filamento del que hay en la bobina "
 "seleccionada."
 
 #: octoprint_filamentmanager/templates/settings.jinja2:4
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:5
 msgid "Plugin Configuration"
-msgstr "Configuración del Plugin"
+msgstr "Configuración del plugin"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:7
 msgid "Filament Spools"
@@ -166,7 +167,7 @@ msgstr "Bobinas de filamento"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:13
 msgid "Items per page"
-msgstr "Objetos por página"
+msgstr "Elementos por página"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:22
 msgid "Sort by"
@@ -182,7 +183,7 @@ msgstr "Material (Ascendente)"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:25
 msgid "Vendor (ascending)"
-msgstr "Vendedor (Ascendente)"
+msgstr "Fabricante (Ascendente)"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:26
 msgid "Remaining (descending)"
@@ -201,7 +202,7 @@ msgstr "Material"
 #: octoprint_filamentmanager/templates/settings.jinja2:38
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:26
 msgid "Vendor"
-msgstr "Vendedor"
+msgstr "Fabricante"
 
 #: octoprint_filamentmanager/templates/settings.jinja2:39
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:50
@@ -272,7 +273,7 @@ msgstr "Habilitar medición mediante software \"odometer\""
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:50
 msgid "Pause print if filament runs out"
-msgstr "Pausar la impresión si el filamento se gasta"
+msgstr "Pausar la impresión si el filamento se agota"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:56
 msgid "Pause threshold"
@@ -289,6 +290,11 @@ msgid ""
 "PostgreSQL-on-Raspbian-(Stretch)\" target=\"newTab\">wiki</a> how to "
 "install the drivers and setup the database."
 msgstr ""
+"Si quieres usar una base de datos externa, por favor, mira mi <a "
+"href=\"https://github.com/OllisGit/OctoPrint-FilamentManager/wiki/Setup-"
+"PostgreSQL-on-Raspbian-(Stretch)\" target=\"newTab\">wiki</a> sobre como "
+"instalar los drivers y configurar la base de datos."
+
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:84
 msgid "URI"
@@ -312,11 +318,11 @@ msgid ""
 "instance for the changes to take affect."
 msgstr ""
 "Nota: Si cambias esta configuración deberás reiniciar la instancia de "
-"OctoPrint para que los cambios hagan efecto."
+"OctoPrint para que los cambios tengan efecto."
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:122
 msgid "Import & Export"
-msgstr "Importar & Exportar"
+msgstr "Importar y exportar"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:127
 msgid "Browse..."
@@ -334,11 +340,11 @@ msgstr "Exportar"
 msgid ""
 "This does not look like a valid import archive. Only zip files are "
 "supported."
-msgstr "No parece un fichero de importación valido. Sólo se permiten archivos ZIP."
+msgstr "No parece un fichero de importación válido. Sólo se permiten archivos zip."
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:144
 msgid "Currency symbol"
-msgstr "Simbolo de moneda"
+msgstr "Símbolo de moneda"
 
 #: octoprint_filamentmanager/templates/settings_configdialog.jinja2:156
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:87
@@ -354,11 +360,11 @@ msgstr "Guardar"
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:5
 msgid "Filament Profiles"
-msgstr "Perfiles de Filamento"
+msgstr "Perfiles de filamento"
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:13
 msgid "--- New Profile ---"
-msgstr "--- Nuevo Perfil ---"
+msgstr "--- Nuevo perfil ---"
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:14
 msgid "New"
@@ -370,7 +376,7 @@ msgstr "Guardar perfil"
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:30
 msgid "Vendor must be set"
-msgstr "Debes escribir el vendedor"
+msgstr "Debes escribir el fabricante"
 
 #: octoprint_filamentmanager/templates/settings_profiledialog.jinja2:42
 msgid "Material must be set"
@@ -406,11 +412,11 @@ msgstr "Precio"
 
 #: octoprint_filamentmanager/templates/settings_spooldialog.jinja2:74
 msgid "Temperature offset"
-msgstr "Temperatura"
+msgstr "Compensación de temperatura"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:3
-msgid "hide overused usage"
-msgstr ""
+msgid "Hide overused usage"
+msgstr "Ocultar bobinas agotadas"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:10
 #: octoprint_filamentmanager/templates/spool_confirmation.jinja2:18
@@ -420,7 +426,7 @@ msgstr "Extrusor"
 #: octoprint_filamentmanager/templates/sidebar.jinja2:19
 #: octoprint_filamentmanager/templates/spool_confirmation.jinja2:19
 msgid "--- Select Spool ---"
-msgstr "--- Seleccionar Bobina ---"
+msgstr "--- Seleccionar bobina ---"
 
 #: octoprint_filamentmanager/templates/spool_confirmation.jinja2:5
 msgid "Confirm your selected spools"
@@ -433,7 +439,7 @@ msgid ""
 "it's loaded correctly."
 msgstr ""
 "No hay información disponible sobre el extrusor de la impresión actual. "
-"Asegúrate de que el proceso de análisis esté finalizado y se haya cargado"
+"Asegúrate de que el proceso de análisis esté finalizado y haya cargado"
 " correctamente."
 
 #: octoprint_filamentmanager/templates/spool_confirmation.jinja2:14
@@ -442,6 +448,6 @@ msgid ""
 "meant to protect you from accidentically selecting wrong spools for the "
 "print."
 msgstr ""
-"Por favor, confirma las bobinas de los extrusores. Este dialogo está "
-"preparado para evitar que elijas bobinas incorrectas de forma accidental."
+"Por favor, confirma las bobinas seleccionadas para todos los extrusores activos. Este diálogo está "
+"pensado para evitar que elijas bobinas incorrectas para esta impresión."
 
