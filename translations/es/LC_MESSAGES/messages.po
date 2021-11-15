@@ -415,7 +415,7 @@ msgid "Temperature offset"
 msgstr "Compensación de temperatura"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:3
-msgid "Hide overused usage"
+msgid "hide overused usage"
 msgstr "Ocultar bobinas agotadas"
 
 #: octoprint_filamentmanager/templates/sidebar.jinja2:10
