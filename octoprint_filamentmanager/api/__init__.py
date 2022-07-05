@@ -16,6 +16,7 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server import admin_permission
+from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import restricted_access, check_lastmodified, check_etag
 from octoprint.util import dict_merge
 
@@ -29,10 +30,15 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         force = request.values.get("force", "false") in valid_boolean_trues
 
         try:
-            lm = self.filamentManager.get_profiles_lastmodified()
+            if (self.filamentManager != None):
+                lm = self.filamentManager.get_profiles_lastmodified()
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             lm = None
             self._logger.error("Failed to fetch profiles lastmodified timestamp: {message}".format(message=str(e)))
+            self._logger.exception("Failed to fetch profiles lastmodified timestamp: {message}".format(message=str(e)))
 
         etag = entity_tag(lm)
 
@@ -45,12 +51,17 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return add_revalidation_header_with_no_max_age(response, lm, etag)
         except Exception as e:
             self._logger.error("Failed to fetch profiles: {message}".format(message=str(e)))
+            self._logger.exception("Failed to fetch profiles: {message}".format(message=str(e)))
             return make_response("Failed to fetch profiles, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["GET"])
     def get_profile(self, identifier):
         try:
-            profile = self.filamentManager.get_profile(identifier)
+            if (self.filamentManager != None):
+                profile = self.filamentManager.get_profile(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             if profile is not None:
                 return jsonify(dict(profile=profile))
             else:
@@ -58,6 +69,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 return make_response("Unknown profile", 404)
         except Exception as e:
             self._logger.error("Failed to fetch profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to fetch profile with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to fetch profile, see the log for more details", 500)
 
@@ -82,10 +95,15 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 return make_response("Profile does not contain mandatory '{}' field".format(key), 400)
 
         try:
-            saved_profile = self.filamentManager.create_profile(new_profile)
+            if (self.filamentManager != None):
+                saved_profile = self.filamentManager.create_profile(new_profile)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             return jsonify(dict(profile=saved_profile))
         except Exception as e:
             self._logger.error("Failed to create profile: {message}".format(message=str(e)))
+            self._logger.exception("Failed to create profile: {message}".format(message=str(e)))
             return make_response("Failed to create profile, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/profiles/<int:identifier>", methods=["PATCH"])
@@ -103,9 +121,15 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return make_response("No profile included in request", 400)
 
         try:
-            profile = self.filamentManager.get_profile(identifier)
+            if (self.filamentManager != None):
+                profile = self.filamentManager.get_profile(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             self._logger.error("Failed to fetch profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to fetch profile with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to fetch profile, see the log for more details", 500)
 
@@ -121,6 +145,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         except Exception as e:
             self._logger.error("Failed to update profile with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to update profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
             return make_response("Failed to update profile, see the log for more details", 500)
         else:
             self.on_data_modified("profiles", "update")
@@ -130,10 +156,16 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
     @restricted_access
     def delete_profile(self, identifier):
         try:
-            self.filamentManager.delete_profile(identifier)
+            if (self.filamentManager != None):
+                self.filamentManager.delete_profile(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             return make_response("", 204)
         except Exception as e:
             self._logger.error("Failed to delete profile with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to delete profile with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to delete profile, see the log for more details", 500)
 
@@ -142,10 +174,15 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         force = request.values.get("force", "false") in valid_boolean_trues
 
         try:
-            lm = self.filamentManager.get_spools_lastmodified()
+            if (self.filamentManager != None):
+                lm = self.filamentManager.get_spools_lastmodified()
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             lm = None
             self._logger.error("Failed to fetch spools lastmodified timestamp: {message}".format(message=str(e)))
+            self._logger.exception("Failed to fetch spools lastmodified timestamp: {message}".format(message=str(e)))
 
         etag = entity_tag(lm)
 
@@ -158,12 +195,17 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return add_revalidation_header_with_no_max_age(response, lm, etag)
         except Exception as e:
             self._logger.error("Failed to fetch spools: {message}".format(message=str(e)))
+            self._logger.exception("Failed to fetch spools: {message}".format(message=str(e)))
             return make_response("Failed to fetch spools, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["GET"])
     def get_spool(self, identifier):
         try:
-            spool = self.filamentManager.get_spool(identifier)
+            if (self.filamentManager != None):
+                spool = self.filamentManager.get_spool(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             if spool is not None:
                 return jsonify(dict(spool=spool))
             else:
@@ -171,6 +213,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 return make_response("Unknown spool", 404)
         except Exception as e:
             self._logger.error("Failed to fetch spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to fetch spool with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to fetch spool, see the log for more details", 500)
 
@@ -198,10 +242,19 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return make_response("Spool does not contain mandatory 'id (profile)' field", 400)
 
         try:
-            saved_spool = self.filamentManager.create_spool(new_spool)
+            if (self.filamentManager != None):
+                saved_spool = self.filamentManager.create_spool(new_spool)
+                if ("updateui" in json_data):
+                    update = json_data["updateui"]
+                    if update == True:
+                        self.send_client_message("data_changed", data=dict(table="spools", action="update"))
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             return jsonify(dict(spool=saved_spool))
         except Exception as e:
             self._logger.error("Failed to create spool: {message}".format(message=str(e)))
+            self._logger.exception("Failed to create spool: {message}".format(message=str(e)))
             return make_response("Failed to create spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/spools/<int:identifier>", methods=["PATCH"])
@@ -219,9 +272,15 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return make_response("No spool included in request", 400)
 
         try:
-            spool = self.filamentManager.get_spool(identifier)
+            if (self.filamentManager != None):
+                spool = self.filamentManager.get_spool(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             self._logger.error("Failed to fetch spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to fetch spool with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to fetch spool, see the log for more details", 500)
 
@@ -237,6 +296,8 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         except Exception as e:
             self._logger.error("Failed to update spool with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to update spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
             return make_response("Failed to update spool, see the log for more details", 500)
         else:
             self.on_data_modified("spools", "update")
@@ -246,20 +307,36 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
     @restricted_access
     def delete_spool(self, identifier):
         try:
-            self.filamentManager.delete_spool(identifier)
+            if (self.filamentManager != None):
+                self.filamentManager.delete_spool(identifier)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             return make_response("", 204)
         except Exception as e:
             self._logger.error("Failed to delete spool with id {id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to delete spool with id {id}: {message}"
                                .format(id=str(identifier), message=str(e)))
             return make_response("Failed to delete spool, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/selections", methods=["GET"])
     def get_selections_list(self):
         try:
-            all_selections = self.filamentManager.get_all_selections(self.client_id)
+            if (self.filamentManager != None):
+
+                printer_profile = self._printer_profile_manager.get_current_or_default()
+                printerProfileToolCount = printer_profile['extruder']['count']
+                all_selections = self.filamentManager.get_all_selections(self.client_id)
+                # return only the selection of the max tool count of the current printer profile
+                all_selections = all_selections[0:printerProfileToolCount]
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             return jsonify(dict(selections=all_selections))
         except Exception as e:
             self._logger.error("Failed to fetch selected spools: {message}".format(message=str(e)))
+            self._logger.exception("Failed to fetch selected spools: {message}".format(message=str(e)))
             return make_response("Failed to fetch selected spools, see the log for more details", 500)
 
     @octoprint.plugin.BlueprintPlugin.route("/selections/<int:identifier>", methods=["PATCH"])
@@ -287,29 +364,49 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
             return make_response("Trying to change filament while printing", 409)
 
         try:
-            saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+            if (self.filamentManager != None):
+                saved_selection = self.filamentManager.update_selection(identifier, self.client_id, selection)
+                # Inform (external e.g. OctoPod) UI about spool selection change
+                self.send_client_message("selection_changed", data=dict(table="selections", action="update"))
+                if ("updateui" in json_data["selection"]):
+                    update = json_data["selection"]["updateui"]
+                    if update == True:
+                        self.send_client_message("data_changed", data=dict(table="spools", action="update"))
+
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             self._logger.error("Failed to update selected spool for tool{id}: {message}"
                                .format(id=str(identifier), message=str(e)))
+            self._logger.exception("Failed to update selected spool for tool{id}: {message}"
+                               .format(id=str(identifier), message=str(e)))
+
             return make_response("Failed to update selected spool, see the log for more details", 500)
         else:
             try:
                 self.set_temp_offsets([saved_selection])
             except Exception as e:
                 self._logger.error("Failed to set temperature offsets: {message}".format(message=str(e)))
+                self._logger.exception("Failed to set temperature offsets: {message}".format(message=str(e)))
             self.on_data_modified("selections", "update")
             return jsonify(dict(selection=saved_selection))
 
     @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
     @restricted_access
-    @admin_permission.require(403)
+    @Permissions.ADMIN.require(403)
     def export_data(self):
         try:
             tempdir = tempfile.mkdtemp()
-            self.filamentManager.export_data(tempdir)
+            if (self.filamentManager != None):
+                self.filamentManager.export_data(tempdir)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
             archive_path = shutil.make_archive(tempfile.mktemp(), "zip", tempdir)
         except Exception as e:
             self._logger.error("Data export failed: {message}".format(message=str(e)))
+            self._logger.exception("Data export failed: {message}".format(message=str(e)))
             return make_response("Data export failed, see the log for more details", 500)
         finally:
             try:
@@ -322,9 +419,13 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         archive_name = "filament_export_{timestamp}.zip".format(timestamp=timestamp)
 
         def file_generator():
-            with open(archive_path) as f:
-                for c in f:
-                    yield c
+            with open(archive_path, "rb") as f:
+                while True:
+                    chunk = f.read()
+                    if chunk:
+                        yield(chunk)
+                    else:
+                        break
             try:
                 os.remove(archive_path)
             except Exception as e:
@@ -337,7 +438,7 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
 
     @octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
     @restricted_access
-    @admin_permission.require(403)
+    @Permissions.ADMIN.require(403)
     def import_data(self):
         def unzip(filename, extract_dir):
             # python 2.7 lacks of shutil.unpack_archive ¯\_(ツ)_/¯
@@ -361,9 +462,14 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
         try:
             tempdir = tempfile.mkdtemp()
             unzip(upload_path, tempdir)
-            self.filamentManager.import_data(tempdir)
+            if (self.filamentManager != None):
+                self.filamentManager.import_data(tempdir)
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return
         except Exception as e:
             self._logger.error("Data import failed: {message}".format(message=str(e)))
+            self._logger.exception("Data import failed: {message}".format(message=str(e)))
             return make_response("Data import failed, see the log for more details", 500)
         finally:
             try:
@@ -395,12 +501,17 @@ class FilamentManagerApi(octoprint.plugin.BlueprintPlugin):
                 return make_response("Configuration does not contain mandatory '{}' field".format(key), 400)
 
         try:
-            connection = self.filamentManager.connect(config["uri"],
-                                                      database=config["name"],
-                                                      username=config["user"],
-                                                      password=config["password"])
+            if (self.filamentManager != None):
+                connection = self.filamentManager.connect(config["uri"],
+                                                          database=config["name"],
+                                                          username=config["user"],
+                                                          password=config["password"])
+            else:
+                self._logger.warn("self.filamentManager is not initialized yet")
+                return make_response("FilamentManager is still initializing (if this persists, some dependencies may be missing)", 503)
         except Exception as e:
-            return make_response("Failed to connect to the database with the given configuration", 400)
+            self._logger.exception("Failed to connect to the database with the given configuration")
+            return make_response("Failed to connect to the database with the given configuration: {}".format(e), 400)
         else:
             connection.close()
             return make_response("", 204)

@@ -230,6 +230,8 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
     var api = this.core.client;
     var settingsViewModel = this.core.bridge.allViewModels.settingsViewModel;
 
+    self.testConnectionResult = ko.observable(null);
+    self.testConnectionResultTextColor = ko.observable("color:blue");
 
     var dialog = $('#settings_plugin_filamentmanager_configurationdialog');
 
@@ -279,13 +281,27 @@ FilamentManager.prototype.viewModels.config = function configurationViewModel() 
 
         var data = ko.mapping.toJS(self.config.database);
 
+        self.testConnectionResult('Waiting for response...');
+        self.testConnectionResultTextColor('color:orange');
+
         api.database.test(data).done(function () {
             target.addClass('btn-success');
-        }).fail(function () {
+            self.testConnectionResult('Success!');
+            self.testConnectionResultTextColor('color:green');
+        }).fail(function (response) {
             target.addClass('btn-danger');
+            console.log(JSON.stringify(response));
+            self.testConnectionResult(response.responseText);
+            self.testConnectionResultTextColor("color:red");
         }).always(function () {
             $('i.fa-spinner', target).remove();
             target.prop('disabled', false);
+            // clear the result message after a few seconds
+            window.setTimeout(function() {
+                self.testConnectionResult('');
+                self.testConnectionResultTextColor('');
+                target.removeClass('btn-success btn-danger');
+            }, 10 * 1000)
         });
     };
 };
@@ -316,10 +332,17 @@ FilamentManager.prototype.viewModels.confirmation = function spoolSelectionConfi
     };
 
     var showDialog = function showSpoolConfirmationDialog() {
+        var allCurrentSelections = selections.selectedSpools != null ? selections.selectedSpools() : null;
         var s = [];
         printerStateViewModel.filament().forEach(function (value) {
             var toolID = Utils.extractToolIDFromName(value.name());
-            s.push({ spool: undefined, tool: toolID });
+
+            var currentSelectionForTool = allCurrentSelections?.[toolID]?.name;
+
+            s.push({ spool: undefined,
+                     tool: toolID,
+                     currentSpoolName: currentSelectionForTool
+            });
         });
         self.selections(s);
         button.attr('disabled', true);
@@ -707,36 +730,60 @@ FilamentManager.prototype.viewModels.spools = function spoolsViewModel() {
     var self = this.viewModels.spools;
     var api = this.core.client;
 
+
+    self.overUsedUsage = ko.observable(false);
+    self.overUsedUsage.subscribe(function(newValue){
+        // self.allSpools.updateItems(self.allSpools.items)
+        self.allSpools.toggleFilter("overUsedUsage");
+    });
     var profilesViewModel = this.viewModels.profiles;
 
-    self.allSpools = new ItemListHelper('filamentSpools', {
-        name: function name(a, b) {
-            // sorts ascending
-            if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
-            if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        material: function material(a, b) {
-            // sorts ascending
-            if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
-            if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        vendor: function vendor(a, b) {
-            // sorts ascending
-            if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
-            if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
-            return 0;
-        },
-        remaining: function remaining(a, b) {
-            // sorts descending
-            var ra = parseFloat(a.weight) - parseFloat(a.used);
-            var rb = parseFloat(b.weight) - parseFloat(b.used);
-            if (ra > rb) return -1;
-            if (ra < rb) return 1;
-            return 0;
+
+    var myListHelperFilters = {
+        overUsedUsage: function (data){
+            console.error(data);
+            var result = data.used < data.weight;
+            return result;
         }
-    }, {}, 'name', [], [], 10);
+    };
+    var myListHelperExclusiveFilters = [["overUsedUsage"]];
+
+    self.allSpools = new ItemListHelper(
+        'filamentSpools',
+        {
+            name: function name(a, b) {
+                // sorts ascending
+                if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
+                if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            material: function material(a, b) {
+                // sorts ascending
+                if (a.profile.material.toLocaleLowerCase() < b.profile.material.toLocaleLowerCase()) return -1;
+                if (a.profile.material.toLocaleLowerCase() > b.profile.material.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            vendor: function vendor(a, b) {
+                // sorts ascending
+                if (a.profile.vendor.toLocaleLowerCase() < b.profile.vendor.toLocaleLowerCase()) return -1;
+                if (a.profile.vendor.toLocaleLowerCase() > b.profile.vendor.toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            remaining: function remaining(a, b) {
+                // sorts descending
+                var ra = parseFloat(a.weight) - parseFloat(a.used);
+                var rb = parseFloat(b.weight) - parseFloat(b.used);
+                if (ra > rb) return -1;
+                if (ra < rb) return 1;
+                return 0;
+            }
+        },
+        myListHelperFilters,
+        'name',
+        [],
+        myListHelperExclusiveFilters,
+        10);
+
 
     self.pageSize = ko.pureComputed({
         read: function read() {
